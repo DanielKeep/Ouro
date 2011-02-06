@@ -4,11 +4,11 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.Source;
+module ouro.Source;
 
 import Utf = tango.text.convert.Utf;
 
-import meme.Location;
+import ouro.Location;
 
 final class Source
 {

@@ -4,9 +4,9 @@
     Author: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.ast.Nodes;
+module ouro.ast.Nodes;
 
-import meme.Location;
+import ouro.Location;
 
 abstract class Node
 {

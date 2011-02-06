@@ -4,11 +4,11 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.Error;
+module ouro.Error;
 
 import tango.text.convert.Format;
 
-import meme.Location : Location;
+import ouro.Location : Location;
 
 enum CompilerErrorCode : uint
 {

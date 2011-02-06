@@ -4,14 +4,14 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.lexer.LexFile;
+module ouro.lexer.LexFile;
 
 import tango.io.Stdout;
 import tango.io.device.File;
 
 import tango.core.tools.TraceExceptions;
 
-import meme.lexer.Lexer : lexIter;
+import ouro.lexer.Lexer : lexIter;
 
 void main(char[][] argv)
 {

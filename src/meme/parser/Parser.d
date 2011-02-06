@@ -4,14 +4,14 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.parser.Parser;
+module ouro.parser.Parser;
 
-import meme.Error : CompilerErrorCode;
-import meme.lexer.Tokens;
-import meme.util.TokenStream;
-import meme.util.Parse : parseReal;
+import ouro.Error : CompilerErrorCode;
+import ouro.lexer.Tokens;
+import ouro.util.TokenStream;
+import ouro.util.Parse : parseReal;
 
-import Ast = meme.ast.Nodes;
+import Ast = ouro.ast.Nodes;
 
 alias CompilerErrorCode CEC;
 

@@ -4,7 +4,7 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.util.Parse;
+module ouro.util.Parse;
 
 import Float    = tango.text.convert.Float;
 import Integer  = tango.text.convert.Integer;

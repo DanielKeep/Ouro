@@ -4,11 +4,11 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.lexer.Tokens;
+module ouro.lexer.Tokens;
 
 import tango.text.convert.Format;
 
-import meme.Location;
+import ouro.Location;
 
 typedef size_t TokenType;
 alias TokenType TOK;
@@ -84,7 +84,7 @@ const char[][] OtherTokens =
     nameToTok(char[]) : TOK
 */
 
-private import meme.util.TokensCtfe : generateTokens_ctfe;
+private import ouro.util.TokensCtfe : generateTokens_ctfe;
 mixin(generateTokens_ctfe(SymbolTokens, LiteralTokens, OtherTokens));
 
 struct Token

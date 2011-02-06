@@ -2,6 +2,8 @@
 Compiling Meme
 ==============
 
+:author:    Daniel Keep <daniel.keep@gmail.com>
+
 - Tokenise source.
 
 - Parse into AST.

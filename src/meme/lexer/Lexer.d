@@ -4,18 +4,18 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.lexer.Lexer;
+module ouro.lexer.Lexer;
 
 import tango.text.convert.Format;
 import tango.text.Unicode : isWhitespace, isSpace, isDigit, isLetter;
 
 debug(TraceLexer) import tango.io.Stdout : Stderr;
 
-import meme.Location : Location;
-import meme.Source : Source;
-import meme.Error : CompilerException;
-import meme.lexer.Tokens; // Token, TOKx, ...
-import meme.util.Parse : parseString;
+import ouro.Location : Location;
+import ouro.Source : Source;
+import ouro.Error : CompilerException;
+import ouro.lexer.Tokens; // Token, TOKx, ...
+import ouro.util.Parse : parseString;
 
 private
 {

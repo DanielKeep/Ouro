@@ -7,12 +7,12 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.util.TokenStream;
+module ouro.util.TokenStream;
 
-import meme.Error;
-import meme.Location;
-import meme.Source;
-import meme.lexer.Tokens;
+import ouro.Error;
+import ouro.Location;
+import ouro.Source;
+import ouro.lexer.Tokens;
 
 private
 {

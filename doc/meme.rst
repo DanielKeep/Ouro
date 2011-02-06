@@ -1,35 +1,28 @@
 
 ====
-Meme
+Ouro
 ====
+
+:Author: Daniel Keep <daniel.keep@gmail.com>
 
 .. contents::
 
 Introduction
 ++++++++++++
 
-..
-    Notes on conformance
-    ====================
-    
-    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
-    NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and
-    "OPTIONAL" in this document are to be interpreted as described in
-    RFC 2119.
-
-Execution of meme programs
+Execution of Ouro programs
 ++++++++++++++++++++++++++
 
 Source code
 ===========
 
-Meme source code is stored as text using the UTF-8 encoding.  The UTF-8 byte
+Ouro source code is stored as text using the UTF-8 encoding.  The UTF-8 byte
 order mark is optional and is not considered part of the source text itself.
 
 Lexical analysis
 ================
 
-The first step in executing a meme program is to perform lexical analysis of
+The first step in executing a Ouro program is to perform lexical analysis of
 the source code.  This transforms the source from a sequence of characters
 into a sequence of distinct tokens.
 
@@ -353,6 +346,10 @@ Where ``X`` are the productions for which the ``eol`` token should be treated
 as a ``whitespace`` token.
 
 The following EBNF productions describe the grammatical structure of the language.
+
+There are probably inconsistencies between what is described here and what is
+actually implemented.  It needs a once-over to bring the two together (right
+now, the code is canonical).
 
 ::
 
@@ -691,7 +688,7 @@ Expressions
 Macro expansion
 ---------------
 
-Some functions in meme are actually macros.  A macro's arguments are passed as
+Some functions in Ouro are actually macros.  A macro's arguments are passed as
 an AST as opposed to a computed value.
 
 To facilitate this, each function call is checked to determine whether the
@@ -705,7 +702,7 @@ the containing AST.  The AST walk is resumed at the root of the inserted AST.
 Lambda substitution
 -------------------
 
-Numerous syntax forms in meme are defined in terms of anonymous functions.  As
+Numerous syntax forms in Ouro are defined in terms of anonymous functions.  As
 an example, consider the following macro which evaluates an expression once
 and substitutes it into another expression::
 

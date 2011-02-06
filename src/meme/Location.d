@@ -4,7 +4,7 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
 */
-module meme.Location;
+module ouro.Location;
 
 import tango.text.convert.Format;
 
