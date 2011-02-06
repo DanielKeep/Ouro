@@ -1,6 +1,6 @@
 
 (--
- Meme prelude.
+ Ouro prelude.
  --)
 
 |-- Pull in functions defined in native code.
