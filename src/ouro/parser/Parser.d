@@ -43,6 +43,7 @@ void skipEmptyStmts(TokenStream ts)
 
         <empty statement> = <term>;
     */
+
     bool isEnd(TOK type)
     {
         return type == TOKeol || type == TOKeos;
@@ -136,6 +137,7 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
             ),
             <term>;
     */
+
     if( ts.peek.type != TOKlet ) return null;
 
     auto start = ts.pop.loc;
@@ -184,6 +186,7 @@ Ast.Argument[] parseFuncArgNames(TokenStream ts, TOK stopType)
     /*
         <function argument names> = <argument name>, { ",", <argument name> };
     */
+
     Ast.Argument[] args;
 
     args ~= parseArgName(ts);
@@ -202,6 +205,7 @@ Ast.Argument parseArgName(TokenStream ts)
     /*
         <argument name> = <identifier>, [ "..." ];
     */
+
     auto start = ts.peek.loc;
     auto end = start;
     auto ident = ts.popExpect(TOKidentifier).value;
@@ -218,6 +222,10 @@ Ast.Argument parseArgName(TokenStream ts)
 
 Ast.ExprStmt parseExprStmt(TokenStream ts)
 {
+    /*
+        <expression statement> = <expression>, <term>;
+    */
+
     auto expr = parseExpr(ts);
     auto loc = expr.loc;
     ts.popExpectAny(TOKeol, TOKeos);
@@ -299,8 +307,10 @@ struct ExprState
 {
     struct Op
     {
+        Ast.Expr func;
         Ast.BinaryExpr.Op op;
         float prec;
+        Fixity fixity;
     }
 
     Ast.Expr[] exprs;
@@ -311,16 +321,42 @@ struct ExprState
         exprs ~= expr;
     }
 
+    void pushOpOrInfixFunc(Ast.BinaryExpr.Op binOp, Ast.Expr func)
+    {
+        if( func !is null )
+            pushInfixFunc(func);
+        else
+            pushOp(binOp);
+    }
+
     void pushOp(Ast.BinaryExpr.Op binOp)
     {
         Op top;
         top.op = binOp;
         top.prec = precOf(binOp);
+        top.fixity = fixityOf(binOp);
 
         while( ops.length > 0 && ops[$-1].prec > top.prec )
             crushTop;
 
         ops ~= top;
+    }
+
+    void pushInfixFunc(Ast.Expr func)
+    {
+        while( ops.length > 0 )
+            crushTop;
+
+        Op top;
+        top.func = func;
+
+        /*
+            Infix functions have the lowest possible precedence, and are
+            always left-associative.
+        */
+
+        top.prec = -float.infinity;
+        top.fixity = Fixity.Left;
     }
 
     Ast.Expr force()
@@ -342,7 +378,7 @@ struct ExprState
         assert( ops.length == exprs.length-1 );
 
         auto prec = ops[$-1].prec;
-        auto fix = fixityOf(ops[$-1].op);
+        auto fix = ops[$-1].fixity;
 
         size_t i = ops.length - 1;
         while( i>0 && ops[i-1].prec == prec )
@@ -370,7 +406,13 @@ struct ExprState
 
         while( ops.length > 0 )
         {
-            lhs = foldBinaryOp(ops[0].op, lhs, exprs[0]);
+            if( ops[0].func !is null )
+                lhs = new Ast.InfixFuncExpr(lhs.loc.extendTo(exprs[0].loc),
+                        ops[0].func, lhs, exprs[0]);
+
+            else
+                lhs = foldBinaryOp(ops[0].op, lhs, exprs[0]);
+
             ops = ops[1..$];
             exprs = exprs[1..$];
         }
@@ -388,7 +430,13 @@ struct ExprState
 
         while( ops.length > 0 )
         {
-            rhs = foldBinaryOp(ops[$-1].op, exprs[$-1], rhs);
+            if( ops[$-1].func !is null )
+                rhs = new Ast.InfixFuncExpr(exprs[$-1].loc.extendTo(rhs.loc),
+                        ops[$-1].func, exprs[$-1], rhs);
+
+            else
+                rhs = foldBinaryOp(ops[$-1].op, exprs[$-1], rhs);
+
             ops = ops[0..$-1];
             exprs = exprs[0..$-1];
         }
@@ -412,19 +460,20 @@ Ast.Expr parseExpr(TokenStream ts)
 
     // Parse the chain of infix operators.
     Ast.BinaryExpr.Op op;
-    Ast.Expr expr;
-    if( tryparseBinaryOp(ts, op) )
+    Ast.Expr expr, infixFunc;
+    if( tryparseBinaryOp(ts, op, infixFunc) )
     {
         ExprState st;
         st.pushExpr(lhs);
-        st.pushOp(op);
+        st.pushOpOrInfixFunc(op, infixFunc);
 
         while( true )
         {
             st.pushExpr(parseExprAtom(ts));
 
-            if( tryparseBinaryOp(ts, op) )
-                st.pushOp(op);
+            if( tryparseBinaryOp(ts, op, infixFunc) )
+                st.pushOpOrInfixFunc(op, infixFunc);
+
             else
                 break;
         }
@@ -444,6 +493,10 @@ Ast.Expr parseExpr(TokenStream ts)
 
 bool tryparsePrefixOp(TokenStream ts, out Ast.PrefixExpr.Op op)
 {
+    /*
+        <prefix op> = "+" | "-" | "not";
+    */
+
     alias Ast.PrefixExpr.Op Op;
     auto t = ts.peek;
 
@@ -457,8 +510,21 @@ bool tryparsePrefixOp(TokenStream ts, out Ast.PrefixExpr.Op op)
     }
 }
 
-bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op)
+bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op,
+        out Ast.Expr infixFunc)
 {
+    /*
+        <binary op> = "=" | "!=" | "<>"
+                    | "<" | "<=" | ">" | ">="
+                    | "+" | "-" | "*" | "/" | "//"
+                    | "mod" | "rem"
+                    | "**"
+                    | "and" | "or"
+                    | "." | "::" | "++"
+                    | "(.", <infix function>, ".)"
+                    ;
+    */
+
     alias Ast.BinaryExpr.Op Op;
     auto t = ts.peek;
 
@@ -486,31 +552,55 @@ bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op)
         case TOKmod:        op = Op.Mod;    break;
         case TOKrem:        op = Op.Rem;    break;
 
-        default:            return false;
+        case TOKlparenperiod:
+            {
+                auto start = ts.pop.loc;
+                infixFunc = parseInfixFunction(ts);
+                auto end = ts.popExpect(TOKperiodrparen).loc;
+
+                return true;
+            }
+            break;
+
+        default:
+            return false;
     }
 
     ts.pop;
     return true;
 }
 
+Ast.Expr parseInfixFunction(TokenStream ts)
+{
+    /*
+        <infix function> = <identifier>
+                         | <sub expression>;
+    */
+
+    if( auto expr = tryparseVariableExpr(ts) )
+        return expr;
+
+    if( auto expr = tryparseSubExpr(ts) )
+        return expr;
+
+    ts.err(CEC.PExInfFunc);
+}
+
 Ast.Expr tryparsePostfixExpr(TokenStream ts, Ast.Expr expr)
 {
+    /*
+        <postfix op> = "(.", <postfix function>, ")";
+
+        <postfix function> = <infix function>;
+    */
+
     if( ts.peek.type != TOKlparenperiod )
         return expr;
 
     auto start = ts.pop.loc;
-    Ast.Expr funcExpr;
+    Ast.Expr funcExpr = parseInfixFunction(ts);
 
-    if( auto varExpr = tryparseVariableExpr(ts) )
-        funcExpr = varExpr;
-
-    else if( auto subExpr = tryparseSubExpr(ts) )
-        funcExpr = subExpr;
-
-    else
-        return expr;
-
-    auto end = ts.popExpect(TOKperiodrparen).loc;
+    auto end = ts.popExpect(TOKrparen).loc;
 
     return new Ast.PostfixFuncExpr(start.extendTo(end), funcExpr, expr);
 }
@@ -522,12 +612,13 @@ Ast.Expr tryparseExprAtom(TokenStream ts)
                                 ( <number expression>
                                 | <string expression>
                                 | <logical expression>
+                                | <nil expression>
                                 | <list expression>
                                 | <map expression>
                                 | <lambda expression>
+                                | <range expression>
                                 | <function expression>
                                 | <variable expression>
-                                | <range expression>
                                 | <sub expression>
                                 ),
                             [ <explode> ];
@@ -542,12 +633,13 @@ Ast.Expr tryparseExprAtom(TokenStream ts)
         if( auto e = tryparseNumberExpr(ts) )       return e;
         if( auto e = tryparseStringExpr(ts) )       return e;
         if( auto e = tryparseLogicalExpr(ts) )      return e;
+        if( auto e = tryparseNilExpr(ts) )          return e;
         if( auto e = tryparseListExpr(ts) )         return e;
         if( auto e = tryparseMapExpr(ts) )          return e;
         if( auto e = tryparseLambdaExpr(ts) )       return e;
+        if( auto e = tryparseRangeExpr(ts) )        return e;
         if( auto e = tryparseFunctionOrVariableOrSubExpr(ts) )
                                                     return e;
-        if( auto e = tryparseRangeExpr(ts) )        return e;
     })();
 
     Ast.Expr expr;
@@ -577,23 +669,25 @@ Ast.Expr parseExprAtom(TokenStream ts)
 
 Ast.Expr tryparseNumberExpr(TokenStream ts)
 {
+    /*
+        <number expression> = <number>;
+    */
+
     if( ts.peek.type != TOKnumber ) return null;
 
     auto loc = ts.peek.loc;
     auto value = parseReal(ts.pop.value);
     auto expr = new Ast.NumberExpr(loc, value);
 
-    if( auto rhsExpr = tryparseFunctionOrVariableOrSubExpr(ts) )
-        return new Ast.BinaryExpr(
-                expr.loc.extendTo(rhsExpr.loc),
-                Ast.BinaryExpr.Op.Mul, expr, rhsExpr);
-
-    else
-        return expr;
+    return expr;
 }
 
 Ast.Expr tryparseStringExpr(TokenStream ts)
 {
+    /*
+        <string expression> = <string>;
+    */
+
     if( ts.peek.type != TOKstring ) return null;
 
     auto loc = ts.peek.loc;
@@ -603,6 +697,10 @@ Ast.Expr tryparseStringExpr(TokenStream ts)
 
 Ast.Expr tryparseLogicalExpr(TokenStream ts)
 {
+    /*
+        <logical expression> = "true" | "false";
+    */
+
     if( ts.peek.type == TOKtrue )
         return new Ast.LogicalExpr(ts.pop.loc, true);
 
@@ -613,8 +711,23 @@ Ast.Expr tryparseLogicalExpr(TokenStream ts)
         return null;
 }
 
+Ast.Expr tryparseNilExpr(TokenStream ts)
+{
+    /*
+        <nil expression> = "nil";
+    */
+
+    if( ts.peek.type != TOKnil ) return null;
+
+    return new Ast.NilExpr(ts.pop.loc);
+}
+
 Ast.Expr tryparseListExpr(TokenStream ts)
 {
+    /*
+        <list expression> = "[", [ <expression>, { ",", <expression> } ], "]";
+    */
+
     if( ts.peek.type != TOKlbracket ) return null;
 
     auto start = ts.popExpect(TOKlbracket).loc;
@@ -633,6 +746,14 @@ Ast.Expr tryparseListExpr(TokenStream ts)
 
 Ast.Expr[] parseCommaExprs(TokenStream ts, TOK stopType)
 {
+    /*
+        Helper method.  Not actually in the grammar.  If it was, it'd look
+        like this:
+
+        <comma exprs (stop)> =
+            <expression>, { ",", <expression> }, <stop>;
+    */
+
     Ast.Expr[] elements;
 
     elements ~= parseExpr(ts);
@@ -647,6 +768,11 @@ Ast.Expr[] parseCommaExprs(TokenStream ts, TOK stopType)
 
 Ast.Expr tryparseMapExpr(TokenStream ts)
 {
+    /*
+        <map expression> = "[:",
+            [ <key value pair>, { ",", <key value pair> } ], ":]";
+    */
+
     if( ts.peek.type != TOKlbracketcolon ) return null;
 
     auto start = ts.pop.loc;
@@ -665,6 +791,10 @@ Ast.Expr tryparseMapExpr(TokenStream ts)
 
 Ast.KeyValuePair parseKeyValuePair(TokenStream ts)
 {
+    /*
+        <key value pair> = <expression>, ":", <expression>;
+    */
+
     auto start = ts.peek.loc;
 
     auto keyExpr = parseExpr(ts);
@@ -682,6 +812,7 @@ Ast.Expr tryparseLambdaExpr(TokenStream ts)
             [ <function argument names> ],
             ".", <expression>;
     */
+
     if( ts.peek.type != TOKbslash ) return null;
 
     auto start = ts.pop.loc;
@@ -716,14 +847,8 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
                           | <sub expression>
                           | <function expression>
                           ;
-
-        <function like keyword> = "#~'"
-                                | "#~\""
-                                | "#~$"
-                                | "let"
-                                | "import"
-                                ;
     */
+
     Ast.Expr baseExpr;
 
     auto start = ts.peek.loc;
@@ -825,6 +950,15 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 
 bool tryparseFunctionLikeKeyword(TokenStream ts, out TOK keyword)
 {
+    /*
+        <function like keyword> = "#~'"
+                                | "#~\""
+                                | "#~$"
+                                | "let"
+                                | "import"
+                                ;
+    */
+
     auto t = ts.peek;
 
     switch( t.type )
@@ -846,6 +980,10 @@ bool tryparseFunctionLikeKeyword(TokenStream ts, out TOK keyword)
 
 Ast.Expr tryparseVariableExpr(TokenStream ts)
 {
+    /*
+        <variable expression> = <identifier>;
+    */
+
     if( ts.peek.type != TOKidentifier ) return null;
 
     auto loc = ts.peek.loc;
@@ -855,6 +993,10 @@ Ast.Expr tryparseVariableExpr(TokenStream ts)
 
 Ast.Expr tryparseSubExpr(TokenStream ts)
 {
+    /*
+        <sub expression> = "(", <treat eol as whitespace( expression )>, ")";
+    */
+
     if( ts.peek.type != TOKlparen ) return null;
 
     Ast.Expr expr;
@@ -869,6 +1011,12 @@ Ast.Expr tryparseSubExpr(TokenStream ts)
 
 Ast.Expr tryparseRangeExpr(TokenStream ts)
 {
+    /*
+        <range expression> = "range",
+            ( "[" | "(" ), <expression>, ",",
+            <expression>, ( "]" | ")" );
+    */
+
     if( ts.peek.type != TOKrange ) return null;
 
     auto start = ts.pop.loc;
@@ -885,6 +1033,9 @@ Ast.Expr tryparseRangeExpr(TokenStream ts)
     return new Ast.RangeExpr(start.extendTo(end), li, ui, le, ue);
 }
 
+/**
+    Used to perform folds like (a < x < b) --> (a < x) and (x < b).
+*/
 Ast.Expr foldBinaryOp(Ast.BinaryExpr.Op op, Ast.Expr lhs, Ast.Expr rhs)
 {
     alias Ast.BinaryExpr.Op Op;

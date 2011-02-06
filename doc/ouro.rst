@@ -146,6 +146,8 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'::'──┘    - Sequence cons
            ├─'++'──┘    - Sequence join
            ├─'...'─┘    - Sequence explode
+           ├─'(.'──┘    - Infix/postfix opening parenthesis
+           ├─'.)'──┘    - Infix closing parenthesis
            ├─'[:'──┘    - Map opening bracket
            ├─':]'──┘    - Map closing bracket
            ├─"#~'"─┘    - Ast quote
@@ -401,10 +403,9 @@ Note: eventually, pattern matching should be added here::
                             | <list expression>
                             | <map expression>
                             | <lambda expression>
-                            | <prefix expression>
+                            | <range expression>
                             | <function expression>
                             | <variable expression>
-                            | <range expression>
                             | <sub expression>
                             ),
                         [ <explode> ];
@@ -416,19 +417,16 @@ Note: eventually, pattern matching should be added here::
                 | "**"
                 | "and" | "or"
                 | "." | "::" | "++"
-                | "(", ".", <function prefix>, ".", ")"
+                | "(.", <infix function>, ".)"
                 ;
 
     <prefix op> = "+" | "-" | "not";
 
-    <postfix op> = "(", ".", <function prefix>, ")";
+    <postfix op> = "(.", <postfix function>, ")";
 
     <explode> = "...";
 
-Note: unit suffixes will go here when added::
-
-    <number expression> = <number>, [ <function expression>
-                                    | <variable expression> ];
+    <number expression> = <number>;
 
     <string expression> = <string>;
 
@@ -448,6 +446,11 @@ Note: unit suffixes will go here when added::
 
     <function expression> = [ "macro" ], <function prefix>,
                             "(", [ <expression>, { ",", <expression> }], ")";
+
+    <infix function> = <identifier>
+                     | <sub expression>;
+
+    <postfix function> = <infix function>;
 
     <function prefix> = <identifier>
                       | <function like keyword>
@@ -511,6 +514,7 @@ Symbol      Meaning                     Prec.   Assoc.  Alternatives
 ``>=``      Greater-than or equal-to    4.0     left
 ``and``     Logical conjunction         3.9     left
 ``or``      Logical disjunction         3.8     left
+``(.f.)``   Infix function              -∞      left
 =========== =========================== ======= ======= ===============
 
 .. [*] ``x // y = floor(x / y)``

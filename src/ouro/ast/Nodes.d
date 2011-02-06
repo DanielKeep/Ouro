@@ -363,6 +363,14 @@ class LogicalExpr : Expr
     }
 }
 
+class NilExpr : Expr
+{
+    this(Location loc)
+    {
+        super(loc);
+    }
+}
+
 class ListExpr : Expr
 {
     Expr[] elemExprs;

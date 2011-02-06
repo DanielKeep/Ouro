@@ -35,6 +35,7 @@ enum CompilerErrorCode : uint
     PLetArgNum,
     PImpArgNum,
     PMacroKeyword,
+    PExInfFunc,
 }
 
 private alias CompilerErrorCode CEC;
@@ -70,6 +71,7 @@ CEC.PAstQQSArgNum:  "ast quasi-quote substitution requires one argument",
 CEC.PLetArgNum:     "let requires at least one argument",
 CEC.PImpArgNum:     "import requires three arguments",
 CEC.PMacroKeyword:  "cannot macro call a keyword-like function",
+CEC.PExInfFunc:     "expected function name or sub-expression",
 
 // Set message for real this time
 cast(CEC) uint.max: null
