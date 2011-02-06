@@ -138,6 +138,11 @@ final class Source
         return this.src[mark.offset..this.mark.offset];
     }
 
+    char[] sliceBetween(Mark start, Mark end)
+    {
+        return this.src[start.offset..end.offset];
+    }
+
     size_t length()
     {
         return src[mark.offset..$].length;

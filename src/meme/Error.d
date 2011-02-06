@@ -14,14 +14,27 @@ enum CompilerErrorCode : uint
 {
     Unknown = 0,
 
-    LUnusWs = 1000,
+    LUnexpected = 1000,
+    LUnusWs,
     LUntermBlockCmt,
     LBlockCmtOvfl,
     LExDecDigit,
     LExHexDigit,
     LInvStrEsc,
     LUntermString,
-    LUnexpected,
+
+    PUnexpected = 2000,
+    PUnexEos,
+    PExGot,
+    PExManyGot,
+    PExExprGotTx,
+    PExFuncAftMacro,
+    PAstQArgNum,
+    PAstQQArgNum,
+    PAstQQSArgNum,
+    PLetArgNum,
+    PImpArgNum,
+    PMacroKeyword,
 }
 
 private alias CompilerErrorCode CEC;
@@ -45,6 +58,19 @@ CEC.LInvStrEsc:     "invalid string escape sequence: '\\{}'",
 CEC.LUntermString:  "unterminated string literal",
 CEC.LUnexpected:    "unexpected character '{}'",
 
+CEC.PUnexpected:    "unexpected '{}'",
+CEC.PUnexEos:       "unexpected end-of-source",
+CEC.PExGot:         "expected {}, got {}",
+CEC.PExManyGot:     "expected one of {}; got {}",
+CEC.PExExprGotTx:   "expected expression, got '{}'",
+CEC.PExFuncAftMacro:"expected function call after 'macro'",
+CEC.PAstQArgNum:    "ast quote requires one argument",
+CEC.PAstQQArgNum:   "ast quasi-quote requires one argument",
+CEC.PAstQQSArgNum:  "ast quasi-quote substitution requires one argument",
+CEC.PLetArgNum:     "let requires at least one argument",
+CEC.PImpArgNum:     "import requires three arguments",
+CEC.PMacroKeyword:  "cannot macro call a keyword-like function",
+
 // Set message for real this time
 cast(CEC) uint.max: null
     ];
@@ -55,14 +81,10 @@ class CompilerException : Exception
     alias CompilerErrorCode Code;
     alias CompilerErrorMessages Messages;
 
-    this(Code code, Location loc, char[] arg0)
+    this(Code code, Location loc, char[] arg0 = null, char[] arg1 = null)
     {
         this.arg0 = arg0;
-        this(code, loc);
-    }
-
-    this(Code code, Location loc)
-    {
+        this.arg1 = arg1;
         this.code = code;
         this.loc = loc;
 
@@ -78,12 +100,13 @@ class CompilerException : Exception
             msg = "undefined error";
 
         return Format("{} #{,04}: {}", loc.toString, code,
-                Format(msg, arg0));
+                Format(msg, arg0, arg1));
     }
 
     Code code;
     Location loc;
     char[] arg0;
+    char[] arg1;
 }
 
 // vim:tw=0

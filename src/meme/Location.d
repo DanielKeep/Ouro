@@ -30,7 +30,7 @@ struct Location
         Location r = *this;
         
         if( this.line == other.line && other.column > this.column )
-            this.length = (other.column - this.column);
+            this.length = (other.column - this.column) + other.length;
 
         else if( other.line > this.line )
             this.length = uint.max;

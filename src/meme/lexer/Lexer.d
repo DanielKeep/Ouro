@@ -15,6 +15,7 @@ import meme.Location : Location;
 import meme.Source : Source;
 import meme.Error : CompilerException;
 import meme.lexer.Tokens; // Token, TOKx, ...
+import meme.util.Parse : parseString;
 
 private
 {
@@ -55,7 +56,8 @@ void skipWhitespace(Source src)
 */
 bool popToken(out Token dest, Source src, TOK type, size_t n)
 {
-    dest = Token(src.locSpan(n), type, src.slice(n));
+    auto text = src.slice(n);
+    dest = Token(src.locSpan(n), type, text, text);
     src.advance(n);
     return true;
 }
@@ -63,7 +65,27 @@ bool popToken(out Token dest, Source src, TOK type, size_t n)
 bool popToken(out Token dest, Source src, TOK type, Source.Mark mark)
 {
     auto loc = src.locSpanFrom(mark);
-    dest = Token(loc, type, src.sliceFrom(mark));
+    auto text = src.sliceFrom(mark);
+    dest = Token(loc, type, text, text);
+    return true;
+}
+
+bool popToken(out Token dest, Source src, TOK type, Source.Mark mark,
+        char[] value)
+{
+    auto loc = src.locSpanFrom(mark);
+    auto text = src.sliceFrom(mark);
+    dest = Token(loc, type, text, value);
+    return true;
+}
+
+bool popToken(out Token dest, Source src, TOK type, Source.Mark mark,
+        Source.Mark valBegMark, Source.Mark valEndMark)
+{
+    auto loc = src.locSpanFrom(mark);
+    auto text = src.sliceFrom(mark);
+    auto value = src.sliceBetween(valBegMark, valEndMark);
+    dest = Token(loc, type, text, value);
     return true;
 }
 
@@ -126,6 +148,7 @@ bool lexComment(Source src, out Token token)
     {
         case "|--":
             src.advance(3);
+            auto valMark = src.save;
             size_t eol = isEol(src);
             while( eol == 0 )
             {
@@ -133,11 +156,13 @@ bool lexComment(Source src, out Token token)
                 eol = isEol(src);
             }
             src.advance(eol);
-            return popToken(token, src, TOKcomment, mark);
+            return popToken(token, src, TOKcomment, mark, valMark, src.save);
 
         case "(--":
         {
             src.advance(3);
+            auto valBegMark = src.save;
+            auto valEndMark = src.save;
             size_t depth = 1;
             while( depth > 0 )
             {
@@ -155,6 +180,7 @@ bool lexComment(Source src, out Token token)
 
                     case "--)":
                         -- depth;
+                        valEndMark = src.save;
                         src.advance(3);
                         break;
 
@@ -163,11 +189,14 @@ bool lexComment(Source src, out Token token)
                 }
             }
 
-            return popToken(token, src, TOKcomment, mark);
+            return popToken(token, src, TOKcomment, mark,
+                    valBegMark, valEndMark);
         }
         case "(++":
         {
             src.advance(3);
+            auto valBegMark = src.save;
+            auto valEndMark = src.save;
             size_t depth = 1;
             while( depth > 0 )
             {
@@ -185,6 +214,7 @@ bool lexComment(Source src, out Token token)
 
                     case "++)":
                         -- depth;
+                        valEndMark = src.save;
                         src.advance(3);
                         break;
 
@@ -193,7 +223,8 @@ bool lexComment(Source src, out Token token)
                 }
             }
 
-            return popToken(token, src, TOKcomment, mark);
+            return popToken(token, src, TOKcomment, mark,
+                    valBegMark, valEndMark);
         }
 
         default:
@@ -217,15 +248,29 @@ bool lexSymbol(Source src, out Token token)
     {
         // Unique prefix single-cp symbols
         case '=': l = 1; tok = TOKeq; break;
-        case '(': l = 1; tok = TOKlparen; break;
         case ')': l = 1; tok = TOKrparen; break;
-        case '[': l = 1; tok = TOKlbracket; break;
         case ']': l = 1; tok = TOKrbracket; break;
         case ',': l = 1; tok = TOKcomma; break;
         case '-': l = 1; tok = TOKhyphen; break;
         case '\\':l = 1; tok = TOKbslash; break;
 
         // multi-cp symbols
+        case '(':
+            switch( cp1 )
+            {
+                case '.':   l = 2; tok = TOKlparenperiod; break;
+                default:    l = 1; tok = TOKlparen; break;
+            }
+            break;
+
+        case '[':
+            switch( cp1 )
+            {
+                case ':':   l = 2; tok = TOKlbracketcolon; break;
+                default:    l = 1; tok = TOKlbracket; break;
+            }
+            break;
+
         case '!':
             switch( cp1 )
             {
@@ -270,6 +315,7 @@ bool lexSymbol(Source src, out Token token)
         case ':':
             switch( cp1 )
             {
+                case ']':   l = 2; tok = TOKcolonrbracket; break;
                 case ':':   l = 2; tok = TOKcolon2; break;
                 default:    l = 1; tok = TOKcolon; break;
             }
@@ -288,6 +334,11 @@ bool lexSymbol(Source src, out Token token)
             {
                 l = 3;
                 tok = TOKperiod3;
+            }
+            else if( cp1 == ')' )
+            {
+                l = 2;
+                tok = TOKperiodrparen;
             }
             else
             {
@@ -379,7 +430,9 @@ bool lexBasicIdentifierOrKeyword(Source src, out Token token)
         case "rem":     type = TOKrem; break;
         case "true":    type = TOKtrue; break;
         case "false":   type = TOKfalse; break;
+        case "nil":     type = TOKnil; break;
         case "import":  type = TOKimport; break;
+        case "macro":   type = TOKmacro; break;
         case "range":   type = TOKrange; break;
         default:
     }
@@ -601,6 +654,8 @@ bool lexString(Source src, out Token token)
 
     src.advance;
 
+    auto valBegMark = src.save;
+
     while( src[0] != '"' )
     {
         if( src[0] == '\\' )
@@ -615,9 +670,12 @@ bool lexString(Source src, out Token token)
             src.advance;
     }
 
+    auto valEndMark = src.save;
+
     src.advance;
 
-    return popToken(token, src, TOKstring, mark);
+    return popToken(token, src, TOKstring, mark,
+            parseString(src.sliceBetween(valBegMark, valEndMark)));
 }
 
 const Lexers = [

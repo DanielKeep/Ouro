@@ -153,6 +153,8 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'::'──┘    - Sequence cons
            ├─'++'──┘    - Sequence join
            ├─'...'─┘    - Sequence explode
+           ├─'[:'──┘    - Map opening bracket
+           ├─':]'──┘    - Map closing bracket
            ├─"#~'"─┘    - Ast quote
            ├─'#~"'─┘    - Ast quasi-quote
            └─'#~$'─┘    - Ast quasi-quote escape (a.k.a. substitution)
@@ -193,7 +195,9 @@ identifiers.
            ├─'rem'────┘     - Binary remainder
            ├─'true'───┘     - Logical true
            ├─'false'──┘     - Logical false
+           ├─'nil'────┘     - Nil
            ├─'import'─┘     - Module import statement
+           ├─'macro'──┘     - Macro keyword
            └─'range'──┘     - Range constructor
 
 Identifier
@@ -336,7 +340,7 @@ of some basic syntax form.  When encountered, they are rewritten into the
 equivalent basic form before being added to the AST.
 
 For example, the syntax ``a + b`` is a derived form equivalent to
-``#i"+"(a,b)``; that is, calling the function ``+`` with arguments ``a`` and
+``$"+"(a,b)``; that is, calling the function ``+`` with arguments ``a`` and
 ``b``.
 
 Also note that the grammar is context-dependent: the interpretation of
@@ -375,7 +379,7 @@ The following EBNF productions describe the grammatical structure of the languag
 
     <let statement> = (
           "let", <identifier>, "=", <expression>
-        | "let", [ "macro" ],
+        | "let", [ "macro" ], <identifier>,
             "(", [ <function argument names> ], ")", "=", <expression>
         ),
         <term>;
@@ -396,14 +400,17 @@ Note: eventually, pattern matching should be added here::
                             ( <number expression>
                             | <string expression>
                             | <logical expression>
+                            | <nil expression>
                             | <list expression>
+                            | <map expression>
                             | <lambda expression>
                             | <prefix expression>
                             | <function expression>
                             | <variable expression>
                             | <range expression>
                             | <sub expression>
-                            );
+                            ),
+                        [ <explode> ];
 
     <binary op> = "=" | "!=" | "<>"
                 | "<" | "<=" | ">" | ">="
@@ -415,19 +422,29 @@ Note: eventually, pattern matching should be added here::
                 | "(", ".", <function prefix>, ".", ")"
                 ;
 
-    <prefix op> = "+" | "-" | "not" | "...";
+    <prefix op> = "+" | "-" | "not";
 
     <postfix op> = "(", ".", <function prefix>, ")";
 
+    <explode> = "...";
+
 Note: unit suffixes will go here when added::
 
-    <number expression> = <number>;
+    <number expression> = <number>, [ <function expression>
+                                    | <variable expression> ];
 
     <string expression> = <string>;
 
     <logical expression> = "true" | "false";
 
+    <nil expression> = "nil";
+
     <list expression> = "[", [ <expression>, { ",", <expression> } ], "]";
+
+    <map expression> = "[:",
+        [ <key value pair>, { ",", <key value pair> } ], ":]";
+
+    <key value pair> = <expression>, ":", <expression>;
 
     <lambda expression> = "\", [ "macro" ], [ <function argument names> ],
         ".", <expression>;
@@ -455,6 +472,59 @@ Note: unit suffixes will go here when added::
         <expression>, ( "]" | ")" );
 
     <sub expression> = "(", <treat eol as whitespace( expression )>, ")";
+
+Binary Operators
+----------------
+
+Operator precedence is expressed as a decimal number.  Operators are evaluated
+before other operators with lower precedence.  This is expressed in the AST by
+the arrangement of nodes.  For example, addition and multiplication have
+precedences of 6.2 and 6.5 respectively; multiplication is always evaluated
+before addition.
+
+Also of note is the associativity (or fixity) of the operators.  This
+determines whether they are left-associative or right-associative.  For
+example, assuming a generic operator ∗.
+
+=========== =================== ===================
+Expression  Left-Associative    Right-Associative
+=========== =================== ===================
+a ∗ b ∗ c   (a ∗ b) ∗ c         a ∗ (b ∗ c)
+=========== =================== ===================
+
+=========== =========================== ======= ======= ===============
+Symbol      Meaning                     Prec.   Assoc.  Alternatives
+=========== =========================== ======= ======= ===============
+``.``       Function composition        9.0     left
+``**``      Exponentiation              6.7     right
+``*``       Multiplication              6.5     left
+``/``       Division                    6.5     left
+``//``      Integer division [*]_       6.5     left
+``mod``     Modulus [*]_                6.5     left
+``rem``     Remainder [*]_              6.5     left
+``+``       Addition                    6.2     left
+``-``       Subtraction                 6.2     left
+``::``      Sequence construction       5.6     right
+``++``      Sequence join               5.4     left
+``=``       Equality                    4.0     left
+``!=``      Inequality                  4.0     left    ``<>``
+``<``       Less-than                   4.0     left
+``<=``      Less-than or equal-to       4.0     left
+``>``       Greater-than                4.0     left
+``>=``      Greater-than or equal-to    4.0     left
+``and``     Logical conjunction         3.9     left
+``or``      Logical disjunction         3.8     left
+=========== =========================== ======= ======= ===============
+
+.. [*] ``x // y = floor(x / y)``
+.. [*] ``x mod y = x - y*floor(x / y)``
+.. [*] ``x rem y = x - y*trunc(x / y)``
+
+Comparison operators also support "ternary syntax".  That is, the expression
+``a < x < b`` is rewritten to ``a < x and x < b``.  For this to work, both
+comparison operators must be "pointing" in the same direction.  That is, you
+can mix ``<`` and ``<=`` or ``>`` and ``>=``, but you cannot mix ``<`` and
+``>``.
 
 Abstract Symbol Tree
 ====================
@@ -524,6 +594,13 @@ The following describes the structure of the AST nodes themselves.
 
     SequenceExpr : Expression
         elementExprs : [Expression]
+
+    MapExpr : Expression
+        keyValuePairs : [KeyValuePair]
+
+    KeyValuePair
+        key : Expression
+        value : Expression
 
     LambdaExpr : Expression
         isMacro : Logical

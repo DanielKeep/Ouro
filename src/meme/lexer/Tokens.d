@@ -20,6 +20,10 @@ const char[][2][] SymbolTokens =
     [")", "rparen"],
     ["[", "lbracket"],
     ["]", "rbracket"],
+    ["(.", "lparenperiod"],
+    [".)", "periodrparen"],
+    ["[:", "lbracketcolon"],
+    [":]", "colonrbracket"],
     [",", "comma"],
     ["-", "hyphen"],
     ["\\", "bslash"],
@@ -54,7 +58,9 @@ const char[][] LiteralTokens =
     "rem",
     "true",
     "false",
+    "nil",
     "import",
+    "macro",
     "range",
 ];
 
@@ -86,8 +92,9 @@ struct Token
     Location loc;
     TOK type = TOKnone;
     char[] text;
+    char[] value;
 
-    static Token opCall(Location loc, TOK type, char[] text)
+    static Token opCall(Location loc, TOK type, char[] text, char[] value)
     {
         alias type a_fun_shooter;
 
