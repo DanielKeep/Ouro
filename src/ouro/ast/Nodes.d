@@ -255,6 +255,111 @@ class BinaryExpr : Expr
     }
 }
 
+class TernaryExpr : Expr
+{
+    enum Op
+    {
+        LtLt, LeLt, LtLe, LeLe,
+        GtGt, GeGt, GtGe, GeGe,
+    }
+
+    Op op;
+    Expr lhs, mid, rhs;
+
+    this(Location loc, Op op, Expr lhs, Expr mid, Expr rhs)
+    in
+    {
+        assert( lhs !is null );
+        assert( mid !is null );
+        assert( rhs !is null );
+    }
+    body
+    {
+        super(loc);
+        this.op = op;
+        this.lhs = lhs;
+        this.mid = mid;
+        this.rhs = rhs;
+    }
+
+    private alias BinaryExpr.Op BinOp;
+
+    static Op opFromBinary(BinOp lho, BinOp rho)
+    {
+        switch( lho )
+        {
+            case BinOp.Lt:
+                switch( rho )
+                {
+                    case BinOp.Lt:      return Op.LtLt;
+                    case BinOp.LtEq:    return Op.LtLe;
+                    default:            assert(false);
+                }
+
+            case BinOp.LtEq:
+                switch( rho )
+                {
+                    case BinOp.Lt:      return Op.LeLt;
+                    case BinOp.LtEq:    return Op.LeLe;
+                    default:            assert(false);
+                }
+
+            case BinOp.Gt:
+                switch( rho )
+                {
+                    case BinOp.Gt:      return Op.GtGt;
+                    case BinOp.GtEq:    return Op.GtGe;
+                    default:            assert(false);
+                }
+
+            case BinOp.GtEq:
+                switch( rho )
+                {
+                    case BinOp.Gt:      return Op.GeGt;
+                    case BinOp.GtEq:    return Op.GeGe;
+                    default:            assert(false);
+                }
+
+            default:
+                assert(false);
+        }
+    }
+
+    static void opRepr(Op op, out char[] lho, out char[] rho)
+    {
+        switch( op )
+        {
+            case Op.LtLt:   lho = "<";  rho = "<";  break;
+            case Op.LeLt:   lho = "<="; rho = "<";  break;
+            case Op.LtLe:   lho = "<";  rho = "<="; break;
+            case Op.LeLe:   lho = "<="; rho = "<="; break;
+            case Op.GtGt:   lho = ">";  rho = ">";  break;
+            case Op.GeGt:   lho = ">="; rho = ">";  break;
+            case Op.GtGe:   lho = ">";  rho = ">="; break;
+            case Op.GeGe:   lho = ">="; rho = ">="; break;
+
+            default:        assert(false);
+        }
+    }
+
+    static char[] opToString(Op op)
+    {
+        switch( op )
+        {
+            case Op.LtLt:   return "LtLt";
+            case Op.LeLt:   return "LeLt";
+            case Op.LtLe:   return "LtLe";
+            case Op.LeLe:   return "LeLe";
+            case Op.GtGt:   return "GtGt";
+            case Op.GeGt:   return "GeGt";
+            case Op.GtGe:   return "GtGe";
+            case Op.GeGe:   return "GeGe";
+
+            default:        assert(false);
+        }
+    }
+}
+
 class InfixFuncExpr : Expr
 {
     Expr func;
@@ -635,41 +740,6 @@ class ImportExpr : Expr
         this.scopeExpr = scopeExpr;
         this.symbolsExpr = symbolsExpr;
         this.subExpr = subExpr;
-    }
-}
-
-class EvalSharedExpr : Expr
-{
-    SharedExpr sharedExpr;
-    Expr expr;
-
-    this(Location loc, SharedExpr sharedExpr, Expr expr)
-    in
-    {
-        assert( sharedExpr !is null );
-        assert( expr !is null );
-    }
-    body
-    {
-        super(loc);
-        this.sharedExpr = sharedExpr;
-        this.expr = expr;
-    }
-}
-
-class SharedExpr : Expr
-{
-    Expr expr;
-
-    this(Location loc, Expr expr)
-    in
-    {
-        assert( expr !is null );
-    }
-    body
-    {
-        super(loc);
-        this.expr = expr;
     }
 }
 

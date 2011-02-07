@@ -1051,13 +1051,9 @@ Ast.Expr foldBinaryOp(Ast.BinaryExpr.Op op, Ast.Expr lhs, Ast.Expr rhs)
                     && (op == Op.Gt || op == Op.GtEq) )
           )
         {
-            auto mid = sharedExpr(lhsBin.rhs);
-            return evalSharedExpr(mid,
-                new Ast.BinaryExpr(lhs.loc.extendTo(rhs.loc), Op.And,
-                    new Ast.BinaryExpr(lhs.loc.extendTo(mid.loc),
-                        lhsBin.op, lhsBin.lhs, mid),
-                    new Ast.BinaryExpr(mid.loc.extendTo(rhs.loc),
-                        op, mid, rhs)));
+            return new Ast.TernaryExpr(lhs.loc.extendTo(rhs.loc),
+                    Ast.TernaryExpr.opFromBinary(lhsBin.op, op),
+                    lhsBin.lhs, lhsBin.rhs, rhs);
         }
     }
     else if( auto rhsBin = cast(Ast.BinaryExpr) rhs )
@@ -1069,51 +1065,12 @@ Ast.Expr foldBinaryOp(Ast.BinaryExpr.Op op, Ast.Expr lhs, Ast.Expr rhs)
                     && (op == Op.Gt || op == Op.GtEq) )
           )
         {
-            auto mid = sharedExpr(rhsBin.lhs);
-            return evalSharedExpr(mid,
-                new Ast.BinaryExpr(lhs.loc.extendTo(rhs.loc), op.And,
-                    new Ast.BinaryExpr(lhs.loc.extendTo(mid.loc),
-                        op, lhs, mid),
-                    new Ast.BinaryExpr(mid.loc.extendTo(rhs.loc),
-                        rhsBin.op, mid, rhsBin.rhs)));
+            return new Ast.TernaryExpr(lhs.loc.extendTo(rhs.loc),
+                    Ast.TernaryExpr.opFromBinary(op, rhsBin.op),
+                    lhs, rhsBin.lhs, rhsBin.rhs);
         }
     }
 
     return new Ast.BinaryExpr(lhs.loc.extendTo(rhs.loc), op, lhs, rhs);
-}
-
-/**
-    This wraps "complex" expressions in a SharedExpr node.
-
-    This is used to ensure a given expression is only evaluated once.
-*/
-Ast.Expr sharedExpr(Ast.Expr expr)
-{
-    if( cast(Ast.NumberExpr) expr )
-        return expr;
-
-    if( cast(Ast.VariableExpr) expr )
-        return expr;
-
-    if( cast(Ast.StringExpr) expr )
-        return expr;
-
-    if( cast(Ast.LogicalExpr) expr )
-        return expr;
-
-    return new Ast.SharedExpr(expr.loc, expr);
-}
-
-/**
-    Wraps a given expression in a EvalSharedExpr node IF a SharedExpr node is
-    given.  If a SharedExpr isn't given, the expression isn't wrapped.
-*/
-Ast.Expr evalSharedExpr(Ast.Expr sharedExpr, Ast.Expr expr)
-{
-    if( auto se = cast(Ast.SharedExpr) sharedExpr )
-        return new Ast.EvalSharedExpr(expr.loc, se, expr);
-    
-    else
-        return expr;
 }
 
