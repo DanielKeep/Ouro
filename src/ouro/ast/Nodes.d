@@ -592,42 +592,6 @@ class RangeExpr : Expr
     }
 }
 
-/+
-class KeywordExpr : Expr
-{
-    enum Keyword
-    {
-        Quote,
-        QuasiQuote,
-        QqSub,
-        Let,
-        Import,
-    }
-
-    Keyword keyword;
-
-    this(Location loc, Keyword keyword)
-    {
-        super(loc);
-        this.keyword = keyword;
-    }
-
-    static char[] keywordToString(Keyword keyword)
-    {
-        switch( keyword )
-        {
-            case Keyword.Quote:         return "Quote";
-            case Keyword.QuasiQuote:    return "QuasiQuote";
-            case Keyword.QqSub:         return "QqSub";
-            case Keyword.Let:           return "Let";
-            case Keyword.Import:        return "Import";
-
-            default:                    assert(false);
-        }
-    }
-}
-+/
-
 class AstQuoteExpr : Expr
 {
     Expr expr;
