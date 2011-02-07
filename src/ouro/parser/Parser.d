@@ -629,7 +629,7 @@ Ast.Expr tryparseExprAtom(TokenStream ts)
     auto hasPrefix = tryparsePrefixOp(ts, prefixOp);
 
     auto innerExpr =
-    ({
+    (delegate Ast.Expr(){
         if( auto e = tryparseNumberExpr(ts) )       return e;
         if( auto e = tryparseStringExpr(ts) )       return e;
         if( auto e = tryparseLogicalExpr(ts) )      return e;
@@ -640,6 +640,8 @@ Ast.Expr tryparseExprAtom(TokenStream ts)
         if( auto e = tryparseRangeExpr(ts) )        return e;
         if( auto e = tryparseFunctionOrVariableOrSubExpr(ts) )
                                                     return e;
+
+        return null;
     })();
 
     Ast.Expr expr;
