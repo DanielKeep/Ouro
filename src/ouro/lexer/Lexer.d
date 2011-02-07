@@ -7,7 +7,6 @@
 module ouro.lexer.Lexer;
 
 import tango.text.convert.Format;
-import tango.text.Unicode : isWhitespace, isSpace, isDigit, isLetter;
 
 debug(TraceLexer) import tango.io.Stdout : Stderr;
 
@@ -16,6 +15,8 @@ import ouro.Source : Source;
 import ouro.Error : CompilerException;
 import ouro.lexer.Tokens; // Token, TOKx, ...
 import ouro.util.Parse : parseString;
+import ouro.util.TokenTest : isWhitespace, isSpace, isDigit, isLetter,
+       isIdentStart, isIdent, isInnerDigit;
 
 private
 {
@@ -448,28 +449,6 @@ bool lexExternalIdentifier(Source src, out Token token)
     return false;
 }
 
-bool isIdentStart(dchar c)
-{
-    return (c == '_') || isLetter(c);
-}
-
-bool isIdent(dchar c)
-{
-    switch( c )
-    {
-        case '\'':
-        case '$':
-        case '|':
-        case '?':
-        case '!':
-        case '~':
-            return true;
-
-        default:
-            return isIdentStart(c) || isDigit(c);
-    }
-}
-
 bool lexNumber(Source src, out Token token)
 {
     debug(TraceLexer) Stderr.format("(lexNumber @ {})", src.loc.toString);
@@ -578,11 +557,6 @@ bool lexNumber(Source src, out Token token)
     eatExponent;
 
     return popToken(token, src, TOKnumber, mark);
-}
-
-bool isInnerDigit(dchar c)
-{
-    return (c == '_') || isDigit(c);
 }
 
 bool lexString(Source src, out Token token)

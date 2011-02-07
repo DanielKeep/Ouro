@@ -134,9 +134,7 @@ final class TokenStream
 
         foreach( ref cacheEl ; cache[cached..n+1] )
         {
-            auto f = next(src, cacheEl);
-            if( !f )
-                err(CEC.PUnexpected, src.loc, src[0..1]);
+            getNext(src, cacheEl);
 
             ++ cached;
 
@@ -179,9 +177,7 @@ final class TokenStream
         else if( next !is null )
         {
             Token token;
-            auto f = next(src, token);
-            if( !f )
-                err(CEC.PUnexpected, src.loc, src[0..1]);
+            getNext(src, token);
 
             if( token.type == TOKeos )
                 next = null;
@@ -221,5 +217,16 @@ private:
 
     Token[] cache;
     size_t cached;
+
+    void getNext(Source src, out Token token)
+    {
+        do
+        {
+            auto f = next(src, token);
+            if( !f )
+                err(CEC.PUnexpected, src.loc, src[0..1]);
+        }
+        while( token.type == TOKcomment );
+    }
 }
 

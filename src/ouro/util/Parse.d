@@ -89,6 +89,6 @@ char[] parseString(char[] text)
         }
     }
 
-    return r;
+    return r[0..r_i];
 }
 

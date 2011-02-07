@@ -57,6 +57,8 @@ class ImportStmt : Statement
     {
         assert( modulePath != "" );
         assert( ident != "" );
+        if( all )
+            assert( symbols.length == 0 );
         if( symbols != null )
             foreach( sym ; symbols )
                 assert( sym != "" );
@@ -201,6 +203,30 @@ class BinaryExpr : Expr
         this.op = op;
         this.lhs = lhs;
         this.rhs = rhs;
+    }
+
+    static char[] opRepr(Op op)
+    {
+        switch( op )
+        {
+            case Op.Eq:     return "=";
+            case Op.LtEq:   return "<=";
+            case Op.Gt:     return ">";
+            case Op.GtEq:   return ">=";
+            case Op.Add:    return "+";
+            case Op.Sub:    return "-";
+            case Op.Mul:    return "*";
+            case Op.Div:    return "/";
+            case Op.IntDiv: return "//";
+            case Op.Exp:    return "**";
+            case Op.And:    return "and";
+            case Op.Or:     return "or";
+            case Op.Comp:   return ".";
+            case Op.Cons:   return "::";
+            case Op.Join:   return "++";
+
+            default:        assert(false);
+        }
     }
 
     static char[] opToString(Op op)
@@ -374,6 +400,18 @@ class PrefixExpr : Expr
         super(loc);
         this.op = op;
         this.subExpr = subExpr;
+    }
+
+    static char[] opRepr(Op op)
+    {
+        switch( op )
+        {
+            case Op.Pos:    return "+";
+            case Op.Neg:    return "-";
+            case Op.Not:    return "not";
+
+            default:        assert(false);
+        }
     }
 
     static char[] opToString(Op op)
