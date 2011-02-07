@@ -157,33 +157,6 @@ abstract class Expr : Node
     }
 }
 
-/+
-class ImportExpr : Expr
-{
-    char[] modulePath;
-    char[][] importList;
-    Expr expr;
-
-    this(Location loc, char[] modulePath, char[][] importList,
-            Expr expr)
-    in
-    {
-        assert( modulePath != "" );
-        assert( expr !is null );
-        if( importList != null )
-            foreach( sym ; importList )
-                assert( sym != "" );
-    }
-    body
-    {
-        super(loc);
-        this.modulePath = modulePath;
-        this.importList = importList;
-        this.expr = expr;
-    }
-}
-// +/
-
 class RewrittenExpr : Expr
 {
     Node original;
