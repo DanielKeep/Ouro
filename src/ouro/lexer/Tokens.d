@@ -102,12 +102,13 @@ struct Token
         r.loc = loc;
         r.type = a_fun_shooter;
         r.text = text;
+        r.value = value;
         return r;
     }
 
     char[] toString()
     {
-        return Format("<{}:{}@{}>", tokToName(type), text, loc);
+        return Format("<{}@{} ({}), ({})>", tokToName(type), loc, text, value);
     }
 }
 
