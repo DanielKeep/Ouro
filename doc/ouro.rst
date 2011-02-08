@@ -661,11 +661,57 @@ The following describes the structure of the AST nodes themselves.
         symbolsExpr : Expr
         subExpr : Expr
 
-AST Refinement
-==============
+AST Refinement and Semantic Analysis
+====================================
 
 Once the AST has been produced, it must be refined.  To do this, the AST nodes
-are walked top-down, with the following transformations taking place.
+are walked top-down, with various transforms being applied.  At some point,
+the AST is turned into a semantic tree.  This generally involves replacing
+generic expressions with the actual constructs they represent.
+
+At the end of the process, the compiler should have a complete, valid semantic
+tree.
+
+The exact order of this processing is:
+
+- Macro expansion
+
+  Doing this first ensures that macros have access to the original, unmodified
+  AST.  The macro may be allowed to ask the compiler to perform further
+  processing on a given node, but this isn't decided on yet.
+
+- Syntax rewriting
+
+- AST is converted into a semantic tree.  As part of this process, the
+  following happens:
+
+  - Variable scope assignment.
+
+    Each node is associated with a scope, used to lookup variables by name.
+    This is done whilst traversing down the tree.
+
+  - Dependence lists.
+
+    Each node builds a list of variables (name,scope) its evaluation depends
+    on.  This is used for determining closures.
+    This is done whilst traversing up the tree.
+
+- Lambda inlining
+
+  This collapses multiple lambdas together into their simplest form.
+
+- Lambda substitution
+
+- Constant folding
+
+  This also involves:
+
+  - Module symbol table creation
+
+    Since this is done using the ``export(ident, expr)`` form, constant
+    folding has to happen on the ``expr`` to ensure it is "fully baked", and
+    the ``export`` itself has to be folded to allow containing code to be
+    folded.
 
 Syntax rewriting
 ----------------
@@ -696,7 +742,11 @@ being rewritten.
         --> let([ident, expr], tail)
 
     let ident(arg...) = expr
+        --> let ident = \ args... . expr], tail
         --> let([ident, \ args... . expr], tail)
+
+    export let ident = expr
+        --> let(export(ident, expr), tail)
 
     expr
         --> do(expr, tail)
@@ -713,6 +763,52 @@ Expressions
     range {[|(} lower upper {]|)}
         --> range({true|false}, {true|false}, lower, upper)
 
+Module symbol table creation
+----------------------------
+
+**Note**: this section details things yet to be implemented.
+
+In order for modules to be "importable", they need to have a symbol table
+generated.  The way this is done is through the use of the ``export`` keyword.
+
+Like ``let`` and ``import``, it can be used as both a statement and an
+expression.  The general forms are::
+
+    export LetStmt
+
+    export(ident, expr)
+
+It can also be used as part of a ``let`` expression like so::
+
+    let(export(ident, expr), subExpr)
+
+``let`` specifically checks for this form.
+
+Exports are processed post-simplification.  By that time, all that is left are
+lambdas and calls.  So this::
+
+    export let fact(n) = n*fact(n-1)
+
+    fact(4)
+
+Is first transformed into::
+
+    let(export(fact, \n.n*fact(n-1)),
+        fact(4))
+
+And then becomes::
+
+    (\fact.fact(4))
+        (export(fact, \n.n*fact(n-1)))
+
+The module-level symbol ``fact`` is bound to the lambda; the ``export``
+expression is then replaced with the expression being bound::
+
+    (\fact.fact(4))
+        (\n.n*fact(n-1))
+
+A given symbol can only be exported once.
+
 Macro expansion
 ---------------
 
@@ -726,6 +822,35 @@ determinable at compile-time.
 When a macro is found, it is invoked with its arguments passed to it as ASTs.
 The result of the macro is expected to be an AST, which is then inserted into
 the containing AST.  The AST walk is resumed at the root of the inserted AST.
+
+Lambda inlining
+---------------
+
+The rewriting process will likely generate many, many expressions in this
+form::
+
+    (\a.(\b.a*b)(3))(2)
+
+That is, multiple, nested lambdas whose only use is to define a locally-scoped
+variable.
+
+To that end, expressions in the following form::
+
+    (\x.(\y.expr)(yExpr))(xExpr)
+
+Are rewritten as::
+
+    (\x,y.expr)(xExpr,yExpr)
+
+Note that, for the rewrite to happen, ``yExpr`` *cannot* depend on ``x``.
+
+This can happen multiple times.  For example::
+
+    (\x.(\y.(\z.expr)(zExpr))(yExpr))(xExpr)
+
+Eventually becomes::
+
+    (\x,y,z.expr)(xExpr,yExpr,zExpr)
 
 Lambda substitution
 -------------------
