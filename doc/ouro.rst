@@ -534,108 +534,132 @@ The following describes the structure of the AST nodes themselves.
 
 ::
 
-    Node
+    Node (abstract)
+        loc : Location
 
     Program : Node
-        statements : Statement*
+        stmts : Statement*
 
     Statement : Node
 
     ImportStmt : Statement
         modulePath : String
-        identifier : String
-        importList : [String]
+        ident : String
+        all : Logical           |-- import all symbols?
+        symbols : [String]
 
-    LetExprStmt : Statement
-        identifier : String
-        expr : Expression
+    LetStmt : Statement (abstract)
+        ident : String
+        expr : Expr
 
-    LetFuncStmt : Statement
-        identifier : String
-        isMacro : Logical
-        arguments : [Argument]
-        expr : Expression
+    LetExprStmt : LetStmt
+
+    LetFuncStmt : LetStmt
+        args : [Argument]
+        expr : Expr
 
     Argument
-        identifier : String
+        loc : Location
+        ident : String
         isVararg : Logical
 
-    ExpressionStmt : Statement
-        expr : Expression
+    ExprStmt : Statement
+        expr : Expr
 
-    Expression : Node
+    Expr : Node (abstract)
 
-    ImportExpr : Expression
-        modulePath : String
-        importList : [String]
-        expr : Expression
-
-    RewrittenExpr : Expression
+    RewrittenExpr : Expr
         original : Node
-        rewrite : Expression
+        rewrite : Expr
 
-    BinaryExpr : Expression
-        op : String
-        lhs : Expression
-        rhs : Expression
+    BinaryExpr : Expr
+        op : ("Eq" | "Ne" | "Lt" | "LtEq" | "Gt" | "GtEq"
+              | "Add" | "Sub" | "Mul" | "Div" | "IntDiv" | "Mod" | "Rem"
+              | "Exp" | "And" | "Or" | "Comp" | "Cons" | "Join" )
+        lhs : Expr
+        rhs : Expr
 
-    UnaryExpr : Expression
-        op : String
-        subExpr : Expression
-        position : Prefix | Postfix
+    TernaryExpr : Expr
+        op : ("LtLt" | "LeLt" | "LtLe" | "LeLe"
+              | "GtGt" | "GeGt" | "GtGe" | "GeGe" )
+        lhs : Expr
+        mid : Expr
+        rhs : Expr
 
-    NumberExpr : Expression
+    InfixFuncExpr : Expr
+        func : Expr
+        lhs : Expr
+        rhs : Expr
+
+    PrefixExpr : Expr
+        op : ("Pos" | "Neg" | "Not")
+        subExpr : Expr
+
+    PostfixFuncExpr : Expr
+        func : Expr
+        subExpr : Expr
+
+    NumberExpr : Expr
         value : Real
 
-    StringExpr : Expression
+    StringExpr : Expr
         value : String
 
-    LogicalExpr : Expression
+    LogicalExpr : Expr
         value : Logical
 
-    SequenceExpr : Expression
-        elementExprs : [Expression]
+    NilExpr : Expr
 
-    MapExpr : Expression
+    ListExpr : Expr
+        elemExprs : [Expr]
+
+    MapExpr : Expr
         keyValuePairs : [KeyValuePair]
 
     KeyValuePair
-        key : Expression
-        value : Expression
+        loc : Location
+        key : Expr
+        value : Expr
 
-    LambdaExpr : Expression
+    LambdaExpr : Expr
         isMacro : Logical
         args : [Argument]
-        expr : Expression
+        expr : Expr
 
-    ExplodeExpr : Expression
-        seqExpr : Expression
+    ExplodeExpr : Expr
+        seqExpr : Expr
 
-    CallExpr : Expression
+    CallExpr : Expr
         isMacro : Logical
-        funcExpr : Expression
-        argExprs : [Expression]
+        funcExpr : Expr
+        argExprs : [Expr]
 
-    LookupExpr : Expression
-        identifier : String
+    VariableExpr : Expr
+        ident : String
 
-    RangeExpr : Expression
-        includeLower : Logical
-        includeUpper : Logical
-        lowerExpr : Expression
-        upperExpr : Expression
+    RangeExpr : Expr
+        incLower : Logical
+        incUpper : Logical
+        lowerExpr : Expr
+        upperExpr : Expr
 
-    KeywordExpr : Expression
-        keyword : String
+    AstQuoteExpr : Expr
+        expr : Expr
 
-    AstQuoteExpr : Expression
-        expr : Expression
+    AstQuasiQuoteExpr : Expr
+        expr : Expr
 
-    AstQuasiQuoteExpr : Expression
-        expr : Expression
+    AstQQSubExpr : Expr
+        expr : Expr
 
-    AstQqSubExpr : Expression
-        expr : Expression
+    LetExpr : Expr
+        bindExprs : [Expr]
+        subExpr : Expr
+
+    ImportExpr
+        scopeExpr : Expr
+        symbolsExpr : Expr
+        subExpr : Expr
 
 AST Refinement
 ==============
