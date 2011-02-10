@@ -12,7 +12,7 @@ private
 {
     const char[][] AstClassList =
     [
-        "Program"[],
+        "Module"[],
         "ImportStmt",
         "LetExprStmt",
         "LetFuncStmt",
@@ -68,7 +68,7 @@ abstract class Visitor
         assert(false, "missing visit for "~node.classinfo.name);
     }
 
-    void visit(Ast.Program node)
+    void visit(Ast.Module node)
     {
         foreach( stmt ; node.stmts )
             visitBase(stmt);

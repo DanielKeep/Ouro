@@ -537,7 +537,7 @@ The following describes the structure of the AST nodes themselves.
     Node (abstract)
         loc : Location
 
-    Program : Node
+    Module : Node
         stmts : Statement*
 
     Statement : Node
@@ -674,16 +674,19 @@ tree.
 
 The exact order of this processing is:
 
-- Macro expansion
-
-  Doing this first ensures that macros have access to the original, unmodified
-  AST.  The macro may be allowed to ask the compiler to perform further
-  processing on a given node, but this isn't decided on yet.
-
-- Syntax rewriting
-
 - AST is converted into a semantic tree.  As part of this process, the
   following happens:
+
+  - Syntax rewriting
+
+  - Macro expansion
+
+    Doing this here ensures that macros have access to the original, unmodified
+    AST.  This obviously excludes statements since they can't be macros
+    anyway.
+    
+    The macro may be allowed to ask the compiler to perform further
+    processing on a given node, but this isn't decided on yet.
 
   - Variable scope assignment.
 

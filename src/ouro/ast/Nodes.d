@@ -18,7 +18,7 @@ abstract class Node
     }
 }
 
-class Program : Node
+class Module : Node
 {
     Statement[] stmts;
 
