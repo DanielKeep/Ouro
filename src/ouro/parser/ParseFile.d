@@ -34,7 +34,7 @@ void main(char[][] argv)
         scope src = new Source(path, cast(char[]) File.get(path));
         scope ts = new TokenStream(src, &Lexer.lexNext);
 
-        auto progNode = Parser.parseProgram(ts);
+        auto progNode = Parser.parseModule(ts);
         repr.visitBase(progNode);
         Stdout.newline;
     }

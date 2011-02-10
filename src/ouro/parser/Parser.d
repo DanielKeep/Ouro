@@ -15,7 +15,7 @@ import Ast = ouro.ast.Nodes;
 
 alias CompilerErrorCode CEC;
 
-Ast.Program parseProgram(TokenStream ts)
+Ast.Module parseModule(TokenStream ts)
 {
     /*
         <script> = { <statement> };       
@@ -33,7 +33,7 @@ Ast.Program parseProgram(TokenStream ts)
         skipEmptyStmts(ts);
     }
 
-    return new Ast.Program(loc, stmts);
+    return new Ast.Module(loc, stmts);
 }
 
 void skipEmptyStmts(TokenStream ts)

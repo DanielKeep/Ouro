@@ -14,7 +14,7 @@ import ouro.util.StructuredOutput;
 
 import Ast = ouro.ast.Nodes;
 
-class ReprVisitor : Visitor
+class ReprVisitor : Visitor!()
 {
     StructuredOutput so;
 
