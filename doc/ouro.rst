@@ -182,18 +182,19 @@ identifiers.
 ::
 
     keyword
-        >>─┬─'and'──────┐   - Binary logical and
-           ├─'let'────┘ ╧   - Declaration statement
-           ├─'not'────┘     - Unary logical not
-           ├─'or'─────┘     - Binary logical or
-           ├─'mod'────┘     - Binary modulus
-           ├─'rem'────┘     - Binary remainder
-           ├─'true'───┘     - Logical true
-           ├─'false'──┘     - Logical false
-           ├─'nil'────┘     - Nil
-           ├─'import'─┘     - Module import statement
-           ├─'macro'──┘     - Macro keyword
-           └─'range'──┘     - Range constructor
+        >>─┬─'and'───────────┐  - Binary logical and
+           ├─'let'─────────┘ ╧  - Declaration statement
+           ├─'not'─────────┘    - Unary logical not
+           ├─'or'──────────┘    - Binary logical or
+           ├─'mod'─────────┘    - Binary modulus
+           ├─'rem'─────────┘    - Binary remainder
+           ├─'true'────────┘    - Logical true
+           ├─'false'───────┘    - Logical false
+           ├─'nil'─────────┘    - Nil
+           ├─'import'──────┘    - Module import statement
+           ├─'macro'───────┘    - Macro keyword
+           ├─'range'───────┘    - Range constructor
+           └─'__builtin__'─┘    - Builtin lookup
 
 Identifier
 ``````````
@@ -463,6 +464,7 @@ Note: eventually, pattern matching should be added here::
                             | "#~$"
                             | "let"
                             | "import"
+                            | "__builtin__"
                             ;
 
     <variable expression> = <identifier>;

@@ -285,5 +285,10 @@ class ReprVisitor : Visitor!()
         visitBase(node.rhs);
         so.pop.r(")");
     }
+
+    override void visit(Ast.BuiltinExpr node)
+    {
+        so.rf("__builtin__({})", reprString(node.ident));
+    }
 }
 

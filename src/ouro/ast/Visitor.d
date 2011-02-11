@@ -39,6 +39,7 @@ private
         "LetExpr",
         "ImportExpr",
         "TernaryExpr",
+        "BuiltinExpr",
     ];
 
     char[] genDispatch(char[] callSuffix = "")
@@ -250,6 +251,11 @@ abstract class Visitor(Result = void, Arg = void)
             visitBase(node.rhs);
             return defaultVisitResult;
         }
+
+        Result visit(Ast.BuiltinExpr node)
+        {
+            return defaultVisitResult;
+        }
     }
     else
     {
@@ -442,6 +448,11 @@ abstract class Visitor(Result = void, Arg = void)
             visitBase(node.lhs, arg);
             visitBase(node.mid, arg);
             visitBase(node.rhs, arg);
+            return defaultVisitResult;
+        }
+
+        Result visit(Ast.BuiltinExpr node, Arg arg)
+        {
             return defaultVisitResult;
         }
     }

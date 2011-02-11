@@ -36,6 +36,8 @@ enum CompilerErrorCode : uint
     PImpArgNum,
     PMacroKeyword,
     PExInfFunc,
+    PBiArgNum,
+    PBiArgType,
 }
 
 private alias CompilerErrorCode CEC;
@@ -72,6 +74,8 @@ CEC.PLetArgNum:     "let requires at least one argument",
 CEC.PImpArgNum:     "import requires three arguments",
 CEC.PMacroKeyword:  "cannot macro call a keyword-like function",
 CEC.PExInfFunc:     "expected function name or sub-expression",
+CEC.PBiArgNum:      "__builtin__ requires exactly one argument",
+CEC.PBiArgType:     "__builtin__ expected a string literal argument",
 
 // Set message for real this time
 cast(CEC) uint.max: null

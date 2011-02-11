@@ -935,6 +935,18 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
                             args[2]);
                     break;
 
+                case TOKbuiltin:
+                    if( args.length != 1 )
+                        ts.err(CEC.PBiArgNum, loc);
+
+                    if( auto arg0 = cast(Ast.StringExpr) args[0] )
+                        baseExpr = new Ast.BuiltinExpr(loc, arg0.value);
+                    
+                    else
+                        ts.err(CEC.PBiArgType, loc);
+
+                    break;
+
                 default:
                     assert(false, "unimplemented keyword-like function");
             }
@@ -958,6 +970,7 @@ bool tryparseFunctionLikeKeyword(TokenStream ts, out TOK keyword)
                                 | "#~$"
                                 | "let"
                                 | "import"
+                                | "__builtin__"
                                 ;
     */
 
@@ -970,6 +983,7 @@ bool tryparseFunctionLikeKeyword(TokenStream ts, out TOK keyword)
         case TOKhashtildedollar:
         case TOKlet:
         case TOKimport:
+        case TOKbuiltin:
             break;
 
         default:

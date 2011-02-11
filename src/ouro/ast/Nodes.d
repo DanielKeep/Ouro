@@ -718,3 +718,19 @@ class ImportExpr : Expr
     }
 }
 
+class BuiltinExpr : Expr
+{
+    char[] ident;
+
+    this(Location loc, char[] ident)
+    in
+    {
+        assert( ident != "" );
+    }
+    body
+    {
+        super(loc);
+        this.ident = ident;
+    }
+}
+
