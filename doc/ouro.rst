@@ -146,6 +146,7 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'::'──┘    - Sequence cons
            ├─'++'──┘    - Sequence join
            ├─'...'─┘    - Sequence explode
+           ├─'(.)'─┘    - Function composition
            ├─'(.'──┘    - Infix/postfix opening parenthesis
            ├─'.)'──┘    - Infix closing parenthesis
            ├─'[:'──┘    - Map opening bracket

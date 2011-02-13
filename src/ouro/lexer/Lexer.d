@@ -261,7 +261,14 @@ bool lexSymbol(Source src, out Token token)
         case '(':
             switch( cp1 )
             {
-                case '.':   l = 2; tok = TOKlparenperiod; break;
+                case '.':
+                    switch( cp2 )
+                    {
+                        case ')':   l = 3; tok = TOKlparenperiodrparen; break;
+                        default:    l = 2; tok = TOKlparenperiod; break;
+                    }
+                    break;
+
                 default:    l = 1; tok = TOKlparen; break;
             }
             break;

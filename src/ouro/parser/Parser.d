@@ -545,7 +545,7 @@ bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op,
         case TOKcolon2:     op = Op.Cons;   break;
         case TOKplus2:      op = Op.Join;   break;
         case TOKplus:       op = Op.Add;    break;
-        case TOKperiod:     op = Op.Comp;   break;
+        case TOKlparenperiodrparen: op = Op.Comp;   break;
 
         case TOKand:        op = Op.And;    break;
         case TOKor:         op = Op.Or;     break;
