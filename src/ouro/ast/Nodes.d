@@ -221,7 +221,7 @@ class BinaryExpr : Expr
             case Op.Exp:    return "**";
             case Op.And:    return "and";
             case Op.Or:     return "or";
-            case Op.Comp:   return ".";
+            case Op.Comp:   return "(.)";
             case Op.Cons:   return "::";
             case Op.Join:   return "++";
 
