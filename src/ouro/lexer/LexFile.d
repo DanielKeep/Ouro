@@ -20,10 +20,8 @@ void main(char[][] argv)
 
     foreach( path ; args )
     {
-        Stdout.formatln("Lexing \"{}\"...", path);
         foreach( token ; lexIter(path, cast(char[]) File.get(path)) )
             Stdout("  ")(token.toString).newline;
-        Stdout.newline;
     }
 }
 
