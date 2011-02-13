@@ -159,7 +159,9 @@ These tokens are used for non-alphanumeric language keywords.
         >>─┬─'('───┐
            ├─')'─┘ ╧
            ├─'['─┘
-           └─']'─┘
+           ├─']'─┘
+           ├─'{'─┘
+           └─'}'─┘
 
     single character symbol
         >>─┬─'='───┐  - Equality
@@ -171,8 +173,8 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'<'─┘    - Less-than
            ├─'>'─┘    - Greater-than
            ├─'\'─┘    - Lambda introduction
-           ├─':'─┘    - Lambda argument terminator
-           └─'.'─┘    - Function composition, postfix and infix syntax
+           ├─':'─┘    - Reserved for constraints
+           └─'.'─┘    - Lambda argument terminator
 
 Keyword
 ```````
@@ -378,12 +380,10 @@ now, the code is canonical).
 
     <import identifier> = <identifier>;
 
-    <let statement> = (
-          "let", <identifier>, "=", <expression>
-        | "let", [ "macro" ], <identifier>,
-            "(", [ <function argument names> ], ")", "=", <expression>
-        ),
-        <term>;
+    <let statement> =
+        "let", [ "macro" ], <identifier>,
+        [ "(", [ <function argument names> ], ")" ],
+        "=", <expression>, <term>;
 
     <function argument names> = <argument name>, { ",", <argument name> };
 
@@ -446,8 +446,9 @@ Note: eventually, pattern matching should be added here::
     <lambda expression> = "\", [ "macro" ], [ <function argument names> ],
         ".", <expression>;
 
-    <function expression> = [ "macro" ], <function prefix>,
-                            "(", [ <expression>, { ",", <expression> }], ")";
+    <function expression> = <function prefix>, (
+        "(", [ <expression>, { ",", <expression> } ], ")"
+        | "{", [ <expression>, { ",", <expression> } ], "}" );
 
     <infix function> = <identifier>
                      | <sub expression>;
@@ -498,7 +499,7 @@ a ∗ b ∗ c   (a ∗ b) ∗ c         a ∗ (b ∗ c)
 =========== =========================== ======= ======= ===============
 Symbol      Meaning                     Prec.   Assoc.  Alternatives
 =========== =========================== ======= ======= ===============
-``.``       Function composition        9.0     left
+``(.)``     Function composition        9.0     left
 ``**``      Exponentiation              6.7     right
 ``*``       Multiplication              6.5     left
 ``/``       Division                    6.5     left
