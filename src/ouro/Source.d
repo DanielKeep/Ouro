@@ -10,9 +10,13 @@ import Utf = tango.text.convert.Utf;
 
 import ouro.Location;
 
+import tango.io.Stdout;
+
 final class Source
 {
     char[] name, src;
+    char[][] lines;
+    size_t startLine, startCol;
     
     this(char[] name, char[] src)
     {
@@ -38,6 +42,9 @@ final class Source
     {
         this.name = name;
         this.src = src;
+        this.lines = null;
+        this.startLine = 1;
+        this.startCol = 1;
         this.mark = Mark.init;
     }
 
@@ -48,6 +55,8 @@ final class Source
         assert( col >= 1 );
 
         reset(name, src);
+        this.startLine = line;
+        this.startCol = col;
         this.mark.line = line;
         this.mark.column = col;
     }
@@ -57,6 +66,20 @@ final class Source
         auto r = new Source(name, src);
         r.mark = this.mark;
         return r;
+    }
+
+    char[] line(size_t n)
+    {
+        auto ind = n - startLine;
+        if( ind == lines.length )
+        {
+            auto m = save;
+            while( length > 0 && ind >= lines.length )
+                advance;
+            restore(m);
+        }
+
+        return lines[n - startLine];
     }
 
     Location loc()
@@ -162,6 +185,17 @@ final class Source
         auto src = this.src[mark.offset..$];
         size_t bytes = 0; // actual bytes consumed
 
+        void endOfLine()
+        {
+            auto lineNum = (mark.line + lineInc) - 1;
+            if( lineNum < lines.length )
+                return;
+
+            auto line = this.src[mark.lineOffset..mark.offset+bytes];
+            mark.lineOffset = mark.offset+bytes;
+            lines ~= line;
+        }
+
         while( n --> 0 && src.length > 0 )
         {
             uint ate;
@@ -178,6 +212,7 @@ final class Source
                     break;
 
                 case '\n':
+                    endOfLine;
                     if( cr )
                         cr = false;
                     else
@@ -188,9 +223,17 @@ final class Source
                     break;
 
                 default:
+                    if( cr )
+                        endOfLine;
                     cr = false;
                     ++ col;
             }
+        }
+
+        if( src.length == 0 /*&& mark.offset+bytes != mark.lineStart*/ )
+        {
+            assert( src.ptr !is null );
+            endOfLine;
         }
 
         auto slice = this.src[mark.offset..mark.offset + bytes];
@@ -206,7 +249,7 @@ final class Source
     struct Mark
     {
     private:
-        size_t offset;
+        size_t offset, lineOffset;
         uint line = 1,
              column = 1;
         bool hangingCR = false;

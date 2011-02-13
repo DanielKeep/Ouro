@@ -190,20 +190,18 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.CallExpr node)
     {
-        if( node.isMacro )
-            so.r("macro ");
         visitBase(node.funcExpr);
         
         foreach( i,expr ; node.argExprs )
         {
             if( i == 0 )
-                so.r("(").push;
+                so.r(node.isMacro ? "{" : "(").push;
             else
                 so.r(", ");
 
             visitBase(expr);
         }
-        so.pop.r(")");
+        so.pop.r(node.isMacro ? "}" : ")");
     }
 
     override void visit(Ast.VariableExpr node)
@@ -222,23 +220,23 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.AstQuoteExpr node)
     {
-        so.r(`#~'(`).push;
+        so.r(`#~'{`).push;
         visitBase(node.expr);
-        so.pop.r(")");
+        so.pop.r("}");
     }
 
     override void visit(Ast.AstQuasiQuoteExpr node)
     {
-        so.r(`#~"(`).push;
+        so.r(`#~"{`).push;
         visitBase(node.expr);
-        so.pop.r(")");
+        so.pop.r("}");
     }
 
     override void visit(Ast.AstQQSubExpr node)
     {
-        so.r(`#~$(`).push;
+        so.r(`#~${`).push;
         visitBase(node.expr);
-        so.pop.r(")");
+        so.pop.r("}");
     }
 
     override void visit(Ast.LetExpr node)

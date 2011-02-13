@@ -20,6 +20,8 @@ const char[][2][] SymbolTokens =
     [")", "rparen"],
     ["[", "lbracket"],
     ["]", "rbracket"],
+    ["{", "lbrace"],
+    ["}", "rbrace"],
     ["(.", "lparenperiod"],
     [".)", "periodrparen"],
     ["[:", "lbracketcolon"],

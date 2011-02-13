@@ -251,6 +251,8 @@ bool lexSymbol(Source src, out Token token)
         case '=': l = 1; tok = TOKeq; break;
         case ')': l = 1; tok = TOKrparen; break;
         case ']': l = 1; tok = TOKrbracket; break;
+        case '{': l = 1; tok = TOKlbrace; break;
+        case '}': l = 1; tok = TOKrbrace; break;
         case ',': l = 1; tok = TOKcomma; break;
         case '-': l = 1; tok = TOKhyphen; break;
         case '\\':l = 1; tok = TOKbslash; break;

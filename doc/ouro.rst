@@ -133,7 +133,7 @@ These tokens are used for non-alphanumeric language keywords.
 
     symbol
         >>─┬──╢ multi character symbol ╟───┐
-           ├──────╢ nesting symbol ╟─────┘ X
+           ├──────╢ nesting symbol ╟─────┘ ╧
            └─╢ single character symbol ╟─┘
 
     multi character symbol

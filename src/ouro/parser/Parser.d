@@ -841,8 +841,9 @@ Ast.Expr tryparseLambdaExpr(TokenStream ts)
 Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 {
     /*
-        <function expression> = [ "macro" ], <function prefix>,
-                                "(", [ <expression>, { ",", <expression> }], ")";
+        <function expression> = <function prefix>, (
+            "(", [ <expression>, { ",", <expression> } ], ")"
+            | "{", [ <expression>, { ",", <expression> } ], "}" );
 
         <function prefix> = <identifier>
                           | <function like keyword>
@@ -854,15 +855,8 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
     Ast.Expr baseExpr;
 
     auto start = ts.peek.loc;
-    bool isMacro = false;
     TOK keyword;
     bool isKeyword = false;
-
-    if( ts.peek.type == TOKmacro )
-    {
-        isMacro = true;
-        ts.pop;
-    }
 
     if( auto varExpr = tryparseVariableExpr(ts) )
         baseExpr = varExpr;
@@ -873,29 +867,30 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
     else if( auto subExpr = tryparseSubExpr(ts) )
         baseExpr = subExpr;
 
-    else
+    bool isLparenOrLbrace(TOK t)
     {
-        if( isMacro )
-            ts.err(CEC.PExFuncAftMacro);
-        return null;
+        return t == TOKlparen || t == TOKlbrace;
     }
 
-    if( isMacro && isKeyword )
-        ts.err(CEC.PMacroKeyword);
-
-    while( ts.peek.type == TOKlparen )
+    bool isRparenOrRbrace(TOK t)
     {
-        ts.popExpect(TOKlparen);
+        return t == TOKrparen || t == TOKrbrace;
+    }
+
+    while( isLparenOrLbrace(ts.peek.type) )
+    {
+        auto isMacro = (ts.pop.type == TOKlbrace);
+        auto closer = (isMacro ? TOKrbrace : TOKrparen);
 
         Ast.Expr[] args;
 
-        if( ts.peek.type != TOKrparen )
+        if( ! isRparenOrRbrace(ts.peek.type) )
             ts.skipEolDo
             ({
-                args ~= parseCommaExprs(ts, TOKrparen);
+                args ~= parseCommaExprs(ts, closer);
             });
         
-        auto end = ts.popExpect(TOKrparen).loc;
+        auto end = ts.popExpect(closer).loc;
         auto loc = start.extendTo(end);
 
         if( isKeyword )
@@ -907,30 +902,40 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
                 case TOKhashtildequote:
                     if( args.length != 1 )
                         ts.err(CEC.PAstQArgNum, loc);
+                    if( ! isMacro )
+                        ts.err(CEC.PExBraceForKw, loc, `#~'`);
                     baseExpr = new Ast.AstQuoteExpr(loc, args[0]);
                     break;
 
                 case TOKhashtildedquote:
                     if( args.length != 1 )
                         ts.err(CEC.PAstQQArgNum, loc);
+                    if( ! isMacro )
+                        ts.err(CEC.PExBraceForKw, loc, `#~"`);
                     baseExpr = new Ast.AstQuasiQuoteExpr(loc, args[0]);
                     break;
 
                 case TOKhashtildedollar:
                     if( args.length != 1 )
                         ts.err(CEC.PAstQQSArgNum, loc);
+                    if( ! isMacro )
+                        ts.err(CEC.PExBraceForKw, loc, `#~$`);
                     baseExpr = new Ast.AstQQSubExpr(loc, args[0]);
                     break;
 
                 case TOKlet:
                     if( args.length == 0 )
                         ts.err(CEC.PLetArgNum, loc);
+                    if( ! isMacro )
+                        ts.err(CEC.PExBraceForKw, loc, `let`);
                     baseExpr = new Ast.LetExpr(loc, args[0..$-1], args[$-1]);
                     break;
 
                 case TOKimport:
                     if( args.length != 3 )
                         ts.err(CEC.PImpArgNum, loc);
+                    if( ! isMacro )
+                        ts.err(CEC.PExBraceForKw, loc, `import`);
                     baseExpr = new Ast.ImportExpr(loc, args[0], args[1],
                             args[2]);
                     break;
@@ -938,6 +943,8 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
                 case TOKbuiltin:
                     if( args.length != 1 )
                         ts.err(CEC.PBiArgNum, loc);
+                    if( isMacro )
+                        ts.err(CEC.PExParenForKw, loc, `__builtin__`);
 
                     if( auto arg0 = cast(Ast.StringExpr) args[0] )
                         baseExpr = new Ast.BuiltinExpr(loc, arg0.value);
@@ -954,9 +961,6 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
         else
             baseExpr = new Ast.CallExpr(loc,
                     isMacro, baseExpr, args);
-
-        // Only the first in the chain can be a macro call
-        isMacro = false;
     }
 
     return baseExpr;

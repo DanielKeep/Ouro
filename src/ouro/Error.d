@@ -14,7 +14,8 @@ enum CompilerErrorCode : uint
 {
     Unknown = 0,
 
-    LUnexpected = 1000,
+    Lexical = 1000,
+    LUnexpected,
     LUnusWs,
     LUntermBlockCmt,
     LBlockCmtOvfl,
@@ -23,7 +24,8 @@ enum CompilerErrorCode : uint
     LInvStrEsc,
     LUntermString,
 
-    PUnexpected = 2000,
+    Parse = 2000,
+    PUnexpected,
     PUnexEos,
     PExGot,
     PExManyGot,
@@ -38,6 +40,11 @@ enum CompilerErrorCode : uint
     PExInfFunc,
     PBiArgNum,
     PBiArgType,
+    PExBraceForKw,
+    PExParenForKw,
+
+    Semantic = 3000,
+    SUnexpected,
 }
 
 private alias CompilerErrorCode CEC;
@@ -76,6 +83,10 @@ CEC.PMacroKeyword:  "cannot macro call a keyword-like function",
 CEC.PExInfFunc:     "expected function name or sub-expression",
 CEC.PBiArgNum:      "__builtin__ requires exactly one argument",
 CEC.PBiArgType:     "__builtin__ expected a string literal argument",
+CEC.PExBraceForKw:  "expected macro call for {}",
+CEC.PExParenForKw:  "expected regular call for {}",
+
+CEC.SUnexpected:    "unexpected semantic error",
 
 // Set message for real this time
 cast(CEC) uint.max: null
