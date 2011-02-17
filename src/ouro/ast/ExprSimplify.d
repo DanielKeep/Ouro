@@ -5,6 +5,7 @@
  */
 module ouro.ast.ExprSimplify;
 
+import ouro.Error;
 import ouro.ast.Visitor;
 
 import Ast = ouro.ast.Nodes;
@@ -15,6 +16,16 @@ class SimplifyExpr : Visitor!(Ast.Node)
 
     protected
     {
+        void err(CEC code, Ast.Node node, char[] arg0 = null, char[] arg1 = null)
+        {
+            err(code, node.loc, arg0, arg1);
+        }
+
+        void err(CEC code, Location loc, char[] arg0 = null, char[] arg1 = null)
+        {
+            throw new CompilerException(code, loc, arg0, arg1);
+        }
+
         Ast.Expr visitExpr(Ast.Node node)
         {
             auto node2 = visitBase(node);
@@ -283,12 +294,32 @@ class SimplifyExpr : Visitor!(Ast.Node)
 
     Ast.Node visit(Ast.AstQuasiQuoteExpr node)
     {
-        return node;
+        /*
+            #~"{...}
+                --> __builtin__("ouro.quasiquote"){...}
+        */
+
+        return new Ast.RewrittenExpr(node.loc, node,
+            new Ast.CallExpr(node.loc, /*isMacro*/true,
+                new Ast.BuiltinExpr(node.loc, "ouro.quasiquote"),
+                [cast(Ast.Expr) node.expr]
+            )
+        );
     }
 
     Ast.Node visit(Ast.AstQQSubExpr node)
     {
-        return node;
+        /*
+            #~${...}
+                --> __builtin__("ouro.mixin"){...}
+        */
+
+        return new Ast.RewrittenExpr(node.loc, node,
+            new Ast.CallExpr(node.loc, /*isMacro*/true,
+                new Ast.BuiltinExpr(node.loc, "ouro.mixin"),
+                [cast(Ast.Expr) node.expr]
+            )
+        );
     }
 
     Ast.Node visit(Ast.LetExpr node)
