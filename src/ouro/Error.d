@@ -45,6 +45,8 @@ enum CompilerErrorCode : uint
 
     Semantic = 3000,
     SUnexpected,
+    SUnexExplode,
+    SLetSelImp,
 }
 
 private alias CompilerErrorCode CEC;
@@ -87,6 +89,8 @@ CEC.PExBraceForKw:  "expected macro call for {}",
 CEC.PExParenForKw:  "expected regular call for {}",
 
 CEC.SUnexpected:    "unexpected semantic error",
+CEC.SUnexExplode:   "misplaced explode expression",
+CEC.SLetSelImp:     "cannot have a selective binding import",
 
 // Set message for real this time
 cast(CEC) uint.max: null
