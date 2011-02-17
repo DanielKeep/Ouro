@@ -205,6 +205,11 @@ class BinaryExpr : Expr
         this.rhs = rhs;
     }
 
+    char[] builtin()
+    {
+        return "ouro.op" ~ opToString(op);
+    }
+
     static char[] opRepr(Op op)
     {
         switch( op )
@@ -279,6 +284,11 @@ class TernaryExpr : Expr
         this.lhs = lhs;
         this.mid = mid;
         this.rhs = rhs;
+    }
+
+    char[] builtin()
+    {
+        return "ouro.op" ~ opToString(op);
     }
 
     private alias BinaryExpr.Op BinOp;
@@ -361,20 +371,20 @@ class TernaryExpr : Expr
 
 class InfixFuncExpr : Expr
 {
-    Expr func;
+    Expr funcExpr;
     Expr lhs, rhs;
 
-    this(Location loc, Expr func, Expr lhs, Expr rhs)
+    this(Location loc, Expr funcExpr, Expr lhs, Expr rhs)
     in
     {
-        assert( func !is null );
+        assert( funcExpr !is null );
         assert( lhs !is null );
         assert( rhs !is null );
     }
     body
     {
         super(loc);
-        this.func = func;
+        this.funcExpr = funcExpr;
         this.lhs = lhs;
         this.rhs = rhs;
     }
@@ -400,6 +410,11 @@ class PrefixExpr : Expr
         super(loc);
         this.op = op;
         this.subExpr = subExpr;
+    }
+
+    char[] builtin()
+    {
+        return "ouro.op" ~ opToString(op);
     }
 
     static char[] opRepr(Op op)
@@ -429,19 +444,19 @@ class PrefixExpr : Expr
 
 class PostfixFuncExpr : Expr
 {
-    Expr func;
+    Expr funcExpr;
     Expr subExpr;
 
-    this(Location loc, Expr func, Expr subExpr)
+    this(Location loc, Expr funcExpr, Expr subExpr)
     in
     {
-        assert( func !is null );
+        assert( funcExpr !is null );
         assert( subExpr !is null );
     }
     body
     {
         super(loc);
-        this.func = func;
+        this.funcExpr = funcExpr;
         this.subExpr = subExpr;
     }
 }
@@ -678,6 +693,22 @@ class AstQQSubExpr : Expr
     }
 }
 
+class BuiltinExpr : Expr
+{
+    char[] ident;
+
+    this(Location loc, char[] ident)
+    in
+    {
+        assert( ident != "" );
+    }
+    body
+    {
+        super(loc);
+        this.ident = ident;
+    }
+}
+
 class LetExpr : Expr
 {
     Expr[] bindExprs;
@@ -715,22 +746,6 @@ class ImportExpr : Expr
         this.scopeExpr = scopeExpr;
         this.symbolsExpr = symbolsExpr;
         this.subExpr = subExpr;
-    }
-}
-
-class BuiltinExpr : Expr
-{
-    char[] ident;
-
-    this(Location loc, char[] ident)
-    in
-    {
-        assert( ident != "" );
-    }
-    body
-    {
-        super(loc);
-        this.ident = ident;
     }
 }
 

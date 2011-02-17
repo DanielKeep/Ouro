@@ -77,7 +77,7 @@ class ReprVisitor : Visitor!()
         so.r("(").push;
         visitBase(node.lhs);
         so.pop.r(")(.");
-        visitBase(node.func);
+        visitBase(node.funcExpr);
         so.r(".)(").push;
         visitBase(node.rhs);
         so.pop.r(")");
@@ -95,7 +95,7 @@ class ReprVisitor : Visitor!()
         so.r("(").push;
         visitBase(node.subExpr);
         so.pop.r(")(.");
-        visitBase(node.func);
+        visitBase(node.funcExpr);
         so.r(")");
     }
 

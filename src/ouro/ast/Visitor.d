@@ -122,7 +122,7 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Ast.InfixFuncExpr node)
         {
-            visitBase(node.func);
+            visitBase(node.funcExpr);
             visitBase(node.lhs);
             visitBase(node.rhs);
             return defaultVisitResult;
@@ -136,7 +136,7 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Ast.PostfixFuncExpr node)
         {
-            visitBase(node.func);
+            visitBase(node.funcExpr);
             visitBase(node.subExpr);
             return defaultVisitResult;
         }
@@ -235,7 +235,7 @@ abstract class Visitor(Result = void, Arg = void)
             visitBase(node.subExpr);
             return defaultVisitResult;
         }
-
+        
         Result visit(Ast.ImportExpr node)
         {
             visitBase(node.scopeExpr);
@@ -321,7 +321,7 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Ast.InfixFuncExpr node, Arg arg)
         {
-            visitBase(node.func, arg);
+            visitBase(node.funcExpr, arg);
             visitBase(node.lhs, arg);
             visitBase(node.rhs, arg);
             return defaultVisitResult;
@@ -335,7 +335,7 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Ast.PostfixFuncExpr node, Arg arg)
         {
-            visitBase(node.func, arg);
+            visitBase(node.funcExpr, arg);
             visitBase(node.subExpr, arg);
             return defaultVisitResult;
         }
@@ -392,8 +392,8 @@ abstract class Visitor(Result = void, Arg = void)
         Result visit(Ast.CallExpr node, Arg arg)
         {
             visitBase(node.funcExpr, arg);
-            foreach( arg ; node.argExprs )
-                visitBase(arg, arg);
+            foreach( argExpr ; node.argExprs )
+                visitBase(argExpr, arg);
             return defaultVisitResult;
         }
 
