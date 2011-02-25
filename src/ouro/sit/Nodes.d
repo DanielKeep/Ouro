@@ -211,11 +211,27 @@ struct CallArg
     }
 }
 
+enum Order
+{
+    No = 0b1000,
+    Eq = 0b0001,
+    Lt = 0b0010,
+    Gt = 0b0100,
+
+    Le = Lt | Eq,
+    Ge = Gt | Eq,
+}
+
 abstract class Value : Expr
 {
     this(Ast.Node astNode)
     {
         super(astNode);
+    }
+
+    Order order(Value rhs)
+    {
+        return (this is rhs) ? Order.Eq : Order.No;
     }
 }
 
@@ -235,6 +251,11 @@ class UnfixedValue : Value
         super(astNode);
         this.scop = scop;
         this.ident = ident;
+    }
+
+    override Order order(Value rhs)
+    {
+        assert(false, "cannot compare unfixed values");
     }
 }
 
@@ -300,7 +321,7 @@ class AstQuoteValue : Value
         auto rhs = cast(AstQuoteValue) rhsValue;
         if( rhs is null ) return Order.No;
 
-        return this.ast == rhs.ast;
+        return (this.ast == rhs.ast) ? Order.Eq : Order.No;
     }
 }
 
@@ -420,6 +441,24 @@ class ListValue : Value
         super(astNode);
         this.elemValues = elemValues;
     }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(ListValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        if( this.elemValues.length != rhs.elemValues.length )
+            return Order.No;
+
+        foreach( i,lhsEl ; this.elemValues )
+        {
+            auto rhsEl = rhs.elemValues[i];
+            if( lhsEl.order(rhsEl) != Order.Eq )
+                return Order.No;
+        }
+
+        return Order.Eq;
+    }
 }
 
 class LogicalValue : Value
@@ -430,6 +469,14 @@ class LogicalValue : Value
     {
         super(astNode);
         this.value = value;
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(LogicalValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        assert(false, "nyi");
     }
 }
 
@@ -452,6 +499,37 @@ class MapValue : Value
     {
         super(astNode);
         this.kvps = kvps;
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(MapValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        if( this.kvps.length != rhs.kvps.length )
+            return Order.No;
+
+        foreach( kvpL ; this.kvps )
+        {
+            bool found = false;
+
+            foreach( kvpR ; rhs.kvps )
+            {
+                if( kvpL.key.order(kvpR.key) != Order.Eq )
+                    continue;
+
+                if( kvpL.value.order(kvpR.value) != Order.Eq )
+                    return Order.No;
+
+                found = true;
+                break;
+            }
+
+            if( !found )
+                return Order.No;
+        }
+
+        return Order.Eq;
     }
 }
 
@@ -511,6 +589,14 @@ class ModuleValue : Value
         super(astNode);
         this.modul = modul;
     }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(ModuleValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        return (this.modul is rhs.modul) ? Order.Eq : Order.No;
+    }
 }
 
 class NilValue : Value
@@ -518,6 +604,14 @@ class NilValue : Value
     this(Ast.Node astNode)
     {
         super(astNode);
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(NilValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        return Order.Eq;
     }
 }
 
@@ -530,6 +624,18 @@ class StringValue : Value
         super(astNode);
         this.value = value;
     }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(StringValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        if( this.value is rhs.value )
+            return Order.Eq;
+
+        // TODO: use proper Unicode Canonical equivalence
+        return (this.value == rhs.value) ? Order.Eq : Order.No;
+    }
 }
 
 class NumberValue : Value
@@ -540,6 +646,22 @@ class NumberValue : Value
     {
         super(astNode);
         this.value = value;
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(NumberValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        // TODO: is there a faster way to do this?
+        if( this.value == rhs.value )
+            return Order.Eq;
+        else if( this.value < rhs.value )
+            return Order.Lt;
+        else if( this.value > rhs.value )
+            return Order.Gt;
+        else
+            return Order.No;
     }
 }
 
