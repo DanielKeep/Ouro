@@ -27,10 +27,14 @@ class ReprVisitor : Visitor!()
     override void visitScope(Sit.Scope scop)
     {
         scopeName(scop);
-        so.r(" ").push("{");
+        so.r(" {").push.l;
         foreach( k,v ; scop.entries )
+        {
+            so.p(reprIdent(k)).r(": ");
             visitBase(v);
-        so.pop("}").l;
+            so.l;
+        }
+        so.pop.p("}").l;
     }
 
     final void scopeName(Sit.Scope scop)
