@@ -361,18 +361,21 @@ class FunctionValue : Value
         this.expr = expr;
     }
 
-    this(char[] name, Argument[] args, HostFn hostFn)
+    this(char[] name, Argument[] args,
+            Host.Fn fn,
+            Host.EvalContext evalCtx = Host.EvalContext.All)
     in
     {
         assert( name != "" );
-        assert( hostFn !is null );
+        assert( fn !is null );
     }
     body
     {
         super(null);
         this.name = name;
         this.args = args;
-        this.hostFn = hostFn;
+        this.host.fn = fn;
+        this.host.evalCtx = evalCtx;
     }
 }
 
@@ -397,7 +400,7 @@ struct Argument
     }
 }
 
-class ListValue : Value
+class ListExpr : Expr
 {
     Expr[] elemExprs;
 
@@ -405,6 +408,17 @@ class ListValue : Value
     {
         super(astNode);
         this.elemExprs = elemExprs;
+    }
+}
+
+class ListValue : Value
+{
+    Value[] elemValues;
+
+    this(Ast.Node astNode, Value[] elemValues)
+    {
+        super(astNode);
+        this.elemValues = elemValues;
     }
 }
 
@@ -419,23 +433,34 @@ class LogicalValue : Value
     }
 }
 
-class MapValue : Value
+class MapExpr : Expr
 {
-    KeyValuePair[] keyValuePairs;
+    ExprKVP[] kvps;
 
-    this(Ast.Node astNode, KeyValuePair[] keyValuePairs)
+    this(Ast.Node astNode, ExprKVP[] kvps)
     {
         super(astNode);
-        this.keyValuePairs = keyValuePairs;
+        this.kvps = kvps;
     }
 }
 
-struct KeyValuePair
+class MapValue : Value
+{
+    ValueKVP[] kvps;
+
+    this(Ast.Node astNode, ValueKVP[] kvps)
+    {
+        super(astNode);
+        this.kvps = kvps;
+    }
+}
+
+struct ExprKVP
 {
     Location loc;
     Expr key, value;
 
-    static KeyValuePair opCall(Location loc, Expr key, Expr value)
+    static ExprKVP opCall(Location loc, Expr key, Expr value)
     in
     {
         assert( key !is null );
@@ -443,7 +468,28 @@ struct KeyValuePair
     }
     body
     {
-        KeyValuePair r;
+        ExprKVP r;
+        r.loc = loc;
+        r.key = key;
+        r.value = value;
+        return r;
+    }
+}
+
+struct ValueKVP
+{
+    Location loc;
+    Value key, value;
+
+    static ValueKVP opCall(Location loc, Value key, Value value)
+    in
+    {
+        assert( key !is null );
+        assert( value !is null );
+    }
+    body
+    {
+        ValueKVP r;
         r.loc = loc;
         r.key = key;
         r.value = value;

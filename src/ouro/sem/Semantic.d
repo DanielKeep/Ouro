@@ -144,7 +144,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                 else
                 {
                     // Hooray!
-                    Stderr(" success; eval").newline;
+                    Stderr(" success; eval");
 
                     /*
                         We've got a semantic tree, but not (necessarily) an
@@ -336,19 +336,19 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         foreach( i,elemExpr ; node.elemExprs )
             elemExprs[i] = visitExpr(elemExpr, ctx);
 
-        return new Sit.ListValue(node, elemExprs);
+        return new Sit.ListExpr(node, elemExprs);
     }
 
     override Sit.Node visit(Ast.MapExpr node, Context ctx)
     {
-        auto kvps = new Sit.KeyValuePair[node.keyValuePairs.length];
+        auto kvps = new Sit.ExprKVP[node.keyValuePairs.length];
 
         foreach( i,kvp ; node.keyValuePairs )
-            kvps[i] = Sit.KeyValuePair(kvp.loc,
+            kvps[i] = Sit.ExprKVP(kvp.loc,
                 visitExpr(kvp.key, ctx),
                 visitExpr(kvp.value, ctx));
 
-        return new Sit.MapValue(node, kvps);
+        return new Sit.MapExpr(node, kvps);
     }
 
     override Sit.Node visit(Ast.LambdaExpr node, Context ctx)
@@ -450,7 +450,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         foreach( i,bindExpr ; node.bindExprs )
             bindExprs[i] = new Sit.AstQuoteValue(bindExpr, bindExpr);
 
-        auto bindListExpr = new Sit.ListValue(null, bindExprs);
+        auto bindListExpr = new Sit.ListExpr(null, bindExprs);
 
         auto subExpr = new Sit.AstQuoteValue(node.subExpr, node.subExpr);
 

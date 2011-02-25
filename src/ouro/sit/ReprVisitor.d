@@ -136,11 +136,19 @@ class ReprVisitor : Visitor!()
         so.r("Function ").r(reprString(node.name));
     }
 
+    override void visit(Sit.ListExpr node)
+    {
+        so.r("List Expr ").push("[");
+        foreach( elemExpr ; node.elemExprs )
+            visitBase(elemExpr);
+        so.pop("]").l;
+    }
+
     override void visit(Sit.ListValue node)
     {
         so.r("List ").push("[");
-        foreach( elemExpr ; node.elemExprs )
-            visitBase(elemExpr);
+        foreach( elemValue ; node.elemValues )
+            visitBase(elemValue);
         so.pop("]").l;
     }
 
@@ -149,10 +157,23 @@ class ReprVisitor : Visitor!()
         so.rf("Logical {}", node.value);
     }
 
+    override void visit(Sit.MapExpr node)
+    {
+        so.r("Map Expr ").push("{");
+        foreach( kvp ; node.kvps )
+        {
+            so.push("{");
+            visitBase(kvp.key);
+            visitBase(kvp.value);
+            so.pop("}").l;
+        }
+        so.pop("}").l;
+    }
+
     override void visit(Sit.MapValue node)
     {
         so.r("Map ").push("{");
-        foreach( kvp ; node.keyValuePairs )
+        foreach( kvp ; node.kvps )
         {
             so.push("{");
             visitBase(kvp.key);

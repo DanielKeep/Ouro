@@ -20,8 +20,10 @@ private
         "QuantumValue",
         "AstQuoteValue",
         "FunctionValue",
+        "ListExpr",
         "ListValue",
         "LogicalValue",
+        "MapExpr",
         "MapValue",
         "ModuleValue",
         "NilValue",
@@ -120,10 +122,17 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
-        Result visit(Sit.ListValue node)
+        Result visit(Sit.ListExpr node)
         {
             foreach( elemExpr ; node.elemExprs )
                 visitBase(elemExpr);
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.ListValue node)
+        {
+            foreach( elemValue ; node.elemValues )
+                visitBase(elemValue);
             return defaultVisitResult;
         }
 
@@ -132,9 +141,19 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.MapExpr node)
+        {
+            foreach( kvp ; node.kvps )
+            {
+                visitBase(kvp.key);
+                visitBase(kvp.value);
+            }
+            return defaultVisitResult;
+        }
+
         Result visit(Sit.MapValue node)
         {
-            foreach( kvp ; node.keyValuePairs )
+            foreach( kvp ; node.kvps )
             {
                 visitBase(kvp.key);
                 visitBase(kvp.value);
@@ -237,9 +256,16 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
-        Result visit(Sit.ListValue node, Arg arg)
+        Result visit(Sit.ListExpr node, Arg arg)
         {
             foreach( elemExpr ; node.elemExprs )
+                visitBase(elemExpr, arg);
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.ListValue node, Arg arg)
+        {
+            foreach( elemExpr ; node.elemValues )
                 visitBase(elemExpr, arg);
             return defaultVisitResult;
         }
@@ -249,9 +275,19 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.MapExpr node, Arg arg)
+        {
+            foreach( kvp ; node.kvps )
+            {
+                visitBase(kvp.key, arg);
+                visitBase(kvp.value, arg);
+            }
+            return defaultVisitResult;
+        }
+
         Result visit(Sit.MapValue node, Arg arg)
         {
-            foreach( kvp ; node.keyValuePairs )
+            foreach( kvp ; node.kvps )
             {
                 visitBase(kvp.key, arg);
                 visitBase(kvp.value, arg);
