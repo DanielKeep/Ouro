@@ -224,7 +224,8 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Ast.AstQQSubExpr node)
         {
-            visitBase(node.expr);
+            if( node.expr !is null )
+                visitBase(node.expr);
             return defaultVisitResult;
         }
 

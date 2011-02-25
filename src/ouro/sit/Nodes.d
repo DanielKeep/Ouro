@@ -9,6 +9,7 @@
 module ouro.sit.Nodes;
 
 import ouro.Location;
+import ouro.util.Repr : reprIdent;
 
 import Ast = ouro.ast.Nodes;
 
@@ -27,9 +28,9 @@ class Scope
         entries[ident] = value;
     }
 
-    void bindArg(Ast.Node node, Scope scop, char[] ident)
+    void bindArg(Ast.Node node, char[] ident)
     {
-        entries[ident] = new ArgumentValue(node, scop, ident);
+        entries[ident] = new ArgumentValue(node, this, ident);
     }
 
     Value lookup(Ast.Node astNode, char[] ident)
@@ -218,6 +219,7 @@ enum Order
     Lt = 0b0010,
     Gt = 0b0100,
 
+    Ne = Lt | Gt,
     Le = Lt | Eq,
     Ge = Gt | Eq,
 }
@@ -398,6 +400,29 @@ class FunctionValue : Value
         this.host.fn = fn;
         this.host.evalCtx = evalCtx;
     }
+
+    FunctionValue compose(FunctionValue rhs)
+    {
+        // (f (.) g)(...) = g(f(...))
+        auto scop = new Scope(null);
+        auto callArgs = new CallArg[this.args.length];
+
+        foreach( i,arg ; this.args )
+        {
+            scop.bindArg(null, arg.ident);
+            callArgs[i] = CallArg(scop.lookup(null, arg.ident), false);
+        }
+
+        auto fc = new FunctionValue(null,
+            "(" ~ reprIdent(this.name) ~ " (.) " ~ reprIdent(rhs.name) ~ ")",
+            this.args, scop,
+            new CallExpr(null, rhs, [
+                CallArg(new CallExpr(null, this, callArgs), false)
+            ])
+        );
+
+        return fc;
+    }
 }
 
 struct Argument
@@ -406,7 +431,12 @@ struct Argument
     char[] ident;
     bool isVararg;
 
-    static Argument opCall(Location loc, char[] ident, bool isVararg)
+    static Argument opCall(char[] ident, bool isVararg = false)
+    {
+        return Argument(Location.init, ident, isVararg);
+    }
+
+    static Argument opCall(Location loc, char[] ident, bool isVararg = false)
     in
     {
         assert( ident != "" );
@@ -440,6 +470,16 @@ class ListValue : Value
     {
         super(astNode);
         this.elemValues = elemValues;
+    }
+
+    static ListValue cons(Value lhs, ListValue rhs)
+    {
+        return new ListValue(null, (&lhs)[0..1] ~ rhs.elemValues);
+    }
+
+    static ListValue join(ListValue lhs, ListValue rhs)
+    {
+        return new ListValue(null, lhs.elemValues ~ rhs.elemValues);
     }
 
     override Order order(Value rhsValue)
@@ -625,6 +665,11 @@ class StringValue : Value
         this.value = value;
     }
 
+    static StringValue join(StringValue lhs, StringValue rhs)
+    {
+        return new StringValue(null, lhs.value ~ rhs.value);
+    }
+
     override Order order(Value rhsValue)
     {
         auto rhs = cast(StringValue) rhsValue;
@@ -662,6 +707,41 @@ class NumberValue : Value
             return Order.Gt;
         else
             return Order.No;
+    }
+}
+
+class RangeValue : Value
+{
+    bool incLower, incUpper;
+    Value lowerValue, upperValue;
+
+    this(Ast.Node astNode, bool incLower, bool incUpper,
+            Value lowerValue, Value upperValue)
+    in
+    {
+        assert( lowerValue !is null );
+        assert( upperValue !is null );
+    }
+    body
+    {
+        super(astNode);
+        this.incLower = incLower;
+        this.incUpper = incUpper;
+        this.lowerValue = lowerValue;
+        this.upperValue = upperValue;
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(RangeValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        return ((this.incLower == rhs.incLower)
+             && (this.incUpper == rhs.incUpper)
+             && (this.lowerValue.order(rhs.lowerValue) == Order.Eq)
+             && (this.upperValue.order(rhs.upperValue) == Order.Eq))
+            ? Order.Eq
+            : Order.No;
     }
 }
 

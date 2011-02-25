@@ -13,6 +13,7 @@ import tango.text.Util : trimr;
 import tango.core.tools.TraceExceptions;
 
 import Ast      = ouro.ast.Nodes;
+import Builtins = ouro.sem.Builtins;
 import Lexer    = ouro.lexer.Lexer;
 import Parser   = ouro.parser.Parser;
 import Sem      = ouro.sem.Semantic;
@@ -25,11 +26,6 @@ import ouro.sit.ReprVisitor;
 import ouro.util.StructuredOutput;
 import ouro.util.TokenStream;
 
-Sit.Value dummyHostFn(Sit.Value[] args)
-{
-    return new Sit.NilValue(null);
-}
-
 int main(char[][] argv)
 {
     auto exec = argv[0];
@@ -40,12 +36,9 @@ int main(char[][] argv)
     scope so = new StructuredOutput(Stdout.stream);
     scope repr = new ReprVisitor(so);
 
-    auto dummyFn = new Sit.FunctionValue("__builtin__.dummy", null,
-            &dummyHostFn);
-
     Sit.Value builtin(char[] name)
     {
-        return dummyFn;
+        return Builtins.lookupBuiltin(name);
     }
 
     foreach( path ; args )

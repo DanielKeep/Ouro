@@ -20,6 +20,7 @@ import Ast = ouro.ast.Nodes;
 import Sit = ouro.sit.Nodes;
 
 import AstVisitor   = ouro.ast.Visitor;
+import QQRewrite    = ouro.ast.QQRewriteVisitor;
 import Eval         = ouro.sem.Eval;
 
 /*
@@ -73,6 +74,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         }
 
         Eval.EvalVisitor eval;
+        QQRewrite.QQRewriteVisitor qqr;
 
         Sit.Value evalExpr(Sit.Expr expr)
         {
@@ -84,11 +86,23 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
             return eval.visitValue(expr, ctx);
         }
+
+        Sit.AstQuoteValue qqRewrite(Ast.Expr astExpr,
+                out Ast.Expr[] subExprs)
+        {
+            QQRewrite.Context ctx;
+            auto aqv = new Sit.AstQuoteValue(astExpr,
+                    qqr.visitBase(astExpr, &ctx));
+            subExprs = ctx.subExprs;
+
+            return aqv;
+        }
     }
 
     this()
     {
         eval = new Eval.EvalVisitor;
+        qqr = new QQRewrite.QQRewriteVisitor;
     }
 
     override Sit.Node visit(Ast.Module node, Context ctx)
@@ -353,12 +367,17 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
     override Sit.Node visit(Ast.LambdaExpr node, Context ctx)
     {
+        ctx.scop = new Sit.Scope(ctx.scop);
+
         auto args = new Sit.Argument[node.args.length];
 
         foreach( i,arg ; node.args )
+        {
+            ctx.scop.bindArg(null, arg.ident);
             args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
+        }
 
-        return new Sit.FunctionValue(node, "anon", args, ctx.scop,
+        return new Sit.FunctionValue(node, "λ", args, ctx.scop,
                 visitExpr(node.expr, ctx));
     }
 
@@ -432,10 +451,18 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
     override Sit.Node visit(Ast.AstQuasiQuoteExpr node, Context ctx)
     {
+        Ast.Expr[] subExprs;
+        auto qq = qqRewrite(node.expr, subExprs);
+
+        auto args = new Sit.CallArg[1 + subExprs.length];
+        
+        args[0] = Sit.CallArg(qq, false);
+
+        foreach( i,subExpr ; subExprs )
+            args[1+i] = Sit.CallArg(visitExpr(subExpr, ctx), false);
+
         return new Sit.CallExpr(node,
-            ctx.builtinFunction("ouro.quasiquote"),
-            [Sit.CallArg(new Sit.AstQuoteValue(node, node.expr), false)]
-        );
+                ctx.builtinFunction("ouro.qqsub"), args);
     }
 
     override Sit.Node visit(Ast.AstQQSubExpr node, Context ctx)

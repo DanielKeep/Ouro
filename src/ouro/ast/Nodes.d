@@ -215,6 +215,7 @@ class BinaryExpr : Expr
         switch( op )
         {
             case Op.Eq:     return "=";
+            case Op.Ne:     return "!=";
             case Op.LtEq:   return "<=";
             case Op.Gt:     return ">";
             case Op.GtEq:   return ">=";
@@ -239,6 +240,7 @@ class BinaryExpr : Expr
         switch( op )
         {
             case Op.Eq:     return "Eq";
+            case Op.Ne:     return "Ne";
             case Op.LtEq:   return "LtEq";
             case Op.Gt:     return "Gt";
             case Op.GtEq:   return "GtEq";
@@ -680,6 +682,7 @@ class AstQuasiQuoteExpr : Expr
 class AstQQSubExpr : Expr
 {
     Expr expr;
+    size_t index = ~0;
 
     this(Location loc, Expr expr)
     in
@@ -690,6 +693,12 @@ class AstQQSubExpr : Expr
     {
         super(loc);
         this.expr = expr;
+    }
+
+    this(Location loc, size_t index)
+    {
+        super(loc);
+        this.index = index;
     }
 }
 
