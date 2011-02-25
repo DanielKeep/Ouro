@@ -207,8 +207,8 @@ abstract class Visitor(Result = void, Arg = void)
         Result visit(Sit.CallExpr node, Arg arg)
         {
             visitBase(node.funcExpr, arg);
-            foreach( argExpr ; node.argExprs )
-                visitBase(argExpr, arg);
+            foreach( nodeArg ; node.args )
+                visitBase(nodeArg.expr, arg);
             return defaultVisitResult;
         }
 

@@ -219,7 +219,7 @@ abstract class Value : Expr
     }
 }
 
-class ArgumentValue : Value
+class UnfixedValue : Value
 {
     Scope scop;
     char[] ident;
@@ -238,49 +238,43 @@ class ArgumentValue : Value
     }
 }
 
-class DeferredValue : Value
+class ArgumentValue : UnfixedValue
 {
     Scope scop;
     char[] ident;
 
     this(Ast.Node astNode, Scope scop, char[] ident)
-    in
     {
-        assert( scop !is null );
-        assert( ident != "" );
+        super(astNode, scop, ident);
     }
-    body
+}
+
+interface Resolvable
+{
+    Value resolve();
+}
+
+class DeferredValue : UnfixedValue, Resolvable
+{
+    this(Ast.Node astNode, Scope scop, char[] ident)
     {
-        super(astNode);
-        this.scop = scop;
-        this.ident = ident;
+        super(astNode, scop, ident);
     }
 
-    Value resolve()
+    override Value resolve()
     {
         return scop.lookup(astNode, ident);
     }
 }
 
-class QuantumValue : Value
+class QuantumValue : UnfixedValue, Resolvable
 {
-    Scope scop;
-    char[] ident;
-
     this(Ast.Node astNode, Scope scop, char[] ident)
-    in
     {
-        assert( scop !is null );
-        assert( ident != "" );
-    }
-    body
-    {
-        super(astNode);
-        this.scop = scop;
-        this.ident = ident;
+        super(astNode, scop, ident);
     }
 
-    Value resolve()
+    override Value resolve()
     {
         return scop.lookup(astNode, ident);
     }
@@ -300,18 +294,56 @@ class AstQuoteValue : Value
         super(astNode);
         this.ast = ast;
     }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(AstQuoteValue) rhsValue;
+        if( rhs is null ) return Order.No;
+
+        return this.ast == rhs.ast;
+    }
 }
 
 class FunctionValue : Value
 {
+    struct Host
+    {
+        /**
+            The EvalContext of a host function determines when it should be
+            evaluated.  This is necessary for functions which depend
+            specifically on either the compile-time or run-time environments.
+
+            For example, consider opening a file.  Generally, files should be
+            loaded only from the runtime environment.  On the other hand,
+            loading files as compile time can be useful.  As such, there is a
+            need to distinguish between the two.
+         */
+        enum EvalContext
+        {
+            None    = 0b00,
+            Compile = 0b01,
+            Runtime = 0b10,
+            All = Compile | Runtime,
+        }
+
+        alias Value function(Value[]) Fn;
+
+        Fn fn;
+        EvalContext evalCtx = EvalContext.All;
+
+        bool evalCtxCompatible(EvalContext evalCtx)
+        {
+            return (this.evalCtx & evalCtx) != 0;
+        }
+    }
+
     char[] name;
     Argument[] args;
     Scope scop;
 
+    // Implementations
     Expr expr;
-
-    alias Value function(Value[]) HostFn;
-    HostFn hostFn;
+    Host host;
 
     this(Ast.Node astNode, char[] name, Argument[] args, Scope scop, Expr expr)
     in

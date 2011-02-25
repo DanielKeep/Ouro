@@ -11,13 +11,43 @@
  */
 module ouro.sem.Semantic;
 
+import tango.io.Stdout;
+
 import ouro.Error;
 import ouro.sem.Context;
 
 import Ast = ouro.ast.Nodes;
 import Sit = ouro.sit.Nodes;
 
-import AstVisitor = ouro.ast.Visitor;
+import AstVisitor   = ouro.ast.Visitor;
+import Eval         = ouro.sem.Eval;
+
+/*
+    NonFatalAbort instances are thrown to indicate that processing a given
+    subtree is not possible yet and that this is not a fatal, unrecoverable
+    error.
+ */
+class NonFatalAbort
+{
+    static void throwForUnfixed(Sit.UnfixedValue value)
+    {
+        throw new NonFatalAbort;
+    }
+}
+
+bool aborted(void delegate() dg)
+{
+    bool result = false;
+    try
+    {
+        dg();
+    }
+    catch( NonFatalAbort )
+    {
+        result = true;
+    }
+    return result;
+}
 
 class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 {
@@ -41,6 +71,24 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
             assert( expr !is null );
             return expr;
         }
+
+        Eval.EvalVisitor eval;
+
+        Sit.Value evalExpr(Sit.Expr expr)
+        {
+            alias Eval.Context Context;
+
+            Context ctx;
+            ctx.evalCtx = Context.EvalContext.Compile;
+            ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
+
+            return eval.visitValue(expr, ctx);
+        }
+    }
+
+    this()
+    {
+        eval = new Eval.EvalVisitor;
     }
 
     override Sit.Node visit(Ast.Module node, Context ctx)
@@ -49,12 +97,95 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         auto scop = new Sit.PartialScope(ctx.scop);
         ctx.scop = scop;
 
-        foreach( i,modStmt ; node.stmts )
+        /*
+            This is going to be horrible.  *sigh*
+
+            The problem is that we allow definitions to be used in any order.
+            We do not know what this order is.  The only way I can think of to
+            handle this is to iterate over the statements repeatedly until
+            they're all done.
+
+            Of course, it is possible to construct a module with no valid
+            ordering.  We'll detect that by making sure that, on every cycle,
+            we successfully semantic at least one statement.
+         */
+
+        bool failedStmt = false;    // Did at least one stmt fail?
+        bool successStmt = false;   // Did at least one stmt succeed?
+
+        do
         {
-            ctx.stmt = &stmts[i];
-            ctx.stmt.loc = modStmt.loc;
-            ctx.stmt.expr = visitExpr(modStmt, ctx);
+            Stderr("New pass").newline;
+            failedStmt = false;
+            successStmt = false;
+
+            foreach( i,ref stmt ; stmts )
+            {
+                if( stmt.expr !is null )
+                    // Already done this one!  YAY!
+                    continue;
+
+                // Try to process
+                auto subCtx = ctx;
+                auto modStmt = node.stmts[i];
+                Sit.Expr expr;
+
+                ctx.stmt = &stmt;
+                ctx.stmt.loc = modStmt.loc;
+
+                Stderr("Processing ")(modStmt)("...");
+
+                if( aborted({ expr = visitExpr(modStmt, ctx); }) )
+                {
+                    // Bastard.
+                    Stderr(" failed.").newline;
+                    failedStmt = true;
+                }
+                else
+                {
+                    // Hooray!
+                    Stderr(" success; eval").newline;
+
+                    /*
+                        We've got a semantic tree, but not (necessarily) an
+                        actual value.  This is important if we try to use an
+                        indirectly defined macro.
+
+                        Try to evaluate it.
+                     */
+                    Sit.Value value;
+                    if( aborted({ value = evalExpr(expr); }) )
+                    {
+                        Stderr(" failed.").newline;
+                        failedStmt = true;
+                    }
+                    else
+                    {
+                        Stderr(" worked.").newline;
+                        successStmt = true;
+
+                        if( ctx.stmt.bind )
+                        {
+                            ctx.scop.bind(ctx.stmt.bindIdent, value);
+                        }
+
+                        if( ctx.stmt.mergeAll )
+                        {
+                            assert(false, "nyi");
+                        }
+                        else if( ctx.stmt.mergeList.length != 0 )
+                        {
+                            assert(false, "nyi");
+                        }
+
+                        ctx.stmt.expr = value;
+                    }
+                }
+            }
+
+            assert( successStmt, "could not complete semantic analysis" );
         }
+        while( failedStmt )
 
         return new Sit.Module(node, stmts, /*exportSymbols*/null, ctx.scop);
     }
@@ -62,6 +193,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
     override Sit.Node visit(Ast.ImportStmt node, Context ctx)
     {
         assert( ctx.stmt !is null );
+        assert( false, "imports not implemented yet" );
 
         auto moduleExpr = new Sit.CallExpr(node,
             ctx.builtinFunction("ouro.module"),
