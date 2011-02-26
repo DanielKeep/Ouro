@@ -8,6 +8,7 @@ module ouro.sem.Builtins;
 
 import tango.math.Math : pow, floor;
 
+import ouro.Location : Location;
 import ouro.sem.InvokeFn : invokeFn;
 
 import Ast      = ouro.ast.Nodes;
@@ -252,6 +253,60 @@ Value ouro_branch(Value[] args)
     return invokeFn(b, null);
 }
 
+private Ast.Expr valueToAst(Value gv)
+{
+    if( auto v = cast(Sit.AstQuoteValue) gv )
+    {
+        return new Ast.AstQuoteExpr(Location.init, cast(Ast.Expr) v.ast);
+    }
+    else if( auto v = cast(Sit.FunctionValue) gv )
+    {
+        assert( false, "cannot convert function value to ast" );
+    }
+    else if( auto v = cast(Sit.ListValue) gv )
+    {
+        auto elemExprs = new Ast.Expr[v.elemValues.length];
+        foreach( i,elemValue ; v.elemValues )
+            elemExprs[i] = valueToAst(elemValue);
+        
+        return new Ast.ListExpr(Location.init, elemExprs);
+    }
+    else if( auto v = cast(Sit.LogicalValue) gv )
+    {
+        return new Ast.LogicalExpr(Location.init, v.value);
+    }
+    else if( auto v = cast(Sit.MapValue) gv )
+    {
+        assert( false, "map to ast nyi" );
+    }
+    else if( auto v = cast(Sit.NilValue) gv )
+    {
+        return new Ast.NilExpr(Location.init);
+    }
+    else if( auto v = cast(Sit.StringValue) gv )
+    {
+        return new Ast.StringExpr(Location.init, v.value);
+    }
+    else if( auto v = cast(Sit.NumberValue) gv )
+    {
+        return new Ast.NumberExpr(Location.init, v.value);
+    }
+    else if( auto v = cast(Sit.RangeValue) gv )
+    {
+        return new Ast.RangeExpr(Location.init,
+            v.incLower, v.incUpper,
+            valueToAst(v.lowerValue), valueToAst(v.upperValue));
+    }
+}
+
+Value ouro_ast(Value[] args)
+{
+    chkArgNum(args, 1);
+    auto gv = args[0]; // generic value
+
+    return new Sit.AstQuoteValue(null, valueToAst(gv));
+}
+
 Sit.FunctionValue[char[]] builtins;
 
 static this()
@@ -296,5 +351,6 @@ static this()
     builtins["ouro.let"] = new Sit.FunctionValue("ouro.let", [Sit.Argument("bindings", true), Sit.Argument("expr")], &ouro_let);
     builtins["ouro.import"] = new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import);
     builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
+    builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
 }
 
