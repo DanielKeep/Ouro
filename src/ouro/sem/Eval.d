@@ -123,7 +123,9 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
             else
             {
                 auto listValue = cast(Sit.ListValue) value;
-                assert( listValue !is null, "can only explode a List" );
+                assert( listValue !is null, node.astNode.loc.toString
+                        ~ ": can only explode a List; got a "
+                        ~ value.classinfo.name );
 
                 foreach( argValue ; listValue.elemValues )
                     addArg(argValue, false);
@@ -133,106 +135,6 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         foreach( i,nodeArg ; node.args )
             addArg(visitValue(nodeArg.expr, ctx), nodeArg.explode);
 
-        /+
-        // Handle callee-side varargs.  This means searching for any argument
-        // which is flagged as vararg.
-        {
-            bool gotVa = false;
-            size_t vaIdx = args.length;
-            size_t vaBeg = vaIdx, vaEnd = vaIdx, vaLen = 0;
-
-            foreach( i,fnArg ; fn.args )
-            {
-                if( fnArg.isVararg )
-                {
-                    if( gotVa )
-                        assert( false, "cannot have more than one vararg" );
-                    gotVa = true;
-                    vaIdx = i;
-                }
-            }
-
-            if( gotVa )
-            {
-                // Compute start and end of the vararg segment
-                vaBeg = vaIdx;
-                vaLen = (args.length - vaBeg) - (fn.args.length - vaBeg - 1);
-                vaEnd = vaBeg + vaLen;
-
-                // Create vararg list
-                auto vaListElems = new Sit.Value[vaLen];
-                foreach( i,val ; args[vaBeg..vaEnd] )
-                    vaListElems[i] = val;
-                auto vaList = new Sit.ListValue(null, vaListElems);
-
-                // Adjust arg list
-                if( vaBeg == args.length )
-                {
-                    // This means that the caller only supplied enough
-                    // arguments for the non-vararg portion.  We'll just add a
-                    // new one.
-                    addArg(vaList, false);
-                }
-                else
-                {
-                    args[vaBeg] = vaList;
-
-                    foreach( i,val ; args[vaEnd..$] )
-                        args[vaBeg+1+i] = val;
-
-                    args = args[0..$-(vaLen-1)];
-                }
-            }
-        }
-
-        // Do the call.
-        if( fn.host.fn !is null )
-        {
-            if( ! fn.host.evalCtxCompatible(ctx.evalCtx) )
-            {
-                /*
-                    This means that we're trying to:
-                    
-                    - Call a runtime function at compile time.  This isn't an
-                      error, but we do need to delay actual execution.  This
-                      might be a problem if, for example, we're trying to
-                      evaluate a macro.  For now, abort.
-
-                    - Call a compile-time function at runtime.  This is
-                      *probably* an error since it's now too late to ever
-                      execute.
-                 */
-                assert( false,
-                        "incompatible context; TODO: delay if possible" );
-            }
-
-            // Ok, call it.
-            auto result = fn.host.fn(args);
-            return result;
-        }
-        else if( fn.expr !is null )
-        {
-            // Construct scope for call
-            FixScope fs;
-            fs.scop = fn.scop;
-            fs.parent = ctx.fixScope;
-
-            foreach( i,arg ; args )
-                fs.values[fn.args[i].ident] = arg;
-
-            // Construct new context for call
-            auto subCtx = ctx;
-            subCtx.fixScope = &fs;
-
-            auto result = visitBase(fn.expr, subCtx);
-            return result;
-        }
-        else
-        {
-            assert( false, "function has no implementation" );
-        }
-        +/
-
         return InvokeFn.invokeFn(fn, args);
     }
 
@@ -241,10 +143,12 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
     {
         assert( fn.expr !is null );
 
+        if( fn.args.length != args.length )
+            assert( false, "argument number mismatch" );
+
         // Construct scope for call
         FixScope fs;
         fs.scop = fn.scop;
-        //fs.parent = ctx.fixScope;
 
         foreach( i,arg ; args )
             fs.values[fn.args[i].ident] = arg;
