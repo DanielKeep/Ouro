@@ -173,6 +173,7 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'<'─┘    - Less-than
            ├─'>'─┘    - Greater-than
            ├─'\'─┘    - Lambda introduction
+           ├─'λ'─┘    - Lambda introduction
            ├─':'─┘    - Reserved for constraints
            └─'.'─┘    - Lambda argument terminator
 
@@ -443,7 +444,8 @@ Note: eventually, pattern matching should be added here::
 
     <key value pair> = <expression>, ":", <expression>;
 
-    <lambda expression> = "\", [ "macro" ], [ <function argument names> ],
+    <lambda expression> = ( "\" | "λ" ), [ "macro" ],
+        [ <function argument names> ],
         ".", <expression>;
 
     <function expression> = <function prefix>, (

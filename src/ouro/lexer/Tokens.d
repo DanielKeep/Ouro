@@ -30,6 +30,7 @@ const char[][2][] SymbolTokens =
     [",", "comma"],
     ["-", "hyphen"],
     ["\\", "bslash"],
+    ["λ", "lambda"],
     ["!=", "noteq"],
     ["//", "slash2"],
     ["/", "slash"],

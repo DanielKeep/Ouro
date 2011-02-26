@@ -168,7 +168,7 @@ class ReprVisitor : Visitor!()
         foreach( i,arg ; node.args )
         {
             if( i == 0 )
-                so.r("\\");
+                so.r("λ");
             else
                 so.r(",");
 

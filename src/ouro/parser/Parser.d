@@ -815,7 +815,11 @@ Ast.Expr tryparseLambdaExpr(TokenStream ts)
             ".", <expression>;
     */
 
-    if( ts.peek.type != TOKbslash ) return null;
+    {
+        auto type = ts.peek.type;
+        if( !( type == TOKbslash || type == TOKlambda ) )
+            return null;
+    }
 
     auto start = ts.pop.loc;
     Ast.Argument[] args;

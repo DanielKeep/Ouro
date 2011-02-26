@@ -238,9 +238,9 @@ bool lexSymbol(Source src, out Token token)
     debug(TraceLexer) Stderr.format("(lexSymbol @ {})", src.loc.toString);
     auto cp0_2 = src[0..3];
     dchar cp0, cp1, cp2;
-    if( src.length > 0 ) cp0 = cp0_2[0];
-    if( src.length > 1 ) cp1 = cp0_2[1];
-    if( src.length > 2 ) cp2 = cp0_2[2];
+    if( src.length > 0 ) cp0 = src[0];
+    if( src.length > 1 ) cp1 = src[1];
+    if( src.length > 2 ) cp2 = src[2];
 
     size_t l = 0;
     TOK tok;
@@ -256,6 +256,7 @@ bool lexSymbol(Source src, out Token token)
         case ',': l = 1; tok = TOKcomma; break;
         case '-': l = 1; tok = TOKhyphen; break;
         case '\\':l = 1; tok = TOKbslash; break;
+        case 'λ': l = 1; tok = TOKlambda; break;
 
         // multi-cp symbols
         case '(':
