@@ -13,7 +13,7 @@ import ouro.util.StructuredOutput;
 import AstRepr = ouro.ast.ReprVisitor;
 import Sit = ouro.sit.Nodes;
 
-class ReprVisitor : Visitor!()
+class ReprVisitor : Visitor!(void, bool)
 {
     StructuredOutput so;
     AstRepr.ReprVisitor arv;
@@ -24,14 +24,14 @@ class ReprVisitor : Visitor!()
         this.arv = new AstRepr.ReprVisitor(so);
     }
 
-    override void visitScope(Sit.Scope scop)
+    override void visitScope(Sit.Scope scop, bool showDef)
     {
         scopeName(scop);
         so.r(" {").push.l;
         foreach( k,v ; scop.entries )
         {
             so.p(reprIdent(k)).r(": ");
-            visitBase(v);
+            visitBase(v, true);
             so.l;
         }
         so.pop.p("}").l;
@@ -42,12 +42,17 @@ class ReprVisitor : Visitor!()
         so.rf("0x{:x,8}", cast(void*) scop);
     }
 
-    override void visit(Sit.Module node)
+    void visitBaseDef(Sit.Node node)
+    {
+        return visitBase(node, false);
+    }
+
+    override void visit(Sit.Module node, bool showDef)
     {
         so.push("{");
         {
             so.p("scope: ");
-            visitScope(node.scop);
+            visitScope(node.scop,false);
 
             so.p("exportSymbols: ");
             so.r("[");
@@ -72,7 +77,7 @@ class ReprVisitor : Visitor!()
                 }
                 so.r("{").push;
                 {
-                    visitBase(stmt.expr);
+                    visitBaseDef(stmt.expr);
                 }
                 so.r("}").pop.l;
             }
@@ -81,19 +86,19 @@ class ReprVisitor : Visitor!()
         so.pop("}").l;
     }
 
-    override void visit(Sit.AstMixinExpr node)
+    override void visit(Sit.AstMixinExpr node, bool showDef)
     {
         so.r("AstMixin { ").push;
-        visitBase(node.expr);
+        visitBaseDef(node.expr);
         so.pop.r(" }").l;
     }
 
-    override void visit(Sit.CallExpr node)
+    override void visit(Sit.CallExpr node, bool showDef)
     {
         so.r("Call ").r("{").push.l;
         {
             so.p("funcExpr: ").push;
-            visitBase(node.funcExpr);
+            visitBaseDef(node.funcExpr);
             so.pop.l;
 
             so.p("args: ").push("[").l;
@@ -102,7 +107,7 @@ class ReprVisitor : Visitor!()
                 so.indent;
                 if( arg.explode )
                     so.r("explode ");
-                visitBase(arg.expr);
+                visitBaseDef(arg.expr);
                 so.l;
             }
             so.pop.p("]").l;
@@ -110,95 +115,114 @@ class ReprVisitor : Visitor!()
         so.pop.p("}");
     }
 
-    override void visit(Sit.ArgumentValue node)
+    override void visit(Sit.ArgumentValue node, bool showDef)
     {
         so.r("Argument { ");
         scopeName(node.scop);
         so.r(" : ").r(reprIdent(node.ident)).r(" }");
     }
 
-    override void visit(Sit.QuantumValue node)
+    override void visit(Sit.QuantumValue node, bool showDef)
     {
         so.r("Quantum { ");
         scopeName(node.scop);
         so.r(" : ").r(reprIdent(node.ident)).r(" }");
     }
 
-    override void visit(Sit.AstQuoteValue node)
+    override void visit(Sit.AstQuoteValue node, bool showDef)
     {
         so.r("AstQuote { ").push;
         arv.visitBase(node.ast);
         so.pop.r(" }").l;
     }
 
-    override void visit(Sit.FunctionValue node)
+    override void visit(Sit.FunctionValue node, bool showDef)
     {
         so.r("Function ").r(reprString(node.name));
+        if( showDef )
+        {
+            so.r(" {").push.l;
+            so.p("args: [").push.l;
+
+            foreach( arg ; node.args )
+            {
+                so.p(arg.ident);
+                if( arg.isVararg )
+                    so.r("...");
+                so.l;
+            }
+
+            so.pop.p("]").l;
+            so.p("expr: ");
+            visitBaseDef(node.expr);
+            so.l;
+            so.pop.p("}").l;
+        }
     }
 
-    override void visit(Sit.ListExpr node)
+    override void visit(Sit.ListExpr node, bool showDef)
     {
         so.r("List Expr ").push("[");
         foreach( elemExpr ; node.elemExprs )
-            visitBase(elemExpr);
+            visitBaseDef(elemExpr);
         so.pop("]").l;
     }
 
-    override void visit(Sit.ListValue node)
+    override void visit(Sit.ListValue node, bool showDef)
     {
         so.r("List ").push("[");
         foreach( elemValue ; node.elemValues )
-            visitBase(elemValue);
+            visitBaseDef(elemValue);
         so.pop("]").l;
     }
 
-    override void visit(Sit.LogicalValue node)
+    override void visit(Sit.LogicalValue node, bool showDef)
     {
         so.rf("Logical {}", node.value);
     }
 
-    override void visit(Sit.MapExpr node)
+    override void visit(Sit.MapExpr node, bool showDef)
     {
         so.r("Map Expr ").push("{");
         foreach( kvp ; node.kvps )
         {
             so.push("{");
-            visitBase(kvp.key);
-            visitBase(kvp.value);
+            visitBaseDef(kvp.key);
+            visitBaseDef(kvp.value);
             so.pop("}").l;
         }
         so.pop("}").l;
     }
 
-    override void visit(Sit.MapValue node)
+    override void visit(Sit.MapValue node, bool showDef)
     {
         so.r("Map ").push("{");
         foreach( kvp ; node.kvps )
         {
             so.push("{");
-            visitBase(kvp.key);
-            visitBase(kvp.value);
+            visitBaseDef(kvp.key);
+            visitBaseDef(kvp.value);
             so.pop("}").l;
         }
         so.pop("}").l;
     }
 
-    override void visit(Sit.ModuleValue node)
+    override void visit(Sit.ModuleValue node, bool showDef)
     {
         so.r("Module ").r(reprString(node.modul.astNode.loc.file));
     }
 
-    override void visit(Sit.NilValue node)
+    override void visit(Sit.NilValue node, bool showDef)
     {
         so.r("Nil");
     }
 
-    override void visit(Sit.StringValue node)
+    override void visit(Sit.StringValue node, bool showDef)
     {
         so.r("String ").r(reprString(node.value));
     }
 
-    override void visit(Sit.NumberValue node)
+    override void visit(Sit.NumberValue node, bool showDef)
     {
         so.r("Number ").r(reprReal(node.value));
     }

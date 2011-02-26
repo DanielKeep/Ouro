@@ -57,7 +57,7 @@ int main(char[][] argv)
                 auto astModule = Parser.parseModule(ts);
                 auto ctx = SemCtx.Context(null, &builtin);
                 auto sitModule = siv.visitBase(astModule, ctx);
-                repr.visitBase(sitModule);
+                repr.visitBase(sitModule, false);
             }
             catch( CompilerException e )
             {
