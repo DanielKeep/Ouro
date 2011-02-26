@@ -165,11 +165,10 @@ class ReprVisitor : Visitor!()
     override void visit(Ast.LambdaExpr node)
     {
         so.r("(").push;
+        so.r("\\");
         foreach( i,arg ; node.args )
         {
-            if( i == 0 )
-                so.r("\\");
-            else
+            if( i != 0 )
                 so.r(",");
 
             so.r(arg.ident);
