@@ -409,15 +409,9 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
             auto argExprs = new Sit.CallArg[node.argExprs.length];
             foreach( i,argExpr ; node.argExprs )
             {
-                bool explode = false;
-                if( auto explodeExpr = cast(Ast.ExplodeExpr) argExpr )
-                {
-                    explode = true;
-                    argExpr = explodeExpr.subExpr;
-                }
                 argExprs[i] = Sit.CallArg(
-                    new Sit.AstQuoteValue(argExpr, argExpr),
-                    explode);
+                        new Sit.AstQuoteValue(argExpr, argExpr),
+                        false);
             }
 
             auto funcValue = cast(Sit.FunctionValue) evalExpr(funcExpr);
