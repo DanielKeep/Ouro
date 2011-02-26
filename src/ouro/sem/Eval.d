@@ -53,6 +53,7 @@ struct Context
                 assert( fvp !is null, "expected fixed value, didn't find it" );
                 return *fvp;
             }
+            fs = fs.parent;
         }
 
         // Oh damn it all to hell
