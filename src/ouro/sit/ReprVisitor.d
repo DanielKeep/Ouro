@@ -75,15 +75,15 @@ class ReprVisitor : Visitor!(void, bool)
                         so.r(i==0 ? "[" : ", ").r(reprIdent(merge));
                     so.r("] ");
                 }
-                so.r("{").push;
+                so.p("{").push;
                 {
                     visitBaseDef(stmt.expr);
                 }
-                so.r("}").pop.l;
+                so.pop.p("}").l;
             }
-            so.pop("]").l;
+            so.pop.p("]").l;
         }
-        so.pop("}").l;
+        so.pop.p("}").l;
     }
 
     override void visit(Sit.AstMixinExpr node, bool showDef)
@@ -153,9 +153,16 @@ class ReprVisitor : Visitor!(void, bool)
             }
 
             so.pop.p("]").l;
-            so.p("expr: ");
-            visitBaseDef(node.expr);
-            so.l;
+            if( node.expr !is null )
+            {
+                so.p("expr: ");
+                visitBaseDef(node.expr);
+                so.l;
+            }
+            else if( node.host.fn !is null )
+            {
+                so.fl("host: 0x{:x,8}", cast(void*) node.host.fn);
+            }
             so.pop.p("}").l;
         }
     }
@@ -163,17 +170,29 @@ class ReprVisitor : Visitor!(void, bool)
     override void visit(Sit.ListExpr node, bool showDef)
     {
         so.r("List Expr ").push("[");
+        if( node.elemExprs.length > 0 )
+            so.l;
         foreach( elemExpr ; node.elemExprs )
+        {
+            so.indent;
             visitBaseDef(elemExpr);
-        so.pop("]").l;
+            so.l;
+        }
+        so.pop.p("]").l;
     }
 
     override void visit(Sit.ListValue node, bool showDef)
     {
         so.r("List ").push("[");
+        if( node.elemValues.length > 0 )
+            so.l;
         foreach( elemValue ; node.elemValues )
+        {
+            so.indent;
             visitBaseDef(elemValue);
-        so.pop("]").l;
+            so.l;
+        }
+        so.pop.p("]").l;
     }
 
     override void visit(Sit.LogicalValue node, bool showDef)

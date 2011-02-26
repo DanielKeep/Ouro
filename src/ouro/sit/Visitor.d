@@ -200,7 +200,8 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result defaultVisit(Sit.Node node, Arg arg)
         {
-            assert(false, "missing visit for "~node.classinfo.name);
+            assert(false, "missing visit for "
+                    ~ (node !is null ? node.classinfo.name : "(null)"));
         }
 
         Result visitScope(Sit.Scope scop, Arg arg)

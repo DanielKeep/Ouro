@@ -234,7 +234,7 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.AstQQSubExpr node)
     {
-        if( node.expr !is null )
+        if( node.expr is null )
         {
             so.rf(`#~${}`, node.index);
         }

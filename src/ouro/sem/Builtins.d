@@ -8,6 +8,8 @@ module ouro.sem.Builtins;
 
 import tango.math.Math : pow, floor;
 
+import ouro.sem.InvokeFn : invokeFn;
+
 import Ast      = ouro.ast.Nodes;
 import QQSub    = ouro.ast.QQSubVisitor;
 import Sit      = ouro.sit.Nodes;
@@ -39,7 +41,7 @@ real chkArgNumber(Value[] args, size_t i)
     if( auto v = cast(Sit.NumberValue) args[i] )
         return v.value;
     else
-        assert( false, "expected number" );
+        assert( false, "expected number; got " ~ args[i].classinfo.name );
 }
 
 bool chkArgLogical(Value[] args, size_t i)
@@ -47,7 +49,7 @@ bool chkArgLogical(Value[] args, size_t i)
     if( auto v = cast(Sit.LogicalValue) args[i] )
         return v.value;
     else
-        assert( false, "expected logical" );
+        assert( false, "expected logical; got " ~ args[i].classinfo.name );
 }
 
 Sit.FunctionValue chkArgFn(Value[] args, size_t i)
@@ -55,7 +57,7 @@ Sit.FunctionValue chkArgFn(Value[] args, size_t i)
     if( auto v = cast(Sit.FunctionValue) args[i] )
         return v;
     else
-        assert( false, "expected function" );
+        assert( false, "expected function; got " ~ args[i].classinfo.name );
 }
 
 Sit.ListValue chkArgList(Value[] args, size_t i)
@@ -63,7 +65,7 @@ Sit.ListValue chkArgList(Value[] args, size_t i)
     if( auto v = cast(Sit.ListValue) args[i] )
         return v;
     else
-        assert( false, "expected list" );
+        assert( false, "expected list; got " ~ args[i].classinfo.name );
 }
 
 Sit.StringValue chkArgStringValue(Value[] args, size_t i)
@@ -71,7 +73,7 @@ Sit.StringValue chkArgStringValue(Value[] args, size_t i)
     if( auto v = cast(Sit.StringValue) args[i] )
         return v;
     else
-        assert( false, "expected string" );
+        assert( false, "expected string; got " ~ args[i].classinfo.name );
 }
 
 Ast.Expr chkArgAst(Value[] args, size_t i)
@@ -83,7 +85,7 @@ Ast.Expr chkArgAst(Value[] args, size_t i)
         return expr;
     }
     else
-        assert( false, "expected ast" );
+        assert( false, "expected ast; got " ~ args[i].classinfo.name );
 }
 
 Value compareOp(Sit.Order ord)(Value[] args)
@@ -216,13 +218,14 @@ Value ouro_range(Value[] args)
     return new Sit.RangeValue(null, li, ri, args[2], args[3]);
 }
 
-Value ouro_qqsub(Value[] args)
+Value ouro_qqsub(Value[] args) // ast, subs...
 {
-    chkArgNumMin(args, 1);
+    chkArgNum(args, 2);
     auto qq = chkArgAst(args, 0);
-    auto subExprs = new Ast.Expr[args.length - 1];
+    auto subs = chkArgList(args, 1).elemValues;
+    auto subExprs = new Ast.Expr[subs.length];
     foreach( i,ref subExpr ; subExprs )
-        subExpr = chkArgAst(args, 1+i);
+        subExpr = chkArgAst(subs, i);
 
     scope qqsv = new QQSub.QQSubVisitor;
     return new Sit.AstQuoteValue(null, qqsv.visitExpr(qq, subExprs));
@@ -236,6 +239,17 @@ Value ouro_let(Value[] args)
 Value ouro_import(Value[] args)
 {
     assert( false, "ouro.import nyi" );
+}
+
+Value ouro_branch(Value[] args)
+{
+    chkArgNum(args, 3);
+    auto cond = chkArgLogical(args, 0);
+    auto b0 = chkArgFn(args, 1);
+    auto b1 = chkArgFn(args, 2);
+
+    auto b = cond ? b0 : b1;
+    return invokeFn(b, null);
 }
 
 Sit.FunctionValue[char[]] builtins;
@@ -281,5 +295,6 @@ static this()
     builtins["ouro.qqsub"] = new Sit.FunctionValue("ouro.qqsub", [Sit.Argument("ast"), Sit.Argument("subs", true)], &ouro_qqsub);
     builtins["ouro.let"] = new Sit.FunctionValue("ouro.let", [Sit.Argument("bindings", true), Sit.Argument("expr")], &ouro_let);
     builtins["ouro.import"] = new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import);
+    builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
 }
 

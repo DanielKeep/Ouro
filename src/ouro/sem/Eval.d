@@ -12,7 +12,8 @@ module ouro.sem.Eval;
 
 import ouro.sit.Visitor;
 
-import Sit = ouro.sit.Nodes;
+import InvokeFn = ouro.sem.InvokeFn;
+import Sit      = ouro.sit.Nodes;
 
 struct Context
 {
@@ -132,6 +133,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         foreach( i,nodeArg ; node.args )
             addArg(visitValue(nodeArg.expr, ctx), nodeArg.explode);
 
+        /+
         // Handle callee-side varargs.  This means searching for any argument
         // which is flagged as vararg.
         {
@@ -164,12 +166,22 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
                 auto vaList = new Sit.ListValue(null, vaListElems);
 
                 // Adjust arg list
-                args[vaBeg] = vaList;
+                if( vaBeg == args.length )
+                {
+                    // This means that the caller only supplied enough
+                    // arguments for the non-vararg portion.  We'll just add a
+                    // new one.
+                    addArg(vaList, false);
+                }
+                else
+                {
+                    args[vaBeg] = vaList;
 
-                foreach( i,val ; args[vaEnd..$] )
-                    args[vaBeg+1+i] = val;
+                    foreach( i,val ; args[vaEnd..$] )
+                        args[vaBeg+1+i] = val;
 
-                args = args[0..$-vaLen];
+                    args = args[0..$-(vaLen-1)];
+                }
             }
         }
 
@@ -219,6 +231,31 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         {
             assert( false, "function has no implementation" );
         }
+        +/
+
+        return InvokeFn.invokeFn(fn, args);
+    }
+
+    Sit.Value invokeExprFn(Sit.FunctionValue fn, Sit.Value[] args,
+            Context.EvalContext evalCtx = Context.EvalContext.Runtime)
+    {
+        assert( fn.expr !is null );
+
+        // Construct scope for call
+        FixScope fs;
+        fs.scop = fn.scop;
+        //fs.parent = ctx.fixScope;
+
+        foreach( i,arg ; args )
+            fs.values[fn.args[i].ident] = arg;
+
+        // Construct new context for call
+        Context subCtx;
+        subCtx.evalCtx = evalCtx;
+        subCtx.fixScope = &fs;
+
+        auto result = visitBase(fn.expr, subCtx);
+        return result;
     }
 
     override Sit.Value visit(Sit.ArgumentValue node, Context ctx)
