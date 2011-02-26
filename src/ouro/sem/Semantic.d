@@ -253,7 +253,10 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         auto args = new Sit.Argument[node.args.length];
 
         foreach( i,arg ; node.args )
+        {
+            ctx.scop.bindArg(null, arg.ident);
             args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
+        }
 
         return new Sit.FunctionValue(node, node.ident, args, ctx.scop,
                 visitExpr(node.expr, ctx));

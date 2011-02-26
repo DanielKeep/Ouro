@@ -263,9 +263,6 @@ class UnfixedValue : Value
 
 class ArgumentValue : UnfixedValue
 {
-    Scope scop;
-    char[] ident;
-
     this(Ast.Node astNode, Scope scop, char[] ident)
     {
         super(astNode, scop, ident);
