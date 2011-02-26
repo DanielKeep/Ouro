@@ -475,8 +475,13 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
     override Sit.Node visit(Ast.AstQQSubExpr node, Context ctx)
     {
-        //return new Sit.AstMixinExpr(node, visitExpr(node.expr, ctx));
-        assert( false, "blargh" );
+        auto astExpr = node.expr;
+        auto sitExpr = visitExpr(astExpr, ctx);
+        auto value = evalExpr(sitExpr);
+        auto astValue = cast(Sit.AstQuoteValue) value;
+        assert( astValue !is null, "expected ast result from macro; "
+                "got a " ~ value.toString );
+        return visitExpr(astValue.ast, ctx);
     }
 
     override Sit.Node visit(Ast.LetExpr node, Context ctx)
