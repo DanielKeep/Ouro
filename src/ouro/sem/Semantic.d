@@ -105,6 +105,17 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         qqr = new QQRewrite.QQRewriteVisitor;
     }
 
+    Sit.Node visitMacro(Context ctx, Ast.Node node,
+            Sit.FunctionValue fn, Sit.CallArg[] args...)
+    {
+        auto call = new Sit.CallExpr(node, fn, args);
+        auto value = evalExpr(call);
+        auto astValue = cast(Sit.AstQuoteValue) value;
+        assert( astValue !is null, "expected ast result from macro; "
+                "got a " ~ value.toString );
+        return visitExpr(astValue.ast, ctx);
+    }
+
     override Sit.Node visit(Ast.Module node, Context ctx)
     {
         auto stmts = new Sit.Stmt[node.stmts.length];
@@ -409,9 +420,9 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                     explode);
             }
 
-            return new Sit.AstMixinExpr(node,
-                new Sit.CallExpr(node, funcExpr, argExprs)
-            );
+            auto funcValue = cast(Sit.FunctionValue) evalExpr(funcExpr);
+
+            return visitMacro(ctx, node, funcValue, argExprs);
         }
         else
         {
@@ -470,7 +481,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
     override Sit.Node visit(Ast.AstQQSubExpr node, Context ctx)
     {
-        return new Sit.AstMixinExpr(node, visitExpr(node.expr, ctx));
+        //return new Sit.AstMixinExpr(node, visitExpr(node.expr, ctx));
+        assert( false, "blargh" );
     }
 
     override Sit.Node visit(Ast.LetExpr node, Context ctx)
@@ -484,12 +496,10 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
         auto subExpr = new Sit.AstQuoteValue(node.subExpr, node.subExpr);
 
-        return new Sit.AstMixinExpr(node,
-            new Sit.CallExpr(node,
-                ctx.builtinFunction("ouro.let"),
-                [Sit.CallArg(bindListExpr, false),
-                 Sit.CallArg(subExpr, false)]
-            )
+        return visitMacro(ctx, node,
+            ctx.builtinFunction("ouro.let"),
+            Sit.CallArg(bindListExpr, false),
+            Sit.CallArg(subExpr, false)
         );
     }
 
