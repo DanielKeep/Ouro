@@ -78,6 +78,11 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.ClosureValue node)
+        {
+            return visitBase(node.value);
+        }
+
         Result visit(Sit.DeferredValue node)
         {
             return defaultVisitResult;
@@ -206,6 +211,11 @@ abstract class Visitor(Result = void, Arg = void)
         Result visit(Sit.ArgumentValue node, Arg arg)
         {
             return defaultVisitResult;
+        }
+
+        Result visit(Sit.ClosureValue node, Arg arg)
+        {
+            return visitBase(node.value, arg);
         }
 
         Result visit(Sit.DeferredValue node, Arg arg)

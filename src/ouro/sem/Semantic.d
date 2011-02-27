@@ -119,7 +119,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
     override Sit.Node visit(Ast.Module node, Context ctx)
     {
         auto stmts = new Sit.Stmt[node.stmts.length];
-        auto scop = new Sit.PartialScope(ctx.scop);
+        auto scop = new Sit.PartialScope(ctx.scop, false);
         ctx.scop = scop;
 
         /*
@@ -259,7 +259,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         ctx.stmt.bind = true;
         ctx.stmt.bindIdent = node.ident;
 
-        ctx.scop = new Sit.Scope(ctx.scop);
+        ctx.scop = new Sit.Scope(ctx.scop, true);
 
         auto args = new Sit.Argument[node.args.length];
 
@@ -381,7 +381,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
 
     override Sit.Node visit(Ast.LambdaExpr node, Context ctx)
     {
-        ctx.scop = new Sit.Scope(ctx.scop);
+        ctx.scop = new Sit.Scope(ctx.scop, true);
 
         auto args = new Sit.Argument[node.args.length];
 

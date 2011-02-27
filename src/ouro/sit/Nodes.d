@@ -18,6 +18,7 @@ const Nodes =
     "Module"[],
     "CallExpr",
     "ArgumentValue",
+    "ClosureValue",
     "DeferredValue",
     "QuantumValue",
     "AstQuoteValue",
@@ -38,9 +39,20 @@ class Scope
     Value[char[]] entries;
     Scope parent;
 
-    this(Scope parent)
+    /**
+        This should be set to true for any scope which is enclosed.  That is,
+        any scope where values from parent scopes will not be available unless
+        specifically stored and provided.
+
+        This is used to denote points in the scope chain outside which
+        closures must be used.
+     */
+    bool enclosed;
+
+    this(Scope parent, bool enclosed)
     {
         this.parent = parent;
+        this.enclosed = enclosed;
     }
 
     void bind(char[] ident, Value value)
@@ -64,7 +76,20 @@ class Scope
             return *entry;
         
         else if( parent !is null )
-            return parent.lookup(astNode, ident, allowFallbacks);
+        {
+            auto v = parent.lookup(astNode, ident, allowFallbacks);
+
+            /*
+                The purpose of this bit is to wrap dynamic values which are
+                being pulled from outside an enclosure in a closure.
+             */
+
+            if( this.enclosed )
+            if( auto dv = cast(DynamicValue) v )
+                v = dv.makeClosure;
+
+            return v;
+        }
 
         return null;
     }
@@ -76,9 +101,9 @@ class PartialScope : Scope
 
     Value[char[]] quantumCache;
 
-    this(Scope parent)
+    this(Scope parent, bool enclosed)
     {
-        super(parent);
+        super(parent, enclosed);
     }
 
     void fix()
@@ -265,11 +290,44 @@ class UnfixedValue : Value
     }
 }
 
-class ArgumentValue : UnfixedValue
+/**
+    This interface is implemented by Value classes which do not have a single,
+    fixed value.  For example, the arguments to a function are dynamic.
+
+    Dynamic values must be stored in closures if accessed from inside an
+    enclosed scope.
+ */
+interface DynamicValue
 {
+    Value makeClosure();
+
+    template Impl()
+    {
+        override Value makeClosure()
+        {
+            return new ClosureValue(this.astNode, this);
+        }
+    }
+}
+
+class ArgumentValue : UnfixedValue, DynamicValue
+{
+    mixin DynamicValue.Impl!();
+
     this(Ast.Node astNode, Scope scop, char[] ident)
     {
         super(astNode, scop, ident);
+    }
+}
+
+class ClosureValue : Value
+{
+    UnfixedValue value;
+
+    this(Ast.Node astNode, UnfixedValue value)
+    {
+        super(astNode);
+        this.value = value;
     }
 }
 
@@ -405,7 +463,7 @@ class FunctionValue : Value
     FunctionValue compose(FunctionValue rhs)
     {
         // (f (.) g)(...) = g(f(...))
-        auto scop = new Scope(null);
+        auto scop = new Scope(null, true);
         auto callArgs = new CallArg[this.args.length];
 
         foreach( i,arg ; this.args )

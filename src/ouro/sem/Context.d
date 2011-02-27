@@ -15,6 +15,7 @@ struct Context
     Sit.Scope scop;
     Sit.Stmt* stmt;
     BuiltinFn builtinFn;
+    Sit.ClosureValue[] closureValues;
 
     static Context opCall(Sit.Scope scop, Sit.Stmt* stmt, BuiltinFn builtinFn)
     {
@@ -47,6 +48,54 @@ struct Context
         auto v = cast(Sit.FunctionValue) builtin(name);
         assert( v !is null );
         return v;
+    }
+
+    void mergeClosureValues(ref Context fromCtx)
+    {
+        /*
+            This function needs to work out what closure values to take from a
+            sub-context.
+
+            In general, we need to omit values which are defined inside the
+            current enclosed scope.  The way we do this is to walk the scope
+            chain (starting with the sub-context's scope).  For each scope, we
+            drop all closure values defined in it.
+
+            We stop when we attempt to go up a scope and find the current one
+            is enclosed.  The remaining closure values are appended to the
+            current context's list.
+         */
+
+        auto curScop = fromCtx.scop;
+        auto closures = fromCtx.closureValues;
+        bool lastScopEnclosed = false;
+        
+        while( curScop !is null && ! lastScopEnclosed )
+        {
+            bool dropThis = false;
+
+            for( size_t i=0;
+                 i < closures.length;
+                 dropThis = false, i += (dropThis ? 0 : 1) )
+            {
+                auto cv = closures[i];
+                dropThis = cv.value.scop is curScop;
+                if( dropThis )
+                {
+                    // Move a value from the end of the array up into this
+                    // spot (swap remove without the swap bit).
+                    auto endIdx = closures.length-1;
+                    closures[i] = closures[endIdx];
+                    closures = closures[0..endIdx];
+                }
+            }
+
+            lastScopEnclosed = curScop.enclosed;
+            curScop = curScop.parent;
+        }
+
+        if( closures.length > 0 )
+            this.closureValues ~= closures;
     }
 }
 
