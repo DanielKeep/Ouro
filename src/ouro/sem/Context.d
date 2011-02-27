@@ -15,7 +15,7 @@ struct Context
     Sit.Scope scop;
     Sit.Stmt* stmt;
     BuiltinFn builtinFn;
-    Sit.ClosureValue[] closureValues;
+    Sit.EnclosedValue[] enclosedValues;
 
     static Context opCall(Sit.Scope scop, Sit.Stmt* stmt, BuiltinFn builtinFn)
     {
@@ -50,7 +50,7 @@ struct Context
         return v;
     }
 
-    void mergeClosureValues(ref Context fromCtx)
+    void mergeEnclosedValues(ref Context fromCtx)
     {
         /*
             This function needs to work out what closure values to take from a
@@ -67,7 +67,7 @@ struct Context
          */
 
         auto curScop = fromCtx.scop;
-        auto closures = fromCtx.closureValues;
+        auto enclosed = fromCtx.enclosedValues;
         bool lastScopEnclosed = false;
         
         while( curScop !is null && ! lastScopEnclosed )
@@ -75,18 +75,18 @@ struct Context
             bool dropThis = false;
 
             for( size_t i=0;
-                 i < closures.length;
+                 i < enclosed.length;
                  dropThis = false, i += (dropThis ? 0 : 1) )
             {
-                auto cv = closures[i];
+                auto cv = enclosed[i];
                 dropThis = cv.value.scop is curScop;
                 if( dropThis )
                 {
                     // Move a value from the end of the array up into this
                     // spot (swap remove without the swap bit).
-                    auto endIdx = closures.length-1;
-                    closures[i] = closures[endIdx];
-                    closures = closures[0..endIdx];
+                    auto endIdx = enclosed.length-1;
+                    enclosed[i] = enclosed[endIdx];
+                    enclosed = enclosed[0..endIdx];
                 }
             }
 
@@ -94,8 +94,8 @@ struct Context
             curScop = curScop.parent;
         }
 
-        if( closures.length > 0 )
-            this.closureValues ~= closures;
+        if( enclosed.length > 0 )
+            this.enclosedValues ~= enclosed;
     }
 }
 

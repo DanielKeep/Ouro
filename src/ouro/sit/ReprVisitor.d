@@ -115,6 +115,12 @@ class ReprVisitor : Visitor!(void, bool)
         so.r(" : ").r(reprIdent(node.ident)).r(" }");
     }
 
+    override void visit(Sit.EnclosedValue node, bool showDef)
+    {
+        so.r("Enclosed ");
+        visitBase(node.value, showDef);
+    }
+
     override void visit(Sit.QuantumValue node, bool showDef)
     {
         so.r("Quantum { ");

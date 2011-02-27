@@ -18,7 +18,7 @@ const Nodes =
     "Module"[],
     "CallExpr",
     "ArgumentValue",
-    "ClosureValue",
+    "EnclosedValue",
     "DeferredValue",
     "QuantumValue",
     "AstQuoteValue",
@@ -86,7 +86,7 @@ class Scope
 
             if( this.enclosed )
             if( auto dv = cast(DynamicValue) v )
-                v = dv.makeClosure;
+                v = dv.enclose;
 
             return v;
         }
@@ -299,13 +299,13 @@ class UnfixedValue : Value
  */
 interface DynamicValue
 {
-    Value makeClosure();
+    Value enclose();
 
     template Impl()
     {
-        override Value makeClosure()
+        override EnclosedValue enclose()
         {
-            return new ClosureValue(this.astNode, this);
+            return new EnclosedValue(this.astNode, this);
         }
     }
 }
@@ -320,7 +320,7 @@ class ArgumentValue : UnfixedValue, DynamicValue
     }
 }
 
-class ClosureValue : Value
+class EnclosedValue : Value
 {
     UnfixedValue value;
 
@@ -422,12 +422,14 @@ class FunctionValue : Value
     char[] name;
     Argument[] args;
     Scope scop;
+    EnclosedValue[] enclosedValues;
 
     // Implementations
     Expr expr;
     Host host;
 
-    this(Ast.Node astNode, char[] name, Argument[] args, Scope scop, Expr expr)
+    this(Ast.Node astNode, char[] name, Argument[] args,
+            EnclosedValue[] enclosedValues, Scope scop, Expr expr)
     in
     {
         assert( name != "" );
@@ -439,6 +441,7 @@ class FunctionValue : Value
         super(astNode);
         this.name = name;
         this.args = args;
+        this.enclosedValues = enclosedValues;
         this.scop = scop;
         this.expr = expr;
     }
@@ -474,7 +477,7 @@ class FunctionValue : Value
 
         auto fc = new FunctionValue(null,
             "(" ~ reprIdent(this.name) ~ " (.) " ~ reprIdent(rhs.name) ~ ")",
-            this.args, scop,
+            this.args, null, scop,
             new CallExpr(null, rhs, [
                 CallArg(new CallExpr(null, this, callArgs), false)
             ])

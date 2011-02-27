@@ -269,8 +269,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
             args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
         }
 
-        return new Sit.FunctionValue(node, node.ident, args, ctx.scop,
-                visitExpr(node.expr, ctx));
+        return new Sit.FunctionValue(node, node.ident, args, null,
+                ctx.scop, visitExpr(node.expr, ctx));
     }
 
     override Sit.Node visit(Ast.ExprStmt node, Context ctx)
@@ -391,8 +391,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
             args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
         }
 
-        return new Sit.FunctionValue(node, "λ", args, ctx.scop,
-                visitExpr(node.expr, ctx));
+        return new Sit.FunctionValue(node, "λ", args, null,
+                ctx.scop, visitExpr(node.expr, ctx));
     }
 
     override Sit.Node visit(Ast.ExplodeExpr node, Context ctx)
