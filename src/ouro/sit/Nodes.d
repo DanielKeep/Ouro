@@ -164,22 +164,6 @@ class Expr : Node
     }
 }
 
-class AstMixinExpr : Expr
-{
-    Expr expr;
-
-    this(Ast.Node astNode, Expr expr)
-    in
-    {
-        assert( expr !is null );
-    }
-    body
-    {
-        super(astNode);
-        this.expr = expr;
-    }
-}
-
 class CallExpr : Expr
 {
     Expr funcExpr;

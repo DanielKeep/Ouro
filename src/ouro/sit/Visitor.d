@@ -13,7 +13,6 @@ private
     const char[][] SitClassList =
     [
         "Module"[],
-        "AstMixinExpr",
         "CallExpr",
         "ArgumentValue",
         "DeferredValue",
@@ -82,11 +81,6 @@ abstract class Visitor(Result = void, Arg = void)
             foreach( stmt ; node.stmts )
                 visitBase(stmt.expr);
             return defaultVisitResult;
-        }
-
-        Result visit(Sit.AstMixinExpr node)
-        {
-            return visitBase(node.expr);
         }
 
         Result visit(Sit.CallExpr node)
@@ -217,11 +211,6 @@ abstract class Visitor(Result = void, Arg = void)
             foreach( stmt ; node.stmts )
                 visitBase(stmt.expr, arg);
             return defaultVisitResult;
-        }
-
-        Result visit(Sit.AstMixinExpr node, Arg arg)
-        {
-            return visitBase(node.expr, arg);
         }
 
         Result visit(Sit.CallExpr node, Arg arg)

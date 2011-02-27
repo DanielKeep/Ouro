@@ -98,11 +98,6 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         assert( false, "dunno wat dew" );
     }
 
-    override Sit.Value visit(Sit.AstMixinExpr node, Context ctx)
-    {
-        assert( false, "there shouldn't be any ast mixins anymore" );
-    }
-
     override Sit.Value visit(Sit.CallExpr node, Context ctx)
     {
         auto fn = visitFn(node.funcExpr, ctx);

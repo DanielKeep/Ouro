@@ -86,13 +86,6 @@ class ReprVisitor : Visitor!(void, bool)
         so.pop.p("}").l;
     }
 
-    override void visit(Sit.AstMixinExpr node, bool showDef)
-    {
-        so.r("AstMixin { ").push;
-        visitBaseDef(node.expr);
-        so.pop.r(" }").l;
-    }
-
     override void visit(Sit.CallExpr node, bool showDef)
     {
         so.r("Call ").r("{").push.l;
