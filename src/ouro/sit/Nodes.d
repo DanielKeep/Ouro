@@ -13,6 +13,26 @@ import ouro.util.Repr : reprIdent;
 
 import Ast = ouro.ast.Nodes;
 
+const Nodes =
+[
+    "Module"[],
+    "CallExpr",
+    "ArgumentValue",
+    "DeferredValue",
+    "QuantumValue",
+    "AstQuoteValue",
+    "FunctionValue",
+    "ListExpr",
+    "ListValue",
+    "LogicalValue",
+    "MapExpr",
+    "MapValue",
+    "ModuleValue",
+    "NilValue",
+    "StringValue",
+    "NumberValue",
+];
+
 class Scope
 {
     Value[char[]] entries;

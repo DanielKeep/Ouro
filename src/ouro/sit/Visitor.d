@@ -10,25 +10,7 @@ import Sit = ouro.sit.Nodes;
 
 private
 {
-    const char[][] SitClassList =
-    [
-        "Module"[],
-        "CallExpr",
-        "ArgumentValue",
-        "DeferredValue",
-        "QuantumValue",
-        "AstQuoteValue",
-        "FunctionValue",
-        "ListExpr",
-        "ListValue",
-        "LogicalValue",
-        "MapExpr",
-        "MapValue",
-        "ModuleValue",
-        "NilValue",
-        "StringValue",
-        "NumberValue",
-    ];
+    alias Sit.Nodes SitClassList;
 
     char[] genDispatch(char[] callSuffix = "")
     {
