@@ -322,7 +322,10 @@ Value ouro_dot_dump(Value[] args)
 {
     auto values = chkArgList(args, 0).elemValues;
     foreach( value ; values )
+    {
         repr.visitBase(value, true);
+        repr.so.l;
+    }
 
     return nil;
 }
