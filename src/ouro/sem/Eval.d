@@ -90,15 +90,21 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         return resultValue;
     }
 
-    void visitCallable(Sit.Node node, Context ctx,
-            out Sit.FunctionValue fn, out Sit.ClosureValue cl)
+    Sit.CallableValue visitCallable(Sit.Node node, Context ctx,
+            out Sit.FunctionValue fn)
     {
         auto result = visitValue(node, ctx);
-        fn = cast(Sit.FunctionValue) result;
-        cl = cast(Sit.ClosureValue) result;
+        auto callable = cast(Sit.CallableValue) result;
+        assert( callable !is null, "expected callable result" );
 
-        assert( fn !is null || cl !is null,
-                "expected callable result" );
+        if( auto cv = cast(Sit.ClosureValue) callable )
+            fn = cv.fn;
+        else if( auto fv = cast(Sit.FunctionValue) callable )
+            fn = fv;
+        else
+            assert( false );
+
+        return callable;
     }
 
     override Sit.Value visit(Sit.Module node, Context ctx)
@@ -109,8 +115,9 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
     override Sit.Value visit(Sit.CallExpr node, Context ctx)
     {
         Sit.FunctionValue fn;
-        Sit.ClosureValue cl;
-        visitCallable(node.funcExpr, ctx, fn, cl);
+        auto callable = visitCallable(node.funcExpr, ctx, fn);
+
+        assert( fn !is null );
 
         // Evaluate arguments
         auto args = new Sit.Value[node.args.length];
@@ -140,7 +147,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         foreach( i,nodeArg ; node.args )
             addArg(visitValue(nodeArg.expr, ctx), nodeArg.explode);
 
-        return InvokeFn.invoke(fn, args);
+        return InvokeFn.invoke(callable, args);
     }
 
     Sit.Value invokeExprFn(Sit.FunctionValue fn,
@@ -235,7 +242,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
 
     override Sit.Value visit(Sit.ClosureValue node, Context ctx)
     {
-        Sit.Value[] values;
+        auto values = new Sit.Value[node.values.length];
 
         foreach( i,encValue ; node.values )
         {
@@ -256,7 +263,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         // Make a closure
         auto closureValues = new Sit.Value[node.enclosedValues.length];
         foreach( i,ev ; node.enclosedValues )
-            closureValues[i] = ctx.fixValue(ev);
+            closureValues[i] = ctx.fixValue(ev.value);
 
         return new Sit.ClosureValue(node.astNode, node, closureValues);
     }

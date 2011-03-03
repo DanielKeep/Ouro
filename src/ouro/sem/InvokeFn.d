@@ -12,6 +12,8 @@ import Sit  = ouro.sit.Nodes;
 Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
         Eval.Context.EvalContext evalCtx = Eval.Context.EvalContext.Runtime)
 {
+    assert( callable !is null );
+
     Sit.FunctionValue fn;
     Sit.Value[] clValues;
 
@@ -23,7 +25,7 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
         clValues = clv.values;
     }
     else
-        assert(false);
+        assert(false, "tried to invoke a " ~ callable.classinfo.name);
 
     // Handle callee-side varargs.  This means searching for any argument
     // which is flagged as vararg.
