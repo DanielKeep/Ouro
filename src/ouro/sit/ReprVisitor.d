@@ -24,6 +24,16 @@ class ReprVisitor : Visitor!(void, bool)
         this.arv = new AstRepr.ReprVisitor(so);
     }
 
+    static ReprVisitor forStdout()
+    {
+        return new ReprVisitor(StructuredOutput.forStdout);
+    }
+
+    static ReprVisitor forStderr()
+    {
+        return new ReprVisitor(StructuredOutput.forStderr);
+    }
+
     override void visitScope(Sit.Scope scop, bool showDef)
     {
         scopeName(scop);
