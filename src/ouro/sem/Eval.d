@@ -112,6 +112,15 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         assert( false, "dunno wat dew" );
     }
 
+    Sit.Value evalModule(Sit.Module node, Context ctx = Context.init)
+    {
+        if( node.stmts.length == 0 )
+            return new Sit.NilValue(null);
+
+        auto stmt = node.stmts[$-1];
+        return visitBase(stmt.expr, ctx);
+    }
+
     override Sit.Value visit(Sit.CallExpr node, Context ctx)
     {
         Sit.FunctionValue fn;
@@ -147,7 +156,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         foreach( i,nodeArg ; node.args )
             addArg(visitValue(nodeArg.expr, ctx), nodeArg.explode);
 
-        return InvokeFn.invoke(callable, args);
+        return InvokeFn.invoke(callable, args, ctx.evalCtx);
     }
 
     Sit.Value invokeExprFn(Sit.FunctionValue fn,
