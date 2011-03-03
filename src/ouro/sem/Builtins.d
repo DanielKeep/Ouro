@@ -9,7 +9,7 @@ module ouro.sem.Builtins;
 import tango.math.Math : pow, floor;
 
 import ouro.Location : Location;
-import ouro.sem.InvokeFn : invokeFn;
+import ouro.sem.InvokeFn : invoke;
 
 import Ast      = ouro.ast.Nodes;
 import QQSub    = ouro.ast.QQSubVisitor;
@@ -250,7 +250,7 @@ Value ouro_branch(Value[] args)
     auto b1 = chkArgFn(args, 2);
 
     auto b = cond ? b0 : b1;
-    return invokeFn(b, null);
+    return invoke(b, null);
 }
 
 private Ast.Expr valueToAst(Value gv)

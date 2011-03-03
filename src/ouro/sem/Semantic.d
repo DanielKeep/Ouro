@@ -14,6 +14,7 @@ module ouro.sem.Semantic;
 import tango.io.Stdout;
 
 import ouro.Error;
+import ouro.sem.Abort;
 import ouro.sem.Context;
 
 import Ast = ouro.ast.Nodes;
@@ -22,19 +23,6 @@ import Sit = ouro.sit.Nodes;
 import AstVisitor   = ouro.ast.Visitor;
 import QQRewrite    = ouro.ast.QQRewriteVisitor;
 import Eval         = ouro.sem.Eval;
-
-/*
-    NonFatalAbort instances are thrown to indicate that processing a given
-    subtree is not possible yet and that this is not a fatal, unrecoverable
-    error.
- */
-class NonFatalAbort
-{
-    static void throwForUnfixed(Sit.UnfixedValue value)
-    {
-        throw new NonFatalAbort;
-    }
-}
 
 bool aborted(void delegate() dg)
 {
@@ -50,7 +38,7 @@ bool aborted(void delegate() dg)
     return result;
 }
 
-class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
+class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 {
     protected
     {
@@ -64,7 +52,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
             throw new CompilerException(code, loc, arg0, arg1);
         }
 
-        Sit.Expr visitExpr(Ast.Node node, Context ctx)
+        Sit.Expr visitExpr(Ast.Node node, Context* ctx)
         {
             auto newNode = visitBase(node, ctx);
             assert( newNode !is null );
@@ -105,7 +93,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         qqr = new QQRewrite.QQRewriteVisitor;
     }
 
-    Sit.Node visitMacro(Context ctx, Ast.Node node,
+    Sit.Node visitMacro(Context* ctx, Ast.Node node,
             Sit.FunctionValue fn, Sit.CallArg[] args...)
     {
         auto call = new Sit.CallExpr(node, fn, args);
@@ -116,7 +104,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return visitExpr(astValue.ast, ctx);
     }
 
-    override Sit.Node visit(Ast.Module node, Context ctx)
+    override Sit.Node visit(Ast.Module node, Context* ctx)
     {
         auto stmts = new Sit.Stmt[node.stmts.length];
         auto scop = new Sit.PartialScope(ctx.scop, false);
@@ -151,16 +139,16 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                     continue;
 
                 // Try to process
-                auto subCtx = ctx;
+                auto subCtx = ctx.dup;
                 auto modStmt = node.stmts[i];
                 Sit.Expr expr;
 
-                ctx.stmt = &stmt;
-                ctx.stmt.loc = modStmt.loc;
+                subCtx.stmt = &stmt;
+                subCtx.stmt.loc = modStmt.loc;
 
                 Stderr("Processing ")(modStmt)("...");
 
-                if( aborted({ expr = visitExpr(modStmt, ctx); }) )
+                if( aborted({ expr = visitExpr(modStmt, &subCtx); }) )
                 {
                     // Bastard.
                     Stderr(" failed.").newline;
@@ -170,6 +158,13 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                 {
                     // Hooray!
                     Stderr(" success; eval");
+
+                    debug if( subCtx.dumpNode !is null )
+                    {
+                        Stderr(" ");
+                        subCtx.dumpNode(expr);
+                        Stderr(" ");
+                    }
 
                     /*
                         We've got a semantic tree, but not (necessarily) an
@@ -186,24 +181,32 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                     }
                     else
                     {
-                        Stderr(" worked.").newline;
+                        Stderr(" worked.");
                         successStmt = true;
 
-                        if( ctx.stmt.bind )
+                        debug if( subCtx.dumpNode !is null )
                         {
-                            ctx.scop.bind(ctx.stmt.bindIdent, value);
+                            Stderr(" = ");
+                            subCtx.dumpNode(value);
                         }
 
-                        if( ctx.stmt.mergeAll )
+                        Stderr.newline;
+
+                        if( subCtx.stmt.bind )
+                        {
+                            subCtx.scop.bind(subCtx.stmt.bindIdent, value);
+                        }
+
+                        if( subCtx.stmt.mergeAll )
                         {
                             assert(false, "nyi");
                         }
-                        else if( ctx.stmt.mergeList.length != 0 )
+                        else if( subCtx.stmt.mergeList.length != 0 )
                         {
                             assert(false, "nyi");
                         }
 
-                        ctx.stmt.expr = value;
+                        subCtx.stmt.expr = value;
                     }
                 }
             }
@@ -215,7 +218,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return new Sit.Module(node, stmts, /*exportSymbols*/null, ctx.scop);
     }
 
-    override Sit.Node visit(Ast.ImportStmt node, Context ctx)
+    override Sit.Node visit(Ast.ImportStmt node, Context* ctx)
     {
         assert( ctx.stmt !is null );
         assert( false, "imports not implemented yet" );
@@ -242,7 +245,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return moduleExpr;
     }
 
-    override Sit.Node visit(Ast.LetExprStmt node, Context ctx)
+    override Sit.Node visit(Ast.LetExprStmt node, Context* ctx)
     {
         assert( ctx.stmt !is null );
 
@@ -252,40 +255,44 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return visitBase(node.expr, ctx);
     }
 
-    override Sit.Node visit(Ast.LetFuncStmt node, Context ctx)
+    override Sit.Node visit(Ast.LetFuncStmt node, Context* ctx)
     {
         assert( ctx.stmt !is null );
 
-        ctx.stmt.bind = true;
-        ctx.stmt.bindIdent = node.ident;
+        auto subCtx = ctx.dup;
 
-        ctx.scop = new Sit.Scope(ctx.scop, true);
+        subCtx.stmt.bind = true;
+        subCtx.stmt.bindIdent = node.ident;
+
+        subCtx.scop = new Sit.Scope(ctx.scop, true);
 
         auto args = new Sit.Argument[node.args.length];
 
         foreach( i,arg ; node.args )
         {
-            ctx.scop.bindArg(null, arg.ident);
+            subCtx.scop.bindArg(null, arg.ident);
             args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
         }
 
+        auto expr = visitExpr(node.expr, &subCtx);
+
         return new Sit.FunctionValue(node, node.ident, args, null,
-                ctx.scop, visitExpr(node.expr, ctx));
+                subCtx.scop, expr);
     }
 
-    override Sit.Node visit(Ast.ExprStmt node, Context ctx)
+    override Sit.Node visit(Ast.ExprStmt node, Context* ctx)
     {
         assert( ctx.stmt !is null );
         return visitBase(node.expr, ctx);
     }
 
-    override Sit.Node visit(Ast.RewrittenExpr node, Context ctx)
+    override Sit.Node visit(Ast.RewrittenExpr node, Context* ctx)
     {
         // We don't really care if an expression was rewritten or not.
         return visitBase(node.rewrite, ctx);
     }
 
-    override Sit.Node visit(Ast.BinaryExpr node, Context ctx)
+    override Sit.Node visit(Ast.BinaryExpr node, Context* ctx)
     {
         auto func = ctx.builtinFunction(node.builtin);
         auto lhs = visitExpr(node.lhs, ctx);
@@ -295,7 +302,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                 [Sit.CallArg(lhs, false), Sit.CallArg(rhs, false)]);
     }
 
-    override Sit.Node visit(Ast.TernaryExpr node, Context ctx)
+    override Sit.Node visit(Ast.TernaryExpr node, Context* ctx)
     {
         auto func = ctx.builtinFunction(node.builtin);
         auto lhs = visitExpr(node.lhs, ctx);
@@ -308,7 +315,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                  Sit.CallArg(rhs, false)]);
     }
 
-    override Sit.Node visit(Ast.InfixFuncExpr node, Context ctx)
+    override Sit.Node visit(Ast.InfixFuncExpr node, Context* ctx)
     {
         auto func = visitExpr(node.funcExpr, ctx);
         auto lhs = visitExpr(node.lhs, ctx);
@@ -319,7 +326,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                  Sit.CallArg(rhs, false)]);
     }
 
-    override Sit.Node visit(Ast.PrefixExpr node, Context ctx)
+    override Sit.Node visit(Ast.PrefixExpr node, Context* ctx)
     {
         auto func = ctx.builtinFunction(node.builtin);
         auto subExpr = visitExpr(node.subExpr, ctx);
@@ -328,7 +335,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                 [Sit.CallArg(subExpr, false)]);
     }
 
-    override Sit.Node visit(Ast.PostfixFuncExpr node, Context ctx)
+    override Sit.Node visit(Ast.PostfixFuncExpr node, Context* ctx)
     {
         auto func = visitExpr(node.funcExpr, ctx);
         auto subExpr = visitExpr(node.subExpr, ctx);
@@ -337,27 +344,27 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                 [Sit.CallArg(subExpr, false)]);
     }
 
-    override Sit.Node visit(Ast.NumberExpr node, Context ctx)
+    override Sit.Node visit(Ast.NumberExpr node, Context* ctx)
     {
         return new Sit.NumberValue(node, node.value);
     }
 
-    override Sit.Node visit(Ast.StringExpr node, Context ctx)
+    override Sit.Node visit(Ast.StringExpr node, Context* ctx)
     {
         return new Sit.StringValue(node, node.value);
     }
 
-    override Sit.Node visit(Ast.LogicalExpr node, Context ctx)
+    override Sit.Node visit(Ast.LogicalExpr node, Context* ctx)
     {
         return new Sit.LogicalValue(node, node.value);
     }
 
-    override Sit.Node visit(Ast.NilExpr node, Context ctx)
+    override Sit.Node visit(Ast.NilExpr node, Context* ctx)
     {
         return new Sit.NilValue(node);
     }
 
-    override Sit.Node visit(Ast.ListExpr node, Context ctx)
+    override Sit.Node visit(Ast.ListExpr node, Context* ctx)
     {
         auto elemExprs = new Sit.Expr[node.elemExprs.length];
 
@@ -367,7 +374,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return new Sit.ListExpr(node, elemExprs);
     }
 
-    override Sit.Node visit(Ast.MapExpr node, Context ctx)
+    override Sit.Node visit(Ast.MapExpr node, Context* ctx)
     {
         auto kvps = new Sit.ExprKVP[node.keyValuePairs.length];
 
@@ -379,29 +386,36 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return new Sit.MapExpr(node, kvps);
     }
 
-    override Sit.Node visit(Ast.LambdaExpr node, Context ctx)
+    override Sit.Node visit(Ast.LambdaExpr node, Context* ctx)
     {
-        ctx.scop = new Sit.Scope(ctx.scop, true);
+        auto subCtx = ctx.dup;
+        subCtx.clearEnclosedValues;
+        scope(exit) ctx.mergeEnclosedValues(subCtx);
 
+        subCtx.scop = new Sit.Scope(ctx.scop, true);
         auto args = new Sit.Argument[node.args.length];
 
         foreach( i,arg ; node.args )
         {
-            ctx.scop.bindArg(null, arg.ident);
+            subCtx.scop.bindArg(null, arg.ident);
             args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
         }
 
-        return new Sit.FunctionValue(node, "λ", args, null,
-                ctx.scop, visitExpr(node.expr, ctx));
+        auto expr = visitExpr(node.expr, &subCtx);
+
+        Stderr.format("(-- mk λ w ev:{} --)", subCtx.enclosedValues);
+
+        return new Sit.FunctionValue(node, "λ", args,
+                subCtx.enclosedValues, subCtx.scop, expr);
     }
 
-    override Sit.Node visit(Ast.ExplodeExpr node, Context ctx)
+    override Sit.Node visit(Ast.ExplodeExpr node, Context* ctx)
     {
         err(CEC.SUnexExplode, node);
         assert(false);
     }
 
-    override Sit.Node visit(Ast.CallExpr node, Context ctx)
+    override Sit.Node visit(Ast.CallExpr node, Context* ctx)
     {
         auto funcExpr = visitExpr(node.funcExpr, ctx);
         if( node.isMacro )
@@ -436,12 +450,16 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         }
     }
 
-    override Sit.Node visit(Ast.VariableExpr node, Context ctx)
+    override Sit.Node visit(Ast.VariableExpr node, Context* ctx)
     {
-        return ctx.scop.lookup(node, node.ident);
+        auto v = ctx.scop.lookup(node, node.ident);
+        if( auto ev = cast(Sit.EnclosedValue) v )
+            ctx.addEnclosedValue(ev);
+
+        return v;
     }
 
-    override Sit.Node visit(Ast.RangeExpr node, Context ctx)
+    override Sit.Node visit(Ast.RangeExpr node, Context* ctx)
     {
         return new Sit.CallExpr(node,
             ctx.builtinFunction("ouro.range"),
@@ -452,12 +470,12 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         );
     }
 
-    override Sit.Node visit(Ast.AstQuoteExpr node, Context ctx)
+    override Sit.Node visit(Ast.AstQuoteExpr node, Context* ctx)
     {
         return new Sit.AstQuoteValue(node, node.expr);
     }
 
-    override Sit.Node visit(Ast.AstQuasiQuoteExpr node, Context ctx)
+    override Sit.Node visit(Ast.AstQuasiQuoteExpr node, Context* ctx)
     {
         Ast.Expr[] subExprs;
         auto qq = qqRewrite(node.expr, subExprs);
@@ -473,7 +491,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
                 ctx.builtinFunction("ouro.qqsub"), args);
     }
 
-    override Sit.Node visit(Ast.AstQQSubExpr node, Context ctx)
+    override Sit.Node visit(Ast.AstQQSubExpr node, Context* ctx)
     {
         auto astExpr = node.expr;
         auto sitExpr = visitExpr(astExpr, ctx);
@@ -484,7 +502,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         return visitExpr(astValue.ast, ctx);
     }
 
-    override Sit.Node visit(Ast.LetExpr node, Context ctx)
+    override Sit.Node visit(Ast.LetExpr node, Context* ctx)
     {
         auto bindExprs = new Sit.Expr[node.bindExprs.length];
 
@@ -502,7 +520,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         );
     }
 
-    override Sit.Node visit(Ast.ImportExpr node, Context ctx)
+    override Sit.Node visit(Ast.ImportExpr node, Context* ctx)
     {
         auto scopeExpr = new Sit.AstQuoteValue(node.scopeExpr, node.scopeExpr);
         auto symbolsExpr = new Sit.AstQuoteValue(node.symbolsExpr, node.symbolsExpr);
@@ -516,7 +534,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context)
         );
     }
 
-    override Sit.Node visit(Ast.BuiltinExpr node, Context ctx)
+    override Sit.Node visit(Ast.BuiltinExpr node, Context* ctx)
     {
         return ctx.builtin(node.ident);
     }

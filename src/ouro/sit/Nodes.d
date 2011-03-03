@@ -22,6 +22,7 @@ const Nodes =
     "DeferredValue",
     "QuantumValue",
     "AstQuoteValue",
+    "ClosureValue",
     "FunctionValue",
     "ListExpr",
     "ListValue",
@@ -386,7 +387,33 @@ class AstQuoteValue : Value
     }
 }
 
-class FunctionValue : Value
+abstract class CallableValue : Value
+{
+    this(Ast.Node astNode)
+    {
+        super(astNode);
+    }
+}
+
+class ClosureValue : CallableValue
+{
+    FunctionValue fn;
+    Value[] values;
+
+    this(Ast.Node astNode, FunctionValue fn, Value[] values)
+    in
+    {
+        assert( fn !is null );
+    }
+    body
+    {
+        super(astNode);
+        this.fn = fn;
+        this.values = values;
+    }
+}
+
+class FunctionValue : CallableValue
 {
     struct Host
     {

@@ -9,9 +9,22 @@ module ouro.sem.InvokeFn;
 import Eval = ouro.sem.Eval;
 import Sit  = ouro.sit.Nodes;
 
-Sit.Value invokeFn(Sit.FunctionValue fn, Sit.Value[] args,
+Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
         Eval.Context.EvalContext evalCtx = Eval.Context.EvalContext.Runtime)
 {
+    Sit.FunctionValue fn;
+    Sit.Value[] clValues;
+
+    if( auto fnv = cast(Sit.FunctionValue) callable )
+        fn = fnv;
+    else if( auto clv = cast(Sit.ClosureValue) callable )
+    {
+        fn = clv.fn;
+        clValues = clv.values;
+    }
+    else
+        assert(false);
+
     // Handle callee-side varargs.  This means searching for any argument
     // which is flagged as vararg.
     {
@@ -65,6 +78,8 @@ Sit.Value invokeFn(Sit.FunctionValue fn, Sit.Value[] args,
     // Do the call.
     if( fn.host.fn !is null )
     {
+        assert( clValues.length == 0 );
+
         if( ! fn.host.evalCtxCompatible(evalCtx) )
         {
             /*
@@ -90,7 +105,7 @@ Sit.Value invokeFn(Sit.FunctionValue fn, Sit.Value[] args,
     else if( fn.expr !is null )
     {
         scope eval = new Eval.EvalVisitor;
-        return eval.invokeExprFn(fn, args);
+        return eval.invokeExprFn(fn, args, clValues);
     }
     else
     {

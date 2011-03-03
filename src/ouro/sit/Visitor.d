@@ -98,6 +98,14 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.ClosureValue node)
+        {
+            visitBase(node.fn);
+            foreach( v ; node.values )
+                visitBase(v);
+            return defaultVisitResult;
+        }
+
         Result visit(Sit.FunctionValue node)
         {
             return defaultVisitResult;
@@ -230,6 +238,14 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Sit.AstQuoteValue node, Arg arg)
         {
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.ClosureValue node, Arg arg)
+        {
+            visitBase(node.fn, arg);
+            foreach( v ; node.values )
+                visitBase(v, arg);
             return defaultVisitResult;
         }
 

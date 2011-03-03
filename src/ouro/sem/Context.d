@@ -8,6 +8,8 @@ module ouro.sem.Context;
 
 import Sit = ouro.sit.Nodes;
 
+debug import tango.io.Stdout;
+
 struct Context
 {
     alias Sit.Value delegate(char[] name) BuiltinFn;
@@ -16,6 +18,7 @@ struct Context
     Sit.Stmt* stmt;
     BuiltinFn builtinFn;
     Sit.EnclosedValue[] enclosedValues;
+    void delegate(Sit.Node) dumpNode;
 
     static Context opCall(Sit.Scope scop, Sit.Stmt* stmt, BuiltinFn builtinFn)
     {
@@ -36,6 +39,11 @@ struct Context
         return Context(ctx.scop, ctx.stmt, ctx.builtinFn);
     }
 
+    Context dup()
+    {
+        return *this;
+    }
+
     Sit.Value builtin(char[] name)
     {
         auto v = builtinFn(name);
@@ -48,6 +56,22 @@ struct Context
         auto v = cast(Sit.FunctionValue) builtin(name);
         assert( v !is null );
         return v;
+    }
+
+    void clearEnclosedValues()
+    {
+        enclosedValues = null;
+    }
+
+    void addEnclosedValue(Sit.EnclosedValue value)
+    {
+        foreach( ev ; enclosedValues )
+            if( ev.value is value.value )
+                return;
+
+        enclosedValues ~= value;
+
+        Stderr.format("(-- + ev {} = {} --)", value, enclosedValues);
     }
 
     void mergeEnclosedValues(ref Context fromCtx)
@@ -69,7 +93,7 @@ struct Context
         auto curScop = fromCtx.scop;
         auto enclosed = fromCtx.enclosedValues;
         bool lastScopEnclosed = false;
-        
+
         while( curScop !is null && ! lastScopEnclosed )
         {
             bool dropThis = false;
