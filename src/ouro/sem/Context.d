@@ -8,8 +8,6 @@ module ouro.sem.Context;
 
 import Sit = ouro.sit.Nodes;
 
-debug import tango.io.Stdout;
-
 struct Context
 {
     alias Sit.Value delegate(char[] name) BuiltinFn;
@@ -70,8 +68,6 @@ struct Context
                 return;
 
         enclosedValues ~= value;
-
-        Stderr.format("(-- + ev {} = {} --)", value, enclosedValues);
     }
 
     void mergeEnclosedValues(ref Context fromCtx)

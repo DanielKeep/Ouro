@@ -159,7 +159,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                     // Hooray!
                     Stderr(" success; eval");
 
-                    debug if( subCtx.dumpNode !is null )
+                    debug(SemVerbose) if( subCtx.dumpNode !is null )
                     {
                         Stderr(" ");
                         subCtx.dumpNode(expr);
@@ -184,7 +184,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                         Stderr(" worked.");
                         successStmt = true;
 
-                        debug if( subCtx.dumpNode !is null )
+                        debug(SemVerbose) if( subCtx.dumpNode !is null )
                         {
                             Stderr(" = ");
                             subCtx.dumpNode(value);
@@ -402,8 +402,6 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         }
 
         auto expr = visitExpr(node.expr, &subCtx);
-
-        Stderr.format("(-- mk λ w ev:{} --)", subCtx.enclosedValues);
 
         return new Sit.FunctionValue(node, "λ", args,
                 subCtx.enclosedValues, subCtx.scop, expr);
