@@ -307,6 +307,25 @@ Value ouro_ast(Value[] args)
     return new Sit.AstQuoteValue(null, valueToAst(gv));
 }
 
+import ouro.sit.ReprVisitor : ReprVisitor;
+
+ReprVisitor repr;
+Sit.NilValue nil;
+
+static this()
+{
+    repr = ReprVisitor.forStderr;
+    nil = new Sit.NilValue(null);
+}
+
+Value ouro_dot_dump(Value[] args)
+{
+    foreach( arg ; args )
+        repr.visitBase(arg, true);
+
+    return nil;
+}
+
 Sit.FunctionValue[char[]] builtins;
 
 static this()
@@ -352,5 +371,7 @@ static this()
     builtins["ouro.import"] = new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import);
     builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
     builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
+
+    builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.FunctionValue.Host.EvalContext.Compile);
 }
 
