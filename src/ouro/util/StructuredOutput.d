@@ -8,6 +8,7 @@
 */
 module ouro.util.StructuredOutput;
 
+import tango.io.Console : Cout, Cerr;
 import tango.io.model.IConduit : OutputStream;
 import tango.io.stream.Format : FormatOutput;
 
@@ -30,6 +31,16 @@ final class StructuredOutput
     {
         this.os = os;
         this.of = new FormatOutput!(char)(os);
+    }
+
+    static StructuredOutput forStdout()
+    {
+        return new StructuredOutput(Cout.stream);
+    }
+
+    static StructuredOutput forStderr()
+    {
+        return new StructuredOutput(Cerr.stream);
     }
 
     This seq(void delegate() dg)

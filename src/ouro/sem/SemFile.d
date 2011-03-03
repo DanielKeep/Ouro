@@ -33,8 +33,8 @@ int main(char[][] argv)
 
     bool throwExc = false;
 
-    scope so = new StructuredOutput(Stdout.stream);
-    scope repr = new ReprVisitor(so);
+    auto repr = ReprVisitor.forStdout;
+    auto errRepr = ReprVisitor.forStderr;
 
     Sit.Value builtin(char[] name)
     {
@@ -56,7 +56,11 @@ int main(char[][] argv)
             {
                 auto astModule = Parser.parseModule(ts);
                 auto ctx = SemCtx.Context(null, &builtin);
-                auto sitModule = siv.visitBase(astModule, ctx);
+                ctx.dumpNode = (Sit.Node node)
+                {
+                    errRepr.visitBase(node, true);
+                };
+                auto sitModule = siv.visitBase(astModule, &ctx);
                 repr.visitBase(sitModule, false);
             }
             catch( CompilerException e )

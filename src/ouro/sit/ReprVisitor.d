@@ -24,6 +24,16 @@ class ReprVisitor : Visitor!(void, bool)
         this.arv = new AstRepr.ReprVisitor(so);
     }
 
+    static ReprVisitor forStdout()
+    {
+        return new ReprVisitor(StructuredOutput.forStdout);
+    }
+
+    static ReprVisitor forStderr()
+    {
+        return new ReprVisitor(StructuredOutput.forStderr);
+    }
+
     override void visitScope(Sit.Scope scop, bool showDef)
     {
         scopeName(scop);
@@ -115,6 +125,12 @@ class ReprVisitor : Visitor!(void, bool)
         so.r(" : ").r(reprIdent(node.ident)).r(" }");
     }
 
+    override void visit(Sit.EnclosedValue node, bool showDef)
+    {
+        so.r("Enclosed ");
+        visitBase(node.value, showDef);
+    }
+
     override void visit(Sit.QuantumValue node, bool showDef)
     {
         so.r("Quantum { ");
@@ -127,6 +143,26 @@ class ReprVisitor : Visitor!(void, bool)
         so.r("AstQuote { ").push;
         arv.visitBase(node.ast);
         so.pop.r(" }").l;
+    }
+    
+    override void visit(Sit.ClosureValue node, bool showDef)
+    {
+        so.r("Closure {").push.l;
+        {
+            so.p("func: ");
+            visitBase(node.fn, showDef);
+            so.l();
+
+            so.p("values: [").push.l;
+            foreach( v ; node.values )
+            {
+                so.indent;
+                visitBase(v, false);
+                so.l;
+            }
+            so.pop.p("]").l;
+        }
+        so.pop.p("}");
     }
 
     override void visit(Sit.FunctionValue node, bool showDef)
@@ -151,6 +187,18 @@ class ReprVisitor : Visitor!(void, bool)
                 so.p("expr: ");
                 visitBaseDef(node.expr);
                 so.l;
+
+                if( node.enclosedValues.length > 0 )
+                {
+                    so.p("enclosed: [").push.l;
+                    foreach( ev ; node.enclosedValues )
+                    {
+                        so.indent;
+                        visitBase(ev, false);
+                        so.l;
+                    }
+                    so.pop.p("]").l;
+                }
             }
             else if( node.host.fn !is null )
             {

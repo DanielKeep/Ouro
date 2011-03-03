@@ -78,6 +78,11 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.EnclosedValue node)
+        {
+            return visitBase(node.value);
+        }
+
         Result visit(Sit.DeferredValue node)
         {
             return defaultVisitResult;
@@ -90,6 +95,14 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Sit.AstQuoteValue node)
         {
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.ClosureValue node)
+        {
+            visitBase(node.fn);
+            foreach( v ; node.values )
+                visitBase(v);
             return defaultVisitResult;
         }
 
@@ -208,6 +221,11 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.EnclosedValue node, Arg arg)
+        {
+            return visitBase(node.value, arg);
+        }
+
         Result visit(Sit.DeferredValue node, Arg arg)
         {
             return defaultVisitResult;
@@ -220,6 +238,14 @@ abstract class Visitor(Result = void, Arg = void)
 
         Result visit(Sit.AstQuoteValue node, Arg arg)
         {
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.ClosureValue node, Arg arg)
+        {
+            visitBase(node.fn, arg);
+            foreach( v ; node.values )
+                visitBase(v, arg);
             return defaultVisitResult;
         }
 
