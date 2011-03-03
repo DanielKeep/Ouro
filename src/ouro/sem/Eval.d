@@ -309,6 +309,11 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         return new Sit.MapValue(node.astNode, kvps);
     }
 
+    override Sit.Value visit(Sit.MapValue node, Context ctx)
+    {
+        return node;
+    }
+
     override Sit.Value visit(Sit.ModuleValue node, Context ctx)
     {
         return node;
