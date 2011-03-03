@@ -216,6 +216,7 @@ class BinaryExpr : Expr
         {
             case Op.Eq:     return "=";
             case Op.Ne:     return "!=";
+            case Op.Lt:     return "<";
             case Op.LtEq:   return "<=";
             case Op.Gt:     return ">";
             case Op.GtEq:   return ">=";
@@ -241,6 +242,7 @@ class BinaryExpr : Expr
         {
             case Op.Eq:     return "Eq";
             case Op.Ne:     return "Ne";
+            case Op.Lt:     return "Lt";
             case Op.LtEq:   return "LtEq";
             case Op.Gt:     return "Gt";
             case Op.GtEq:   return "GtEq";
