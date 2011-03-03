@@ -92,7 +92,7 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
                 - Call a runtime function at compile time.  This isn't an
                   error, but we do need to delay actual execution.  This
                   might be a problem if, for example, we're trying to
-                  evaluate a macro.  For now, abort.
+                  evaluate a macro.
 
                 - Call a compile-time function at runtime.  This is
                   *probably* an error since it's now too late to ever
@@ -101,10 +101,10 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
             switch( evalCtx )
             {
                 case Eval.Context.EvalContext.Compile:
-                    throw new LateCallAbort;
+                    throw new EarlyCallAbort;
 
                 case Eval.Context.EvalContext.Runtime:
-                    throw new EarlyCallAbort;
+                    throw new LateCallAbort;
 
                 default:
                     assert(false);
