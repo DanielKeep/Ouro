@@ -73,9 +73,12 @@ int main(char[][] argv)
 
                 auto startCol = src.startCol;
 
+                auto len = e.loc.length;
+                if( len == 0 ) len = 1;
+
                 for( size_t i=0; i<e.loc.column - startCol; ++i )
                     Stderr(' ');
-                for( size_t i=0; i<e.loc.length; ++i )
+                for( size_t i=0; i<len; ++i )
                     Stderr('^');
 
                 Stderr.newline;
