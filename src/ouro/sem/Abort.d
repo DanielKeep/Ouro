@@ -62,3 +62,54 @@ class UnfixedValueAbort : NonFatalAbort
     }
 }
 
+/*
+    Used to indicate that a function call cannot be executed at compile time
+    and must be delayed until runtime.
+*/
+class EarlyCallAbort : NonFatalAbort
+{
+    this()
+    {
+        super("must delay call");
+    }
+}
+
+/*
+    Thrown in instances when semantic analysis cannot be completed at all.
+*/
+class FatalAbort : SemanticAbort
+{
+    this()
+    {
+        super("fatal semantic abort");
+    }
+
+    this(char[] msg)
+    {
+        super(msg);
+    }
+}
+
+/*
+    Used to indicate that someone tried to call a compile-time function in a
+    runtime context.
+*/
+class LateCallAbort : FatalAbort
+{
+    this()
+    {
+        super("tried to call a compile-time function in a runtime context");
+    }
+}
+
+/*
+    Indicates that expansion of an ast mixin failed.
+*/
+class MixinEvalFailedAbort : FatalAbort
+{
+    this()
+    {
+        super("couldn't evaluate macro/ast mixin");
+    }
+}
+
