@@ -1,8 +1,8 @@
 " Vim syntax file
 " Language:         Ouro
 " Maintainer:       Daniel Keep <daniel.keep@gmail.com>
-" Latest Revision:  28 February 2011
-" Remark:           First written.
+" Latest Revision:  3 March 2011
+" Remark:           Fixed string matching to not be overly greedy.
 
 if version < 600
     syntax clear
@@ -26,7 +26,7 @@ syn keyword ouroOperators = + - / * < > \ : . != // ** <= >= <> :: ++ (.) and or
 set iskeyword=48-57,65-90,97-122,170,181,186,192-214,216-246,_
 
 syn match ouroIdent /[\x30-\x39\x41-\x5a\x61-\x7a\xaa\xb5\xba\xc0-\xd6\xd8-\xf6]\k*/
-syn match ouroIdent /\$"\(\\.\|.\)*"/
+syn match ouroIdent /\$"\(\\.\|[^"]\)*"/
 
 " 0 123 0.123 123.456 .456 0e10 123e-10 123e+10 123.456e10 .456e-10
 
@@ -38,7 +38,7 @@ syn match ouroIdent /\$"\(\\.\|.\)*"/
 "   ( [eE] [+-]? \d\d* )?
 syn match ouroNumber '\(\d[0-9_]*\([.]\(\d[0-9_]*\)\?\)\?\|[.]\d[0-9_]*\)\([eE][+-]\?\d\d*\)\?'
 
-syn match ouroString /"\(\\.\|.\)*"/
+syn match ouroString /"\(\\.\|[^"]\)*"/
 
 syn region ouroSubExpr start="(" end=")" fold transparent
 syn region ouroListExpr start="\[" end="\]" fold transparent
