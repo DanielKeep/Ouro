@@ -53,9 +53,9 @@ bool chkArgLogical(Value[] args, size_t i)
         assert( false, "expected logical; got " ~ args[i].classinfo.name );
 }
 
-Sit.FunctionValue chkArgFn(Value[] args, size_t i)
+Sit.CallableValue chkArgCall(Value[] args, size_t i)
 {
-    if( auto v = cast(Sit.FunctionValue) args[i] )
+    if( auto v = cast(Sit.CallableValue) args[i] )
         return v;
     else
         assert( false, "expected function; got " ~ args[i].classinfo.name );
@@ -142,9 +142,9 @@ alias binaryLogicalExpr!("lhs || rhs")  ouro_opOr;
 Value ouro_opComp(Value[] args)
 {
     chkArgNum(args, 2);
-    auto lhs = chkArgFn(args, 0);
-    auto rhs = chkArgFn(args, 1);
-    return lhs.compose(rhs);
+    auto lhs = chkArgCall(args, 0);
+    auto rhs = chkArgCall(args, 1);
+    return Sit.FunctionValue.compose(lhs, rhs);
 }
 
 Value ouro_opCons(Value[] args)
@@ -246,8 +246,8 @@ Value ouro_branch(Value[] args)
 {
     chkArgNum(args, 3);
     auto cond = chkArgLogical(args, 0);
-    auto b0 = chkArgFn(args, 1);
-    auto b1 = chkArgFn(args, 2);
+    auto b0 = chkArgCall(args, 1);
+    auto b1 = chkArgCall(args, 2);
 
     auto b = cond ? b0 : b1;
     return invoke(b, null);
