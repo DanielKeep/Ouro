@@ -1,0 +1,258 @@
+/**
+    Compile-time Folder.
+
+    Works like the regular evaluator, except that it folds expressions instead
+    of values.
+
+    Authors: Daniel Keep <daniel.keep@gmail.com>
+    Copyright: See LICENSE.
+ */
+module ouro.sem.Fold;
+
+import ouro.sit.Visitor;
+
+import InvokeFn = ouro.sem.InvokeFn;
+import Sit      = ouro.sit.Nodes;
+
+alias Sit.FunctionValue.Host.EvalContext.Compile CompileCtx;
+
+class FoldVisitor : Visitor!(Sit.Expr, Context)
+{
+    override Sit.Expr visit(Sit.Module node, Context ctx)
+    {
+        assert( false, "nyi; too lazy" );
+    }
+
+    override Sit.Expr visit(Sit.CallExpr node, Context ctx)
+    {
+        auto funcExpr = visitBase(node.funcExpr, ctx);
+        auto args = new Sit.CallArg[node.args.length];
+        size_t argIdx = 0;
+
+        // If set to false, at least one argument couldn't be statically
+        // evaluated.
+        bool argsAreValues = true;
+
+        void addArg(Sit.Expr expr, bool explode)
+        {
+            if( null is cast(Sit.Value) expr )
+                argsAreValues = false;
+
+            if( ! explode )
+            {
+                if( argIdx < args.length )
+                    args[argIdx++] = Sit.CallArg(expr, false);
+                else
+                    args ~= Sit.CallArg(expr, false);
+            }
+            else
+            {
+                if( auto le = cast(Sit.ListExpr) expr )
+                {
+                    foreach( e ; le.elemExprs )
+                        addArg(e, false);
+                }
+                else if( auto lv = cast(Sit.ListValue) expr )
+                {
+                    foreach( e ; lv.elemValues )
+                        addArg(e, false);
+                }
+                else if( auto v = cast(Sit.Value) expr )
+                {
+                    assert( false, node.astNode.loc.toString
+                            ~ ": can only explode a List; got a "
+                            ~ expr.classinfo.name );
+                }
+                else
+                {
+                    if( argIdx < args.length )
+                        args[argIdx++] = Sit.CallArg(expr, true);
+                    else
+                        args ~= Sit.CallArg(expr, true);
+                }
+            }
+        }
+
+        foreach( nodeArg ; node.args )
+            addArg(visitBase(nodeArg.expr, ctx), nodeArg.explode);
+
+        // We can only actually make this call if the function and *all* of
+        // the arguments are values.
+        auto canCall = (cast(Sit.CallableValue) funcExpr !is null)
+            && argsAreValues;
+
+        if( canCall )
+        {
+            // We have to convert the array of expressions into an array of
+            // values.  It should just be a quick cast of all elements.
+            auto argValues = new Sit.Value[args.length];
+
+            foreach( i,arg ; args )
+            {
+                argValues[i] = cast(Sit.Value) arg.expr;
+                assert( argValues[i] !is null );
+            }
+
+            // Ok, call that sucker!
+            auto callable = cast(Sit.Callable) funcExpr;
+            return InvokeFn.invoke(callable, argValues, CompileCtx);
+        }
+        else
+        {
+            return new Sit.CallExpr(node.astNode, funcExpr, args);
+        }
+    }
+
+    override Sit.Expr visit(Sit.ArgumentValue node, Context ctx)
+    {
+        return ctx.fixValue(node);
+    }
+
+    override Sit.Expr visit(Sit.EnclosedValue node, Context ctx)
+    {
+        return ctx.fixValue(node.value);
+    }
+
+    override Sit.Expr visit(Sit.DeferredValue node, Context ctx)
+    {
+        return ctx.fixValue(node);
+    }
+
+    override Sit.Expr visit(Sit.QuantumValue node, Context ctx)
+    {
+        return ctx.fixValue(node);
+    }
+
+    override Sit.Expr visit(Sit.AstQuoteValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.ClosureValue node, Context ctx)
+    {
+        auto exprs = new Sit.Expr[node.values.length];
+
+        foreach( i,encValue ; node.values )
+        {
+            auto fixValue = visitValue(encValue, ctx);
+            assert( cast(Sit.UnfixedValue) fixValue is null );
+            values[i] = fixValue;
+        }
+
+        return new Sit.ClosureValue(node.astNode, node.fn, values);
+    }
+
+    override Sit.Expr visit(Sit.FunctionValue node, Context ctx)
+    {
+        if( node.enclosedValues.length == 0 )
+            // No need for a closure.
+            return node;
+
+        // Make a closure
+        auto closureValues = new Sit.Value[node.enclosedValues.length];
+        foreach( i,ev ; node.enclosedValues )
+            closureValues[i] = ctx.fixValue(ev.value);
+        
+        return new Sit.ClosureValue(node.astNode, node, closureValues);
+    }
+
+    override Sit.Expr visit(Sit.ListExpr node, Context ctx)
+    {
+        auto elemExprs = new Sit.Expr[node.elemExprs.length];
+        bool allValues = true;
+
+        foreach( i,elemExpr ; node.elemExprs )
+        {
+            elemExprs[i] = visitBase(elemExpr, ctx);
+            allValues &= cast(Sit.Value) elemExprs[i] !is null;
+        }
+
+        if( allValues )
+        {
+            auto elemValues = new Sit.Value[node.elemExprs.length];
+
+            foreach( i,elemExpr ; elemExprs )
+            {
+                elemValues[i] = cast(Sit.Value) elemExpr;
+                assert( elemValues[i] !is null );
+            }
+
+            return new Sit.ListValue(node.astNode, elemValues);
+        }
+        else
+        {
+            return new Sit.ListExpr(node.astNode, elemExprs);
+        }
+    }
+
+    override Sit.Expr visit(Sit.ListValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.LogicalValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.MapExpr node, Context ctx)
+    {
+        auto kvpExprs = new Sit.ExprKVP[node.kvps.length];
+        auto allValues = true;
+
+        foreach( i,kvpExpr ; node.kvps )
+        {
+            auto k = visitBase(kvpExpr.key, ctx);
+            auto v = visitBase(kvpExpr.value, ctx);
+            allValues &= cast(Sit.Value) k !is null
+                && cast(Sit.Value) v !is null;
+
+            kvpExprs[i] = Sit.ExprKVP(kvpExpr.loc, k, v);
+        }
+
+        if( allValues )
+        {
+            auto kvpValues = new Sit.ValueKVP[node.kvps.length];
+            
+            foreach( i,kvpExpr ; kvpExprs )
+            {
+                auto k = cast(Sit.Value) kvpExpr.key;
+                auto v = cast(Sit.Value) kvpExpr.value;
+                assert( k !is null && v !is null );
+                kvpValues[i] = Sit.ValueKVP(kvpExpr.loc, k, v);
+            }
+
+            return new Sit.MapValue(node.astNode, kvpValues);
+        }
+        else
+        {
+            return new Sit.MapExpr(node.astNode, kvpExprs);
+        }
+    }
+
+    override Sit.Expr visit(Sit.MapValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.ModuleValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.NilValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.StringValue node, Context ctx)
+    {
+        return node;
+    }
+
+    override Sit.Expr visit(Sit.NumberValue node, Context ctx)
+    {
+        return node;
+    }
+}
+
