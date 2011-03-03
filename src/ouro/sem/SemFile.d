@@ -14,6 +14,7 @@ import tango.core.tools.TraceExceptions;
 
 import Ast      = ouro.ast.Nodes;
 import Builtins = ouro.sem.Builtins;
+import Eval     = ouro.sem.Eval;
 import Lexer    = ouro.lexer.Lexer;
 import Parser   = ouro.parser.Parser;
 import Sem      = ouro.sem.Semantic;
@@ -51,17 +52,28 @@ int main(char[][] argv)
             scope src = new Source(path, cast(char[]) File.get(path));
             scope ts = new TokenStream(src, &Lexer.lexNext);
             scope siv = new Sem.SemInitialVisitor;
+            scope eval = new Eval.EvalVisitor;
 
             try
             {
                 auto astModule = Parser.parseModule(ts);
+
                 auto ctx = SemCtx.Context(null, &builtin);
                 ctx.dumpNode = (Sit.Node node)
                 {
                     errRepr.visitBase(node, true);
                 };
-                auto sitModule = siv.visitBase(astModule, &ctx);
+                auto sitModule = cast(Sit.Module) siv.visitBase(astModule, &ctx);
                 repr.visitBase(sitModule, false);
+                Stdout.newline;
+
+                Stdout("Switching to runtime...").newline;
+                Stdout.flush; Stderr.flush;
+                auto result = eval.evalModule(sitModule);
+                Stdout.newline.flush; Stderr.flush;
+                Stdout("Module result: ");
+                repr.visitBase(result, true);
+                Stdout.newline;
             }
             catch( CompilerException e )
             {
