@@ -314,14 +314,15 @@ Sit.NilValue nil;
 
 static this()
 {
-    repr = ReprVisitor.forStderr;
+    repr = ReprVisitor.forStdout;
     nil = new Sit.NilValue(null);
 }
 
 Value ouro_dot_dump(Value[] args)
 {
-    foreach( arg ; args )
-        repr.visitBase(arg, true);
+    auto values = chkArgList(args, 0).elemValues;
+    foreach( value ; values )
+        repr.visitBase(value, true);
 
     return nil;
 }
@@ -372,6 +373,6 @@ static this()
     builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
     builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
 
-    builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.FunctionValue.Host.EvalContext.Compile);
+    builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.FunctionValue.Host.EvalContext.Runtime);
 }
 
