@@ -890,7 +890,14 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
                 args ~= parseCommaExprs(ts, closer);
             });
         
-        auto end = ts.popExpect(closer).loc;
+        // Remember: we need to skip over EOLs until we're out of the argument
+        // list.
+        typeof(ts.peek.loc) end;
+        ts.skipEolDo
+        ({
+            end = ts.popExpect(closer).loc;
+        });
+
         auto loc = start.extendTo(end);
 
         if( isKeyword )
