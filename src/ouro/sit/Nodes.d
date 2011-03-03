@@ -393,6 +393,8 @@ abstract class CallableValue : Value
     {
         super(astNode);
     }
+
+    abstract FunctionValue trueFn();
 }
 
 class ClosureValue : CallableValue
@@ -410,6 +412,11 @@ class ClosureValue : CallableValue
         super(astNode);
         this.fn = fn;
         this.values = values;
+    }
+
+    override FunctionValue trueFn()
+    {
+        return fn;
     }
 }
 
@@ -490,23 +497,30 @@ class FunctionValue : CallableValue
         this.host.evalCtx = evalCtx;
     }
 
-    FunctionValue compose(FunctionValue rhs)
+    override FunctionValue trueFn()
+    {
+        return this;
+    }
+
+    static FunctionValue compose(CallableValue lhs, CallableValue rhs)
     {
         // (f (.) g)(...) = g(f(...))
         auto scop = new Scope(null, true);
-        auto callArgs = new CallArg[this.args.length];
+        auto args = lhs.trueFn.args;
+        auto callArgs = new CallArg[args.length];
 
-        foreach( i,arg ; this.args )
+        foreach( i,arg ; args )
         {
             scop.bindArg(null, arg.ident);
             callArgs[i] = CallArg(scop.lookup(null, arg.ident), false);
         }
 
         auto fc = new FunctionValue(null,
-            "(" ~ reprIdent(this.name) ~ " (.) " ~ reprIdent(rhs.name) ~ ")",
-            this.args, null, scop,
+            "(" ~ reprIdent(lhs.trueFn.name) ~ " (.) "
+                ~ reprIdent(rhs.trueFn.name) ~ ")",
+            args, null, scop,
             new CallExpr(null, rhs, [
-                CallArg(new CallExpr(null, this, callArgs), false)
+                CallArg(new CallExpr(null, lhs, callArgs), false)
             ])
         );
 
