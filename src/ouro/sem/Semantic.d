@@ -28,6 +28,26 @@ bool aborted(void delegate() dg)
 {
     bool result = false;
     try
+        dg();
+    catch( SemanticAbort )
+        result = true;
+    return result;
+}
+
+bool abortedF(void delegate() dg)
+{
+    bool result = false;
+    try
+        dg();
+    catch( FatalAbort )
+        result = true;
+    return result;
+}
+
+bool abortedNF(void delegate() dg)
+{
+    bool result = false;
+    try
     {
         dg();
     }
@@ -97,7 +117,9 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             Sit.FunctionValue fn, Sit.CallArg[] args...)
     {
         auto call = new Sit.CallExpr(node, fn, args);
-        auto value = evalExpr(call);
+        Sit.Value value;
+        if( abortedF({ value = evalExpr(call); }) )
+            throw new MixinEvalFailedAbort;
         auto astValue = cast(Sit.AstQuoteValue) value;
         assert( astValue !is null, "expected ast result from macro; "
                 "got a " ~ value.toString );
@@ -148,7 +170,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
                 Stderr("Processing ")(modStmt)("...");
 
-                if( aborted({ expr = visitExpr(modStmt, &subCtx); }) )
+                if( abortedNF({ expr = visitExpr(modStmt, &subCtx); }) )
                 {
                     // Bastard.
                     Stderr(" failed.").newline;
@@ -174,12 +196,41 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                         Try to evaluate it.
                      */
                     Sit.Value value;
-                    if( aborted({ value = evalExpr(expr); }) )
+                    bool noEx = false;
+
+                    try
+                    {
+                        value = evalExpr(expr);
+                        noEx = true;
+                    }
+                    catch( EarlyCallAbort )
+                    {
+                        Stderr(" worked (with delay).").newline;
+                        successStmt = true;
+
+                        if( subCtx.stmt.bind )
+                        {
+                            assert(false, "cannot bind delayed expressions yet");
+                        }
+
+                        if( subCtx.stmt.mergeAll )
+                        {
+                            assert(false, "nyi");
+                        }
+                        else if( subCtx.stmt.mergeList.length != 0 )
+                        {
+                            assert(false, "nyi");
+                        }
+
+                        subCtx.stmt.expr = expr;
+                    }
+                    catch( NonFatalAbort )
                     {
                         Stderr(" failed.").newline;
                         failedStmt = true;
                     }
-                    else
+
+                    if( noEx )
                     {
                         Stderr(" worked.");
                         successStmt = true;

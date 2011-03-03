@@ -6,6 +6,8 @@
  */
 module ouro.sem.InvokeFn;
 
+import ouro.sem.Abort;
+
 import Eval = ouro.sem.Eval;
 import Sit  = ouro.sit.Nodes;
 
@@ -96,8 +98,17 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
                   *probably* an error since it's now too late to ever
                   execute.
              */
-            assert( false,
-                    "incompatible context; TODO: delay if possible" );
+            switch( evalCtx )
+            {
+                case Eval.Context.EvalContext.Compile:
+                    throw new LateCallAbort;
+
+                case Eval.Context.EvalContext.Runtime:
+                    throw new EarlyCallAbort;
+
+                default:
+                    assert(false);
+            }
         }
 
         // Ok, call it.
