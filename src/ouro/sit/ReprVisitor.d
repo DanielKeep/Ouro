@@ -138,6 +138,17 @@ class ReprVisitor : Visitor!(void, bool)
         so.r(" : ").r(reprIdent(node.ident)).r(" }");
     }
 
+    override void visit(Sit.RuntimeValue node, bool showDef)
+    {
+        so.f("Runtime Value 0x{:x,8}", cast(void*) node);
+        if( showDef )
+        {
+            so.r(" { ").push;
+            visitBase(node.expr, true);
+            so.pop.r(" }");
+        }
+    }
+
     override void visit(Sit.AstQuoteValue node, bool showDef)
     {
         so.r("AstQuote { ").push;

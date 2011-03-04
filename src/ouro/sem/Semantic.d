@@ -23,6 +23,7 @@ import Sit = ouro.sit.Nodes;
 import AstVisitor   = ouro.ast.Visitor;
 import QQRewrite    = ouro.ast.QQRewriteVisitor;
 import Eval         = ouro.sem.Eval;
+import Fold         = ouro.sem.Fold;
 
 bool aborted(void delegate() dg)
 {
@@ -82,6 +83,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         }
 
         Eval.EvalVisitor eval;
+        Fold.FoldVisitor fold;
         QQRewrite.QQRewriteVisitor qqr;
 
         Sit.Value evalExpr(Sit.Expr expr)
@@ -93,6 +95,17 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
 
             return eval.visitValue(expr, ctx);
+        }
+
+        Sit.Expr foldExpr(Sit.Expr expr)
+        {
+            alias Eval.Context Context;
+
+            Context ctx;
+            ctx.evalCtx = Context.EvalContext.Compile;
+            ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
+
+            return fold.visitBase(expr, ctx);
         }
 
         Sit.AstQuoteValue qqRewrite(Ast.Expr astExpr,
@@ -110,6 +123,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
     this()
     {
         eval = new Eval.EvalVisitor;
+        fold = new Fold.FoldVisitor;
         qqr = new QQRewrite.QQRewriteVisitor;
     }
 
@@ -179,7 +193,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                 else
                 {
                     // Hooray!
-                    Stderr(" success; eval");
+                    Stderr(" success; fold");
 
                     debug(SemVerbose) if( subCtx.dumpNode !is null )
                     {
@@ -195,57 +209,31 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
                         Try to evaluate it.
                      */
-                    Sit.Value value;
-                    bool noEx = false;
-
-                    try
-                    {
-                        value = evalExpr(expr);
-                        noEx = true;
-                    }
-                    catch( EarlyCallAbort )
-                    {
-                        Stderr(" worked (with delay).").newline;
-                        successStmt = true;
-
-                        if( subCtx.stmt.bind )
-                        {
-                            assert(false, "cannot bind delayed expressions yet");
-                        }
-
-                        if( subCtx.stmt.mergeAll )
-                        {
-                            assert(false, "nyi");
-                        }
-                        else if( subCtx.stmt.mergeList.length != 0 )
-                        {
-                            assert(false, "nyi");
-                        }
-
-                        subCtx.stmt.expr = expr;
-                    }
-                    catch( NonFatalAbort )
+                    Sit.Expr foldedExpr;
+                    Sit.Value foldedValue;
+                    
+                    if( aborted({ foldedExpr = foldExpr(expr); }) )
                     {
                         Stderr(" failed.").newline;
                         failedStmt = true;
                     }
-
-                    if( noEx )
+                    else
                     {
-                        Stderr(" worked.");
+                        Stderr(" worked.").newline;
+
                         successStmt = true;
-
-                        debug(SemVerbose) if( subCtx.dumpNode !is null )
-                        {
-                            Stderr(" = ");
-                            subCtx.dumpNode(value);
-                        }
-
-                        Stderr.newline;
+                        foldedValue = cast(Sit.Value) foldedExpr;
+                    
+                        // If we couldn't fold to a value, create a
+                        // RuntimeValue.
+                        if( foldedValue is null )
+                            foldedValue = new Sit.RuntimeValue(
+                                expr.astNode, foldedExpr);
 
                         if( subCtx.stmt.bind )
                         {
-                            subCtx.scop.bind(subCtx.stmt.bindIdent, value);
+                            subCtx.scop.bind(subCtx.stmt.bindIdent,
+                                    foldedValue);
                         }
 
                         if( subCtx.stmt.mergeAll )
@@ -257,7 +245,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                             assert(false, "nyi");
                         }
 
-                        subCtx.stmt.expr = value;
+                        subCtx.stmt.expr = foldedValue;
                     }
                 }
             }

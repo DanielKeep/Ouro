@@ -9,23 +9,45 @@
  */
 module ouro.sem.Fold;
 
+import ouro.sem.Abort;
 import ouro.sit.Visitor;
 
+import Eval     = ouro.sem.Eval;
 import InvokeFn = ouro.sem.InvokeFn;
 import Sit      = ouro.sit.Nodes;
 
+alias Eval.Context Context;
 alias Sit.FunctionValue.Host.EvalContext.Compile CompileCtx;
 
 class FoldVisitor : Visitor!(Sit.Expr, Context)
 {
+    Sit.Value visitValue(Sit.Node node, Context ctx)
+    {
+        auto result = visitBase(node, ctx);
+        assert( result !is null, "expected non-null result node" );
+        auto resultValue = cast(Sit.Value) result;
+        assert( resultValue !is null, "expected Value result" );
+        return resultValue;
+    }
+
     override Sit.Expr visit(Sit.Module node, Context ctx)
     {
         assert( false, "nyi; too lazy" );
     }
 
+    protected static bool foldedValue(Sit.Expr node)
+    {
+        return (cast(Sit.Value) node !is null)
+            && (cast(Sit.RuntimeValue) node is null);
+    }
+
     override Sit.Expr visit(Sit.CallExpr node, Context ctx)
     {
+        // Process function
         auto funcExpr = visitBase(node.funcExpr, ctx);
+        auto callable = cast(Sit.CallableValue) funcExpr;
+
+        // Process arguments
         auto args = new Sit.CallArg[node.args.length];
         size_t argIdx = 0;
 
@@ -35,8 +57,9 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
 
         void addArg(Sit.Expr expr, bool explode)
         {
-            if( null is cast(Sit.Value) expr )
-                argsAreValues = false;
+            // Have to check for both non-value expressions and runtime
+            // values.
+            argsAreValues &= foldedValue(expr);
 
             if( ! explode )
             {
@@ -78,8 +101,7 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
 
         // We can only actually make this call if the function and *all* of
         // the arguments are values.
-        auto canCall = (cast(Sit.CallableValue) funcExpr !is null)
-            && argsAreValues;
+        auto canCall = (callable !is null) && argsAreValues;
 
         if( canCall )
         {
@@ -94,8 +116,30 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
             }
 
             // Ok, call that sucker!
-            auto callable = cast(Sit.Callable) funcExpr;
-            return InvokeFn.invoke(callable, argValues, CompileCtx);
+            Sit.Value result;
+            try
+            {
+                result = InvokeFn.invoke(callable, argValues, CompileCtx);
+            }
+            catch( EarlyCallAbort )
+            {
+                // Yes: really, really ignore the exception.  This isn't so
+                // much a failure as a "not yet".  The only reason there's
+                // nothing here is that we aren't allowed to return from
+                // inside a catch block.  Honest!
+            }
+
+            // If the call succeeded, return.
+            if( result !is null )
+                return result;
+
+            // Otherwise, we got a delayed call.
+            auto callArgs = new Sit.CallArg[argValues.length];
+
+            foreach( i,argValue ; argValues )
+                callArgs[i] = Sit.CallArg(argValue, false);
+
+            return new Sit.CallExpr(node.astNode, callable, callArgs);
         }
         else
         {
@@ -123,6 +167,11 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         return ctx.fixValue(node);
     }
 
+    override Sit.Expr visit(Sit.RuntimeValue node, Context ctx)
+    {
+        return node;
+    }
+
     override Sit.Expr visit(Sit.AstQuoteValue node, Context ctx)
     {
         return node;
@@ -130,7 +179,7 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
 
     override Sit.Expr visit(Sit.ClosureValue node, Context ctx)
     {
-        auto exprs = new Sit.Expr[node.values.length];
+        auto values = new Sit.Value[node.values.length];
 
         foreach( i,encValue ; node.values )
         {
@@ -163,8 +212,9 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
 
         foreach( i,elemExpr ; node.elemExprs )
         {
-            elemExprs[i] = visitBase(elemExpr, ctx);
-            allValues &= cast(Sit.Value) elemExprs[i] !is null;
+            auto expr = visitBase(elemExpr, ctx);
+            elemExprs[i] = expr;
+            allValues &= foldedValue(expr);
         }
 
         if( allValues )
@@ -204,8 +254,7 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         {
             auto k = visitBase(kvpExpr.key, ctx);
             auto v = visitBase(kvpExpr.value, ctx);
-            allValues &= cast(Sit.Value) k !is null
-                && cast(Sit.Value) v !is null;
+            allValues &= foldedValue(k) && foldedValue(v);
 
             kvpExprs[i] = Sit.ExprKVP(kvpExpr.loc, k, v);
         }
