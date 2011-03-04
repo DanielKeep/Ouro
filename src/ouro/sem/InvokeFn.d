@@ -49,6 +49,9 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
 
         if( gotVa )
         {
+            // Make a copy of args
+            args = args.dup;
+
             // Compute start and end of the vararg segment
             vaBeg = vaIdx;
             vaLen = (args.length - vaBeg) - (fn.args.length - vaBeg - 1);
