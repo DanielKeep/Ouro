@@ -7,6 +7,7 @@
 module ouro.parser.Parser;
 
 import ouro.Error : CompilerErrorCode;
+import ouro.Location;
 import ouro.lexer.Tokens;
 import ouro.util.TokenStream;
 import ouro.util.Parse : parseReal;
@@ -357,6 +358,8 @@ struct ExprState
 
         top.prec = -float.infinity;
         top.fixity = Fixity.Left;
+
+        ops ~= top;
     }
 
     Ast.Expr force()
@@ -460,8 +463,9 @@ Ast.Expr parseExpr(TokenStream ts)
 
     // Parse the chain of infix operators.
     Ast.BinaryExpr.Op op;
-    Ast.Expr expr, infixFunc;
-    if( tryparseBinaryOp(ts, op, infixFunc) )
+    Ast.Expr expr, infixFunc, postfixFunc;
+    Location locSpan;
+    if( tryparseBinaryOp(ts, op, locSpan, infixFunc, postfixFunc) )
     {
         ExprState st;
         st.pushExpr(lhs);
@@ -471,7 +475,7 @@ Ast.Expr parseExpr(TokenStream ts)
         {
             st.pushExpr(parseExprAtom(ts));
 
-            if( tryparseBinaryOp(ts, op, infixFunc) )
+            if( tryparseBinaryOp(ts, op, locSpan, infixFunc, postfixFunc) )
                 st.pushOpOrInfixFunc(op, infixFunc);
 
             else
@@ -485,8 +489,11 @@ Ast.Expr parseExpr(TokenStream ts)
         expr = lhs;
 
     // Handle postfix
-    if( auto postfixExpr = tryparsePostfixExpr(ts, expr) )
-        expr = postfixExpr;
+    if( postfixFunc !is null )
+    {
+        expr = new Ast.PostfixFuncExpr(lhs.loc.extendTo(locSpan),
+                postfixFunc, expr);
+    }
 
     return expr;
 }
@@ -511,7 +518,8 @@ bool tryparsePrefixOp(TokenStream ts, out Ast.PrefixExpr.Op op)
 }
 
 bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op,
-        out Ast.Expr infixFunc)
+        out Location locSpan,
+        out Ast.Expr infixFunc, out Ast.Expr postfixExpr)
 {
     /*
         <binary op> = "=" | "!=" | "<>"
@@ -556,9 +564,18 @@ bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op,
             {
                 auto start = ts.pop.loc;
                 infixFunc = parseInfixFunction(ts);
-                auto end = ts.popExpect(TOKperiodrparen).loc;
+                auto endTok = ts.popExpectAny(TOKperiodrparen,TOKrparen);
+                auto end = endTok.loc;
+                locSpan = start.extendTo(end);
 
-                return true;
+                if( endTok.type == TOKrparen )
+                {
+                    postfixExpr = infixFunc;
+                    infixFunc = null;
+                    return false;
+                }
+                else
+                    return true;
             }
             break;
 
@@ -584,25 +601,6 @@ Ast.Expr parseInfixFunction(TokenStream ts)
         return expr;
 
     ts.err(CEC.PExInfFunc);
-}
-
-Ast.Expr tryparsePostfixExpr(TokenStream ts, Ast.Expr expr)
-{
-    /*
-        <postfix op> = "(.", <postfix function>, ")";
-
-        <postfix function> = <infix function>;
-    */
-
-    if( ts.peek.type != TOKlparenperiod )
-        return expr;
-
-    auto start = ts.pop.loc;
-    Ast.Expr funcExpr = parseInfixFunction(ts);
-
-    auto end = ts.popExpect(TOKrparen).loc;
-
-    return new Ast.PostfixFuncExpr(start.extendTo(end), funcExpr, expr);
 }
 
 Ast.Expr tryparseExprAtom(TokenStream ts)
