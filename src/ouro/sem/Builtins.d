@@ -128,16 +128,19 @@ Value binaryNumberExpr(char[] expr)(Value[] args)
 alias binaryNumberExpr!("floor(lhs / rhs)")     ouro_opIntDiv;
 alias binaryNumberExpr!("pow(lhs, rhs)")        ouro_opExp;
 
-Value binaryLogicalExpr(char[] expr)(Value[] args)
+Value binaryLogicalExpr(bool stopValue)(Value[] args)
 {
     chkArgNum(args, 2);
     auto lhs = chkArgLogical(args, 0);
-    auto rhs = chkArgLogical(args, 1);
-    return new Sit.LogicalValue(null, mixin(expr));
+    auto rhsFn = chkArgCall(args, 1);
+    if( lhs == stopValue )
+        return new Sit.LogicalValue(null, stopValue);
+    else
+        return invoke(rhsFn, null);
 }
 
-alias binaryLogicalExpr!("lhs && rhs")  ouro_opAnd;
-alias binaryLogicalExpr!("lhs || rhs")  ouro_opOr;
+alias binaryLogicalExpr!(false) ouro_opAnd;
+alias binaryLogicalExpr!(true)  ouro_opOr;
 
 Value ouro_opComp(Value[] args)
 {

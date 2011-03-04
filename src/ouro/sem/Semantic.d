@@ -345,9 +345,30 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
     override Sit.Node visit(Ast.BinaryExpr node, Context* ctx)
     {
+        // Some operators need to have their RHS wrapped in a function
+        bool wrapRhs = false;
+
+        switch( node.op )
+        {
+            case Ast.BinaryExpr.Op.And:
+            case Ast.BinaryExpr.Op.Or:
+                wrapRhs = true;
+
+            default:
+        }
+
         auto func = ctx.builtinFunction(node.builtin);
         auto lhs = visitExpr(node.lhs, ctx);
-        auto rhs = visitExpr(node.rhs, ctx);
+        Sit.Expr rhs;
+
+        // Wrap the RHS in a lambda if needed.
+        if( wrapRhs )
+            rhs = visitExpr(
+                new Ast.LambdaExpr(node.rhs.loc, /*isMacro*/false,
+                    null, node.rhs),
+                ctx);
+        else
+            rhs = visitExpr(node.rhs, ctx);
         
         return new Sit.CallExpr(node, func,
                 [Sit.CallArg(lhs, false), Sit.CallArg(rhs, false)]);
