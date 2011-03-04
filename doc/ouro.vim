@@ -1,8 +1,8 @@
 " Vim syntax file
 " Language:         Ouro
 " Maintainer:       Daniel Keep <daniel.keep@gmail.com>
-" Latest Revision:  3 March 2011
-" Remark:           Fixed operator highlighting, added unterminated strings.
+" Latest Revision:  4 March 2011
+" Remark:           Updated ast symbol syntax.
 
 if version < 600
     syntax clear
@@ -16,7 +16,7 @@ syntax include @RST syntax/rst.vim
 syn keyword ouroKeywords let import export macro __builtin__ range
 syn keyword ouroLogicalKeywords true false
 syn keyword ouroLiteralKeywords nil
-syn match   ouroSymbolKeywords /#\~'\|#\~"\|#\~\$/
+syn match   ouroSymbolKeywords /#'\|#"\|#\$/
 syn match   ouroSyntax /,/
 syn match   ouroOperators /[-=+/*<>\\:.]\|!=\|\/\/\|\*\*\|<=\|>=\|<>\|::\|++\|(\.)/
 syn keyword ouroOperators and or not mod rem

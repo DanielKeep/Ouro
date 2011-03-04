@@ -219,14 +219,14 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.AstQuoteExpr node)
     {
-        so.r(`#~'{`).push;
+        so.r(`#'{`).push;
         visitBase(node.expr);
         so.pop.r("}");
     }
 
     override void visit(Ast.AstQuasiQuoteExpr node)
     {
-        so.r(`#~"{`).push;
+        so.r(`#"{`).push;
         visitBase(node.expr);
         so.pop.r("}");
     }
@@ -235,11 +235,11 @@ class ReprVisitor : Visitor!()
     {
         if( node.expr is null )
         {
-            so.rf(`#~${}`, node.index);
+            so.rf(`#${}`, node.index);
         }
         else
         {
-            so.r(`#~${`).push;
+            so.r(`#${`).push;
             visitBase(node.expr);
             so.pop.r("}");
         }

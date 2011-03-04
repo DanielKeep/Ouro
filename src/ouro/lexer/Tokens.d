@@ -46,9 +46,9 @@ const char[][2][] SymbolTokens =
     ["+", "plus"],
     ["...", "period3"],
     [".", "period"],
-    ["#~'", "hashtildequote"],
-    ["#~\"", "hashtildedquote"],
-    ["#~$", "hashtildedollar"],
+    ["#'", "hashquote"],
+    ["#\"", "hashdquote"],
+    ["#$", "hashdollar"],
 ];
 
 const char[][] LiteralTokens =
