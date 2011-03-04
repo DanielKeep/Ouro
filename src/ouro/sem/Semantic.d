@@ -25,36 +25,43 @@ import QQRewrite    = ouro.ast.QQRewriteVisitor;
 import Eval         = ouro.sem.Eval;
 import Fold         = ouro.sem.Fold;
 
-bool aborted(void delegate() dg)
+bool aborted(void delegate() dg, out Object lastEx)
 {
     bool result = false;
     try
         dg();
-    catch( SemanticAbort )
+    catch( SemanticAbort e )
+    {
         result = true;
+        lastEx = e;
+    }
     return result;
 }
 
-bool abortedF(void delegate() dg)
+bool abortedF(void delegate() dg, out Object lastEx)
 {
     bool result = false;
     try
         dg();
-    catch( FatalAbort )
+    catch( FatalAbort e )
+    {
         result = true;
+        lastEx = e;
+    }
     return result;
 }
 
-bool abortedNF(void delegate() dg)
+bool abortedNF(void delegate() dg, out Object lastEx)
 {
     bool result = false;
     try
     {
         dg();
     }
-    catch( NonFatalAbort )
+    catch( NonFatalAbort e )
     {
         result = true;
+        lastEx = e;
     }
     return result;
 }
@@ -132,7 +139,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
     {
         auto call = new Sit.CallExpr(node, fn, args);
         Sit.Value value;
-        if( abortedF({ value = evalExpr(call); }) )
+        Object lastEx;
+        if( abortedF({ value = evalExpr(call); }, lastEx) )
             throw new MixinEvalFailedAbort;
         auto astValue = cast(Sit.AstQuoteValue) value;
         assert( astValue !is null, "expected ast result from macro; "
@@ -161,6 +169,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         bool failedStmt = false;    // Did at least one stmt fail?
         bool successStmt = false;   // Did at least one stmt succeed?
+        Object lastEx = null;       // Last exception
 
         do
         {
@@ -184,7 +193,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
                 Stderr("Processing ")(modStmt)("...");
 
-                if( abortedNF({ expr = visitExpr(modStmt, &subCtx); }) )
+                if( abortedNF({ expr = visitExpr(modStmt, &subCtx); }, lastEx) )
                 {
                     // Bastard.
                     Stderr(" failed.").newline;
@@ -212,7 +221,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                     Sit.Expr foldedExpr;
                     Sit.Value foldedValue;
                     
-                    if( aborted({ foldedExpr = foldExpr(expr); }) )
+                    if( aborted({ foldedExpr = foldExpr(expr); }, lastEx) )
                     {
                         Stderr(" failed.").newline;
                         failedStmt = true;
@@ -250,7 +259,11 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                 }
             }
 
-            assert( successStmt, "could not complete semantic analysis" );
+            if( ! successStmt )
+                if( lastEx !is null )
+                    throw lastEx;
+                else
+                    assert( false, "could not complete semantic analysis" );
         }
         while( failedStmt )
 
