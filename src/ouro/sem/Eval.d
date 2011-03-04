@@ -54,7 +54,9 @@ struct Context
             if( fs.scop is uv.scop )
             {
                 auto fvp = (uv.ident in fs.values);
-                assert( fvp !is null, "expected fixed value, didn't find it" );
+                assert( fvp !is null, "expected fixed value for "
+                        ~ uv.toString ~ " " ~ uv.ident
+                        ~ ", didn't find it" );
                 return *fvp;
             }
             fs = fs.parent;
