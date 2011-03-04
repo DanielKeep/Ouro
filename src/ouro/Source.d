@@ -171,12 +171,30 @@ final class Source
         return src[mark.offset..$].length;
     }
 
+    char advanceCu()
+    {
+        return cast(char) advanceCp;
+    }
+
+    dchar advanceCp()
+    {
+        dchar cp;
+        advance(1, cp);
+        return cp;
+    }
+
     char[] advance()
     {
         return advance(1);
     }
     
     char[] advance(size_t n)
+    {
+        dchar cp;
+        return advance(n, cp);
+    }
+
+    char[] advance(size_t n, out dchar lastCp)
     {
         size_t lineInc = 0;
         auto col = mark.column;
@@ -200,6 +218,7 @@ final class Source
         {
             uint ate;
             auto cp = Utf.decode(src, ate);
+            lastCp = cp;
             src = src[ate..$];
             bytes += ate;
 
