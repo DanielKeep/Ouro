@@ -296,8 +296,8 @@ float precOf(Ast.BinaryExpr.Op op)
         case Op.LtEq:   return 4.0;
         case Op.Gt:     return 4.0;
         case Op.GtEq:   return 4.0;
-        case Op.And:    return 3.9;
-        case Op.Or:     return 3.8;
+        case Op.Or:     return 3.9;
+        case Op.And:    return 3.8;
 
         default:
             assert(false, "missing binary op precedence");
