@@ -31,19 +31,14 @@ class SemanticAbort : Exception
  */
 class NonFatalAbort : SemanticAbort
 {
-    this()
-    {
-        super("non-fatal semantic abort");
-    }
-
-    this(char[] msg)
+    protected this(char[] msg)
     {
         super(msg);
     }
 
     static void throwForUnfixed(Sit.UnfixedValue value)
     {
-        throw new NonFatalAbort;
+        throw new UnfixedValueAbort(value);
     }
 }
 
