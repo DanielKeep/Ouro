@@ -33,6 +33,7 @@ int main(char[][] argv)
     auto args = argv[1..$];
 
     bool throwExc = false;
+    bool doEval = true;
 
     auto repr = ReprVisitor.forStdout;
     auto errRepr = ReprVisitor.forStderr;
@@ -46,6 +47,9 @@ int main(char[][] argv)
     {
         if( path == "--throw" )
             throwExc = true;
+
+        else if( path == "--no-eval" )
+            doEval = false;
 
         else
         {
@@ -67,13 +71,16 @@ int main(char[][] argv)
                 repr.visitBase(sitModule, false);
                 Stdout.newline;
 
-                Stdout("Switching to runtime...").newline;
-                Stdout.flush; Stderr.flush;
-                auto result = eval.evalModule(sitModule);
-                Stdout.newline.flush; Stderr.flush;
-                Stdout("Module result: ");
-                repr.visitBase(result, true);
-                Stdout.newline;
+                if( doEval )
+                {
+                    Stdout("Switching to runtime...").newline;
+                    Stdout.flush; Stderr.flush;
+                    auto result = eval.evalModule(sitModule);
+                    Stdout.newline.flush; Stderr.flush;
+                    Stdout("Module result: ");
+                    repr.visitBase(result, true);
+                    Stdout.newline;
+                }
             }
             catch( CompilerException e )
             {
