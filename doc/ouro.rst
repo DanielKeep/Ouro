@@ -151,9 +151,9 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'.)'──┘    - Infix closing parenthesis
            ├─'[:'──┘    - Map opening bracket
            ├─':]'──┘    - Map closing bracket
-           ├─"#~'"─┘    - Ast quote
-           ├─'#~"'─┘    - Ast quasi-quote
-           └─'#~$'─┘    - Ast quasi-quote escape (a.k.a. substitution)
+           ├─"#'"──┘    - Ast quote
+           ├─'#"'──┘    - Ast quasi-quote
+           └─'#$'──┘    - Ast quasi-quote escape (a.k.a. substitution)
 
     nesting symbol
         >>─┬─'('───┐
@@ -461,9 +461,9 @@ Note: eventually, pattern matching should be added here::
                       | <function expression>
                       ;
 
-    <function like keyword> = "#~'"
-                            | `#~"`
-                            | "#~$"
+    <function like keyword> = "#'"
+                            | `#"`
+                            | "#$"
                             | "let"
                             | "import"
                             | "__builtin__"
@@ -866,8 +866,8 @@ Numerous syntax forms in Ouro are defined in terms of anonymous functions.  As
 an example, consider the following macro which evaluates an expression once
 and substitutes it into another expression::
 
-    let macro fix(name, value, expr) = #~"(
-        (\#~$(name): #~$(expr))(#~$(value))
+    let macro fix(name, value, expr) = #"(
+        (\#$(name). #$(expr))(#$(value))
     )
 
 Given the following code::

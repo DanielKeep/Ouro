@@ -906,27 +906,27 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 
             switch( keyword )
             {
-                case TOKhashtildequote:
+                case TOKhashquote:
                     if( args.length != 1 )
                         ts.err(CEC.PAstQArgNum, loc);
                     if( ! isMacro )
-                        ts.err(CEC.PExBraceForKw, loc, `#~'`);
+                        ts.err(CEC.PExBraceForKw, loc, `#'`);
                     baseExpr = new Ast.AstQuoteExpr(loc, args[0]);
                     break;
 
-                case TOKhashtildedquote:
+                case TOKhashdquote:
                     if( args.length != 1 )
                         ts.err(CEC.PAstQQArgNum, loc);
                     if( ! isMacro )
-                        ts.err(CEC.PExBraceForKw, loc, `#~"`);
+                        ts.err(CEC.PExBraceForKw, loc, `#"`);
                     baseExpr = new Ast.AstQuasiQuoteExpr(loc, args[0]);
                     break;
 
-                case TOKhashtildedollar:
+                case TOKhashdollar:
                     if( args.length != 1 )
                         ts.err(CEC.PAstQQSArgNum, loc);
                     if( ! isMacro )
-                        ts.err(CEC.PExBraceForKw, loc, `#~$`);
+                        ts.err(CEC.PExBraceForKw, loc, `#$`);
                     baseExpr = new Ast.AstQQSubExpr(loc, args[0]);
                     break;
 
@@ -976,9 +976,9 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 bool tryparseFunctionLikeKeyword(TokenStream ts, out TOK keyword)
 {
     /*
-        <function like keyword> = "#~'"
-                                | "#~\""
-                                | "#~$"
+        <function like keyword> = "#'"
+                                | "#\""
+                                | "#$"
                                 | "let"
                                 | "import"
                                 | "__builtin__"
@@ -989,9 +989,9 @@ bool tryparseFunctionLikeKeyword(TokenStream ts, out TOK keyword)
 
     switch( t.type )
     {
-        case TOKhashtildequote:
-        case TOKhashtildedquote:
-        case TOKhashtildedollar:
+        case TOKhashquote:
+        case TOKhashdquote:
+        case TOKhashdollar:
         case TOKlet:
         case TOKimport:
         case TOKbuiltin:

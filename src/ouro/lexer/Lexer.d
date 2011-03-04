@@ -236,16 +236,16 @@ bool lexComment(Source src, out Token token)
 bool lexSymbol(Source src, out Token token)
 {
     debug(TraceLexer) Stderr.format("(lexSymbol @ {})", src.loc.toString);
-    auto cp0_2 = src[0..3];
-    dchar cp0, cp1, cp2;
-    if( src.length > 0 ) cp0 = cp0_2[0];
-    if( src.length > 1 ) cp1 = cp0_2[1];
-    if( src.length > 2 ) cp2 = cp0_2[2];
+    
+    auto m0 = src.save; auto cu0 = src.advanceCu;
+    auto m1 = src.save; auto cu1 = src.advanceCu;
+    auto m2 = src.save; auto cu2 = src.advanceCu;
+    src.restore(m0);
 
     size_t l = 0;
     TOK tok;
 
-    switch( cp0 )
+    switch( cu0 )
     {
         // Unique prefix single-cp symbols
         case '=': l = 1; tok = TOKeq; break;
@@ -259,10 +259,10 @@ bool lexSymbol(Source src, out Token token)
 
         // multi-cp symbols
         case '(':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '.':
-                    switch( cp2 )
+                    switch( cu2 )
                     {
                         case ')':   l = 3; tok = TOKlparenperiodrparen; break;
                         default:    l = 2; tok = TOKlparenperiod; break;
@@ -274,7 +274,7 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '[':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case ':':   l = 2; tok = TOKlbracketcolon; break;
                 default:    l = 1; tok = TOKlbracket; break;
@@ -282,15 +282,15 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '!':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '=':   l = 2; tok = TOKnoteq; break;
-                default:    {}
+                default:    err(CEC.LUnexpected, src.locFrom(m1), (&cu1)[0..1]);
             }
             break;
 
         case '/':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '/':   l = 2; tok = TOKslash2; break;
                 default:    l = 1; tok = TOKslash; break;
@@ -298,7 +298,7 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '*':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '*':   l = 2; tok = TOKstar2; break;
                 default:    l = 1; tok = TOKstar; break;
@@ -306,7 +306,7 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '<':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '=':   l = 2; tok = TOKlteq; break;
                 case '>':   l = 2; tok = TOKltgt; break;
@@ -315,7 +315,7 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '>':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '=':   l = 2; tok = TOKgteq; break;
                 default:    l = 1; tok = TOKgt; break;
@@ -323,7 +323,7 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case ':':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case ']':   l = 2; tok = TOKcolonrbracket; break;
                 case ':':   l = 2; tok = TOKcolon2; break;
@@ -332,7 +332,7 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '+':
-            switch( cp1 )
+            switch( cu1 )
             {
                 case '+':   l = 2; tok = TOKplus2; break;
                 default:    l = 1; tok = TOKplus; break;
@@ -340,12 +340,12 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '.':
-            if( cp1 == '.' && cp2 == '.' )
+            if( cu1 == '.' && cu2 == '.' )
             {
                 l = 3;
                 tok = TOKperiod3;
             }
-            else if( cp1 == ')' )
+            else if( cu1 == ')' )
             {
                 l = 2;
                 tok = TOKperiodrparen;
@@ -358,20 +358,12 @@ bool lexSymbol(Source src, out Token token)
             break;
 
         case '#':
-            switch( cp1 )
+            switch( cu1 )
             {
-                case '~':
-                    switch( cp2 )
-                    {
-                        case '\'':  l = 3; tok = TOKhashtildequote; break;
-                        case '"':   l = 3; tok = TOKhashtildedquote; break;
-                        case '$':   l = 3; tok = TOKhashtildedollar; break;
-                        default:    {}
-                    }
-                    break;
-                    
-                default:
-                    {}
+                case '\'':  l = 2; tok = TOKhashquote; break;
+                case '"':   l = 2; tok = TOKhashdquote; break;
+                case '$':   l = 2; tok = TOKhashdollar; break;
+                default:    err(CEC.LUnexpected, src.locFrom(m1), (&cu1)[0..1]);
             }
 
         default:
