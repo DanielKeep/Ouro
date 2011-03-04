@@ -86,7 +86,7 @@ struct Context
             current context's list.
          */
 
-        auto curScop = fromCtx.scop;
+        auto curScop = fromCtx.scop.parent;
         auto enclosed = fromCtx.enclosedValues;
         bool lastScopEnclosed = false;
 
@@ -96,7 +96,7 @@ struct Context
 
             for( size_t i=0;
                  i < enclosed.length;
-                 dropThis = false, i += (dropThis ? 0 : 1) )
+                 i += (dropThis ? 0 : 1), dropThis = false )
             {
                 auto cv = enclosed[i];
                 dropThis = cv.value.scop is curScop;
