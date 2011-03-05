@@ -516,8 +516,8 @@ Symbol      Meaning                     Prec.   Assoc.  Alternatives
 ``<=``      Less-than or equal-to       4.0     left
 ``>``       Greater-than                4.0     left
 ``>=``      Greater-than or equal-to    4.0     left
-``and``     Logical conjunction         3.9     left
-``or``      Logical disjunction         3.8     left
+``or``      Logical disjunction         3.9     left
+``and``     Logical conjunction         3.8     left
 ``(.f.)``   Infix function              -∞      left
 =========== =========================== ======= ======= ===============
 
@@ -665,280 +665,497 @@ The following describes the structure of the AST nodes themselves.
         symbolsExpr : Expr
         subExpr : Expr
 
-AST Refinement and Semantic Analysis
-====================================
+Semantic Nodes
+==============
 
-Once the AST has been produced, it must be refined.  To do this, the AST nodes
-are walked top-down, with various transforms being applied.  At some point,
-the AST is turned into a semantic tree.  This generally involves replacing
-generic expressions with the actual constructs they represent.
-
-At the end of the process, the compiler should have a complete, valid semantic
-tree.
-
-The exact order of this processing is:
-
-- AST is converted into a semantic tree.  As part of this process, the
-  following happens:
-
-  - Syntax rewriting
-
-  - Macro expansion
-
-    Doing this here ensures that macros have access to the original, unmodified
-    AST.  This obviously excludes statements since they can't be macros
-    anyway.
-    
-    The macro may be allowed to ask the compiler to perform further
-    processing on a given node, but this isn't decided on yet.
-
-  - Variable scope assignment.
-
-    Each node is associated with a scope, used to lookup variables by name.
-    This is done whilst traversing down the tree.
-
-  - Dependence lists.
-
-    Each node builds a list of variables (name,scope) its evaluation depends
-    on.  This is used for determining closures.
-    This is done whilst traversing up the tree.
-
-- Lambda inlining
-
-  This collapses multiple lambdas together into their simplest form.
-
-- Lambda substitution
-
-- Constant folding
-
-  This also involves:
-
-  - Module symbol table creation
-
-    Since this is done using the ``export(ident, expr)`` form, constant
-    folding has to happen on the ``expr`` to ensure it is "fully baked", and
-    the ``export`` itself has to be folded to allow containing code to be
-    folded.
-
-Syntax rewriting
-----------------
-
-Some syntax forms only exist as an intermediary step in the AST and are
-rewritten into expressions.
-
-The rules are given below.
-
-Statements
-``````````
-
-Note that ``tail`` stands for the remainder of the statements following the one
-being rewritten.
+The following describes the structure of the Semantic Information Tree (SIT)
+nodes.  Note that unlike the AST, this is not part of the language
+specification; provided an implementation matches the semantics, the exact
+arrangement and implementation is irrelevant.
 
 ::
 
-    import "path"
-        --> import(module("path"), nil, tail)
+    Scope
+        entries : [:String:Value:]
+        parent  : Scope
+        enclosed : Logical
 
-    import "path" : ident...
-        --> import(module("path"), [ident...], tail)
-
-    import ident = "path"
-        --> let([ident, module("path")], tail)
-
-    let ident = expr
-        --> let([ident, expr], tail)
-
-    let ident(arg...) = expr
-        --> let ident = \ args... . expr], tail
-        --> let([ident, \ args... . expr], tail)
-
-    export let ident = expr
-        --> let(export(ident, expr), tail)
-
-    expr
-        --> do(expr, tail)
-
-Note that the final expression statement, assuming it is not empty, is not
-rewritten.  This is why the "result" of a given program is the value of the
-final expression statement.
-
-Expressions
-```````````
+A ``Scope`` is a mapping between identifiers and ``Value``\ s.  Each ``Scope``
+may be linked to a parent ``Scope``.  A new ``Scope`` is created for each
+module, import and function.
 
 ::
 
-    range {[|(} lower upper {]|)}
-        --> range({true|false}, {true|false}, lower, upper)
+    PartialScope : Scope
+        complete : Logical = false
 
-Module symbol table creation
-----------------------------
+These are used in cases where a complete list of symbols being defined in a
+scope cannot be determined ahead of time.  An example of this would be
+importing all symbols from a module; until the module has been processed, we
+don't know what symbols it defines.
 
-**Note**: this section details things yet to be implemented.
+::
 
-In order for modules to be "importable", they need to have a symbol table
-generated.  The way this is done is through the use of the ``export`` keyword.
+    abstract Node
+        astNode : Ast Node
 
-Like ``let`` and ``import``, it can be used as both a statement and an
-expression.  The general forms are::
+    Module : Node
+        stmts : [Stmt]
+        exportSymbols : [String]
+        scope : Scope
 
-    export LetStmt
+    Stmt
+        loc         : Location
+        expr        : Expr
+        bind        : Logical
+        bindIdent   : String
+        mergeAll    : Logical
+        mergeList   : [String]
 
-    export(ident, expr)
+    abstract Expr : Node
 
-It can also be used as part of a ``let`` expression like so::
+    CallExpr : Expr
+        funcExpr : Expr
+        args     : [CallArg]
 
-    let(export(ident, expr), subExpr)
+    CallArg
+        expr    : Expr
+        explode : Logical
 
-``let`` specifically checks for this form.
+    abstract Value : Expr
 
-Exports are processed post-simplification.  By that time, all that is left are
-lambdas and calls.  So this::
+    UnfixedValue : Value
+        scope : Scope
+        ident : String
 
-    export let fact(n) = n*fact(n-1)
+An ``UnfixedValue`` is produced by a ``Scope`` in cases where the actual value
+is not yet known.
 
-    fact(4)
+::
 
-Is first transformed into::
+    DynamicValue
 
-    let(export(fact, \n.n*fact(n-1)),
-        fact(4))
+This is used for all ``UnfixedValue`` nodes which can have multiple values
+during execution.
 
-And then becomes::
+::
 
-    (\fact.fact(4))
-        (export(fact, \n.n*fact(n-1)))
+    ArgumentValue : UnfixedValue, DynamicValue
 
-The module-level symbol ``fact`` is bound to the lambda; the ``export``
-expression is then replaced with the expression being bound::
+    EnclosedValue : Value
+        value : UnfixedValue
 
-    (\fact.fact(4))
-        (\n.n*fact(n-1))
+An ``EnclosedValue`` wraps a ``DynamicValue`` used outside its defining
+``Scope``.  For example, an ``EnclosedValue`` would be generated when ``x``
+is used in the following::
 
-A given symbol can only be exported once.
+    \x. \. x
 
-Macro expansion
----------------
+::
 
-Some functions in Ouro are actually macros.  A macro's arguments are passed as
-an AST as opposed to a computed value.
+    Resolvable
 
-To facilitate this, each function call is checked to determine whether the
-function is a macro or not.  This obviously requires that the function be
-determinable at compile-time.
+Used for any ``UnfixedValue`` which can have its actual value determined.
+Defines a ``resolve`` method for this purpose.
 
-When a macro is found, it is invoked with its arguments passed to it as ASTs.
-The result of the macro is expected to be an AST, which is then inserted into
-the containing AST.  The AST walk is resumed at the root of the inserted AST.
+::
 
-Lambda inlining
----------------
+    DeferredValue : UnfixedValue, Resolvable
 
-The rewriting process will likely generate many, many expressions in this
-form::
+A value which we know is defined somewhere, but which we haven't computed
+yet.
 
-    (\a.(\b.a*b)(3))(2)
+::
 
-That is, multiple, nested lambdas whose only use is to define a locally-scoped
-variable.
+    QuantumValue : UnfixedValue, Resolvable
 
-To that end, expressions in the following form::
+A value which may or may not be defined at all.  Produced by
+``PartialScope``\ s.
 
-    (\x.(\y.expr)(yExpr))(xExpr)
+::
 
-Are rewritten as::
+    RuntimeValue : Value, Resolvable
+        expr : Expr
 
-    (\x,y.expr)(xExpr,yExpr)
+A value which is not available until runtime.
 
-Note that, for the rewrite to happen, ``yExpr`` *cannot* depend on ``x``.
+::
 
-This can happen multiple times.  For example::
+    AstQuoteValue : Value
+        ast : Ast Node
 
-    (\x.(\y.(\z.expr)(zExpr))(yExpr))(xExpr)
+    CallableValue : Value
 
-Eventually becomes::
+    ClosureValue : CallableValue
+        fn      : FunctionValue
+        values  : [Value]
 
-    (\x,y,z.expr)(xExpr,yExpr,zExpr)
+    FunctionValue : CallableValue
+        name    : String
+        args    : [Argument]
+        scope   : Scope
+        enclosedValues : [EnclosedValue]
+        evalCtx = Mask('None, 'Compile, 'Runtime)
+        expr    : Expr
 
-Lambda substitution
--------------------
+Note that implementations will have to include additional fields to represent
+functions provided by the implementation itself.  Currently, the reference
+implementation allows for a function pointer.
 
-Numerous syntax forms in Ouro are defined in terms of anonymous functions.  As
-an example, consider the following macro which evaluates an expression once
-and substitutes it into another expression::
+::
 
-    let macro fix(name, value, expr) = #"(
-        (\#$(name). #$(expr))(#$(value))
-    )
-
-Given the following code::
-
-    fix(x, 42, 2*x)
-
-The expansion is::
-
-    (\x: 2*x)(42)
-
-Whilst this will execute with the expected semantics, it is inefficient.  It
-could be further rewritten into the more efficient (both time and space)
-form::
-
-    2*42
-
-A more complex example is the ``cond`` macro.  The expansion of::
-
-    cond(x,
-        [0, "foo"],
-        [1, "bar"],
-        [else, "?"])
-
-Is::
-
-    (\a: if(a = 0, "foo",
-        (\b: if(b = 1, "bar",
-            (\c: if(true, "?", nil))(b)))(a)))(x)
-
-Here, the ``cond`` macro has created several anonymous functions in order to
-safely preserve semantics.  However, it can be rewritten, in several steps,
-as::
-
-    if(x = 0, "foo",
-        (\b: if(b = 1, "bar",
-            (\c: if(true, "?", nil))(b)))(x))
-
-    if(x = 0, "foo", if(x = 1, "bar",
-        (\c: if(true, "?", nil))(x)))
-
-    if(x = 0, "foo", if(x = 1, "bar", if(true, "?", nil)))
-
-In order to apply lambda substitution, all arguments to the lambda must be
-either a literal value or a variable lookup.
-
-Constant folding
-----------------
-
-Constant folding is the process by which expressions may be replaced with
-their literal value.  A simple example would be::
-
-    let twoPi = 2pi
-
-Here, there is no benefit to calculating the value of ``twoPi`` at runtime;
-the compiler can safely replace the above code with the equivalent::
-
-    let twoPi = 6.283185307179586476925286766559
-
-An expression is folded if any of the following statements are true; note that
-expressions are folded bottom-up, meaning that when these rules are applied,
-all sub-expressions which can be folded have already been folded.
-
-- The expression is a lookup to a known variable, the value of which is a
-  literal value.
-
-- The expression is a binary operation between literal values.
-
-- The expression is a call to a known function with literal arguments.  The
-  function *MUST NOT* have side-effects.
-
-Note that this folding includes special forms such as the ``if`` construct.
+    Argument
+        loc      : Location
+        ident    : String
+        isVararg : Logical
+
+    ListExpr : Expr
+        elemExprs : [Expr]
+
+    ListValue : Value
+        elemValues : [Value]
+
+    LogicalValue : Value
+        value : Logical
+
+    MapExpr : Expr
+        kvps : [ExprKVP]
+
+    MapValue : Value
+        kvps : [ValueKVP]
+
+    ExprKVP
+        loc : Location
+        key : Expr
+        value : Expr
+
+    ValueKVP
+        loc : Location
+        key : Value
+        value : Value
+
+    ModuleValue : Value
+        module : Module
+
+    NilValue : Value
+
+    StringValue : Value
+        value : String
+
+    NumberValue : Value
+        |-- Note: probably should have been called 'RealValue'
+        value : Real
+
+    RangeValue : Value
+        incLower : Logical
+        incUpper : Logical
+        lowerValue : Value
+        upperValue : Value
+
+Semantic Analysis
+=================
+
+Once the AST has been produced, it must undergo semantic analysis.  This is
+done by walking the tree top-down, turning it into a SIT.  This section
+informally describes what these transformations are.
+
+For some nodes, this simply involves copying the necessary information from
+the AST note to the SIT node.  This includes simple literal expressions, for
+example.  Others require more complex transforms.
+
+The semantic analysis also requires some context be kept.  Contexts are passed
+by reference, and contain the following information:
+
+::
+
+    Context
+        scope       : Scope
+        stmt        : Stmt
+        builtinFn   : λ String. Value
+        enclosedValues : [EnclosedValue]
+
+..
+
+    Note that the process of merging two sets of ``EnclosedValue``\ s is
+    mentioned below.  Given ``ctx`` and ``subCtx``, it involves adding to
+    ``ctx`` all ``EnclosedValue``\ s in ``subCtx`` which are not directly
+    accessible from any ``Scope`` between ``ctx scope`` and ``subCtx scope``.
+
+    In essence, it involves promoting all ``EnclosedValue``\ s from a function
+    into its enclosing function if they cannot be satisfied by the enclosing
+    function itself.
+
+    For example, take the following code::
+
+        \a. \b. \c. a+b+c
+
+    The third function depends on ``a`` and ``b`` since both of these are
+    ``DynamicValue``\ s which are not directly passed to it.  This means the
+    second function depends on ``a`` since ``b`` *is* being directly passed.
+
+Below is a description of the transformations that have to be performed on the
+AST nodes.  The current node is called ``node`` and the current context is
+called ``ctx``.  The meaning of *Eval* and *Fold* is explained later.
+
+``Ast Module``
+    - Create a new ``Scope`` and assign to ``ctx``.
+    - Loop whilst there are un-processed statements.
+        - For each ``stmt`` in ``node stmts`` which has not been processed:
+            - Create a new ``Stmt`` and reference in ``ctx``.
+            - Attempt to transform ``stmt`` into ``expr`` using ``ctx``.
+            - If the attempt failed with a non-fatal error,
+              skip this statement.
+            - Attempt to *Fold* ``expr`` into ``expr'``.
+            - If folding failed for any reason, skip this statement.
+            - If ``expr'`` is a ``Value``, cast and assign to ``value``.
+            - If ``expr'`` is not a ``Value``, wrap ``expr'`` in a
+              ``RuntimeValue`` and assign to ``value``.
+            - Handle any binding or merging with ``value``.
+            - Result of the statement is ``value``.
+            - Add statement to ``module``.
+        - If every un-processed statement was skipped, fail.
+    - Result is a ``Module`` containing the processed statements, exported
+      symbols and scope.
+
+``Ast ImportStmt``
+    - Adjust ``ctx stmt`` to contain binding and merge information in ``node``.
+    - Module path ``node modulePath`` is transformed into the equivalent of
+      ``module(node modulePath)``.  This is the result.
+
+``Ast LetExprStmt``
+    - Adjust ``ctx stmt`` to contain binding information in ``node``.
+    - Result is the transform of ``node expr``.
+
+``Ast LetFuncStmt``
+    - Adjust ``ctx stmt`` to contain binding information in ``node``.
+    - Create a new ``Scope`` and assign to ``ctx scope``.
+    - Create ``ArgumentValue`` bindings for the arguments in the new
+      ``Scope``.
+    - Transform ``node expr`` into the function's body.
+    - Result is a new ``FunctionValue`` given the arguments, scope and body.
+
+``Ast ExprStmt``
+    - Result is the transform of ``node expr``.
+
+``Ast RewrittenExpr``
+    - Result is the transform of ``node rewrite``.
+
+``Ast BinaryExpr``
+    - Obtain a ``FunctionValue`` for the operator.
+    - For operators other than ``and`` and ``or``:
+        - Transform ``node lhs`` and ``node rhs``.
+    - For ``and`` and ``or``:
+        - Transform ``node lhs``.
+        - Wrap ``node rhs`` in a lambda and transform it.
+    - Result is a ``CallExpr`` of the operator with the ``lhs`` and ``rhs``.
+
+``Ast TernaryExpr``
+    - Obtain a ``FunctionValue`` for the operator.
+    - Transform ``node``'s ``lhs``, ``mid`` and ``rhs``.
+    - Result is a ``CallExpr`` of the operator with the ``lhs``, ``mid``
+      and ``rhs``.
+
+``Ast InfixFuncExpr``
+    - Transform ``node``'s ``funcExpr``, ``lhs`` and ``rhs``.
+    - Result is a ``CallExpr`` of ``funcExpr`` with ``lhs`` and ``rhs``.
+
+``Ast PrefixExpr``
+    - Obtain a ``FunctionValue`` for the operator.
+    - Transform ``node``'s ``subExpr``.
+    - Result is a ``CallExpr`` of the operator with ``subExpr``.
+
+``Ast PostfixFuncExpr``
+    - Transform ``node``'s ``funcExpr`` and ``subExpr``.
+    - Result is a ``CallExpr`` of ``funcExpr`` with ``subExpr``.
+
+``Ast NumberExpr``
+    - Result is a ``NumberValue`` node with ``node value``.
+
+``Ast StringExpr``
+    - Result is a ``StringValue`` node with ``node value``.
+
+``Ast LogicalExpr``
+    - Result is a ``LogicalValue`` node with ``node value``.
+
+``Ast NilExpr``
+    - Result is a ``NilValue``
+
+``Ast ListExpr``
+    - Result is a ``ListExpr`` with the transformed elements of
+      ``node elemExprs``.
+
+``Ast MapExpr``
+    - Result is a ``MapExpr``.  Each pair in ``node keyValuePairs`` is
+      transformed and stored in a ``ExprKVP``.
+
+``Ast LambdaExpr``
+    - Copy ``ctx`` into ``subCtx``.
+    - Clear the list of enclosed values in ``subCtx``.
+    - Create a new ``Scope`` and store in ``subCtx``.
+    - Create and bind arguments.
+    - Transform ``node expr`` with ``subCtx`` into the body.
+    - Result is a ``FunctionValue`` with the appropriate scope, args and body.
+    - Merge the enclosed values of ``subCtx`` into ``ctx``.
+
+``Ast ExplodeExpr``
+    - This cannot be transformed.  Any semantically valid ``Ast ExplodeExpr``
+      will be handled by the transformation of the surrounding
+      ``Ast CallExpr``.
+
+      If this is encountered directly, an error should be raised.
+
+``Ast CallExpr``
+    - Transform ``node funcExpr``.
+    - If this is a non-macro call:
+        - Transform each ``node argExpr``.  If the expression is an
+          ``Ast ExplodeExpr``, transform ``argExpr subExpr`` instead and flag
+          the argument as an explode.
+        - Result is a ``CallExpr`` of the function expression itself with the
+          arguments.
+    - If this is a macro call:
+        - Transform each ``node argExpr`` into an ``AstQuoteValue`` containing
+          the original argument expression node.
+        - *Eval* the function expression.  It must result in a
+          ``FunctionValue``.
+        - *Eval* the function with the transformed arguments.  It must result
+          in an ``AstQuoteValue``.
+        - Result is the result of transforming the above ``AstQuoteValue``.
+
+``Ast VariableExpr``
+    - Result is looked up via ``ctx``, given ``node ident``.
+    - If the result is an ``EnclosedValue``, it is added to ``ctx``'s list of
+      enclosed values.
+
+``Ast RangeExpr``
+    - Current implementation:
+        - Result is the transform of the equivalent code
+          ``range(#${node.incLower}, #${node.incUpper}, #${node.lowerExpr},
+          #${node.upperExpr})``, where ``range`` is a ``RangeValue``-producing
+          function.
+    - Alternately:
+        - Transform ``node lowerExpr`` and ``node upperExpr`` and produce a
+          ``RangeExpr``.
+
+    The reason the alternative isn't used is because it was done that way
+    originally and I was too lazy to change it.
+
+``Ast AstQuoteExpr``
+    - Result is an ``AstQuoteValue`` containing ``node expr``.
+
+``Ast AstQuasiQuoteExpr``
+    - A reference to a quasi-quote substitution function is obtained.
+    - ``node expr`` is rewritten to replace all ast substitution expressions
+      with indexed substitutions.  Currently, these are represented as ``#$n``
+      where ``n`` is the index and cannot be directly written in source.
+
+      This rewriting process also extracts all the substitution expressions
+      into an ordered list of ``AstQuoteValue``\ s.
+    - Result is a ``CallExpr`` of the quasi-quote substitution function with
+      the ordered list of substitution expressions as the arguments.
+
+    Alternately, you could produce a specialised expression node.
+
+``Ast AstQQSubExpr``
+    - ``node expr`` is transformed into ``sitExpr``.
+    - *Eval* ``sitExpr`` into ``value``.
+    - ``value`` must be an ``AstQuoteValue``.
+    - Result is the transform of ``value ast``.
+
+``Ast LetExpr``
+    - A reference to the builtin ``let`` macro ``FunctionValue`` is obtained.
+    - Each expression in ``node bindExprs`` is transformed into an
+      ``AstQuoteValue``.
+    - The bind expressions are wrapped in a ``ListExpr``.
+    - ``node subExpr`` is transformed into an ``AstQuoteValue``.
+    - *Eval* the ``let`` macro, called with the bind list and sub expression
+      ast.  Result must be an ``AstQuoteValue``.
+    - Result is the transform of the *Eval*\ ed ``AstQuoteValue``.
+
+``Ast ImportExpr``
+    - Result is the transform of rewriting the node into::
+
+        importFn(#${node scopeExpr}, #${node symbolsExpr}, #${node subExpr})
+
+      ... and *Eval*\ ing it.
+
+``Ast BuiltinExpr``
+    - Result is obtained by calling the builtin lookup function in ``ctx``
+      with ``node ident``.
+
+Evaluation and Folding
+----------------------
+
+Evaluation and folding are very similar processes.  They are processes where
+expressions are transformed.  In the case of evaluation, they are transformed
+into a concrete value.  If a value cannot be produced for any reason,
+evaluation fails.
+
+In the case of folding, they are transformed either into a concrete value or a
+simplified expression.  As much of the simplified expression is folded as
+possible.
+
+Folding is, in essence, compile-time partial evaluation.
+
+Both of these processes are defined below as transforms of semantic nodes.
+Differences between evaluation and folding are noted where they exist.
+
+``Module``
+    *Evaluation*
+        Each statement of the ``Module`` is evaluated in order.  Any
+        statements which contain a ``RuntimeValue`` have the expression
+        evaluated and fixed; fixing it causes all future evaluations of the
+        ``RuntimeValue`` to simply be substituted with the result of the
+        expression.
+
+        The result of the module is the value of the last statement.
+
+    *Folding*
+        A ``Module`` shouldn't be folded; it doesn't make any sense.
+
+``CallExpr``
+    Both the function expression and arguments are processed.
+
+    *Folding*
+        If any argument resolved to a ``RuntimeValue``, treat it as if it were
+        an ``Expr``.
+
+        If any of the above fail to resolve to a Value, a new ``CallExpr`` is
+        returned with the result of processing the original expressions.
+
+        If the function resolved to a value, but the function cannot be called
+        at compile time, return a new ``CallExpr`` as above.
+
+    The function value is called with the argument values and the result
+    returned.
+
+``ArgumentValue``, ``EnclosedValue``, ``DeferredValue``, ``QuantumValue``
+    Look up in ``ctx`` and return.
+
+``RuntimeValue``
+    *Evaluation*
+        Look up in ``ctx`` and return.
+
+    *Folding*
+        Return the node un-modified.
+
+``AstQuoteValue``, ``ListValue``, ``MapValue``, ``ModuleValue``, ``NilValue``, ``StringValue``, ``NumberValue``
+    Return the node un-modified.
+
+``ClosureValue``
+    Process all the closure's values and return a new ``ClosureValue`` with
+    them.
+
+``FunctionValue``
+    If there are no enclosed values, return the node un-modified.
+
+    Otherwise, create a closure by looking up the enclosed values in ``ctx``.
+
+``ListExpr``, ``MapExpr``
+    Process all sub-expressions and return a ``Value``.
+
+    *Folding*
+        If any sub-expression results in an ``Expr`` or ``RuntimeValue``,
+        produce a new ``Expr`` instead.
 
 Execution requirements
 ----------------------
