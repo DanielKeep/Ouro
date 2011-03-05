@@ -87,7 +87,7 @@ struct Context
          */
 
         auto curScop = fromCtx.scop.parent;
-        auto enclosed = fromCtx.enclosedValues;
+        auto enclosed = fromCtx.enclosedValues.dup;
         bool lastScopEnclosed = false;
 
         while( curScop !is null && ! lastScopEnclosed )
@@ -115,7 +115,7 @@ struct Context
         }
 
         if( enclosed.length > 0 )
-            this.enclosedValues ~= enclosed;
+            this.enclosedValues = this.enclosedValues ~ enclosed;
     }
 }
 
