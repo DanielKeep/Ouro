@@ -34,7 +34,7 @@ struct Context
 
     static Context opCall(ref Context ctx)
     {
-        return Context(ctx.scop, ctx.stmt, ctx.builtinFn);
+        return ctx.dup;
     }
 
     Context dup()
