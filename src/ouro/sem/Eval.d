@@ -54,7 +54,9 @@ struct Context
             if( fs.scop is uv.scop )
             {
                 auto fvp = (uv.ident in fs.values);
-                assert( fvp !is null, "expected fixed value, didn't find it" );
+                assert( fvp !is null, "expected fixed value for "
+                        ~ uv.toString ~ " " ~ uv.ident
+                        ~ ", didn't find it" );
                 return *fvp;
             }
             fs = fs.parent;
@@ -117,8 +119,28 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         if( node.stmts.length == 0 )
             return new Sit.NilValue(null);
 
-        auto stmt = node.stmts[$-1];
-        return visitBase(stmt.expr, ctx);
+        Sit.Value result;
+
+        foreach( stmt ; node.stmts )
+        {
+            if( auto rv = cast(Sit.RuntimeValue) stmt.expr )
+            {
+                if( rv.resolve is rv )
+                {
+                    auto v = visitBase(rv.expr, ctx);
+                    rv.fixValue(v);
+                    result = v;
+                }
+                else
+                    result = rv.resolve;
+            }
+            else
+            {
+                result = visitBase(stmt.expr, ctx);
+            }
+        }
+
+        return result;
     }
 
     override Sit.Value visit(Sit.CallExpr node, Context ctx)
@@ -242,6 +264,14 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
     override Sit.Value visit(Sit.QuantumValue node, Context ctx)
     {
         return ctx.fixValue(node);
+    }
+
+    override Sit.Value visit(Sit.RuntimeValue node, Context ctx)
+    {
+        auto v = node.resolve;
+        if( v is null )
+            assert( false, "un-evaluated runtime value" );
+        return v;
     }
 
     override Sit.Value visit(Sit.AstQuoteValue node, Context ctx)

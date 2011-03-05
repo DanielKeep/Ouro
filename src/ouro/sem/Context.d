@@ -34,7 +34,7 @@ struct Context
 
     static Context opCall(ref Context ctx)
     {
-        return Context(ctx.scop, ctx.stmt, ctx.builtinFn);
+        return ctx.dup;
     }
 
     Context dup()
@@ -86,8 +86,8 @@ struct Context
             current context's list.
          */
 
-        auto curScop = fromCtx.scop;
-        auto enclosed = fromCtx.enclosedValues;
+        auto curScop = fromCtx.scop.parent;
+        auto enclosed = fromCtx.enclosedValues.dup;
         bool lastScopEnclosed = false;
 
         while( curScop !is null && ! lastScopEnclosed )
@@ -96,7 +96,7 @@ struct Context
 
             for( size_t i=0;
                  i < enclosed.length;
-                 dropThis = false, i += (dropThis ? 0 : 1) )
+                 i += (dropThis ? 0 : 1), dropThis = false )
             {
                 auto cv = enclosed[i];
                 dropThis = cv.value.scop is curScop;
@@ -115,7 +115,7 @@ struct Context
         }
 
         if( enclosed.length > 0 )
-            this.enclosedValues ~= enclosed;
+            this.enclosedValues = this.enclosedValues ~ enclosed;
     }
 }
 

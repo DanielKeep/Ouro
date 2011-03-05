@@ -4,17 +4,6 @@ Ouro Todo
 
 .. contents::
 
-Fix compile-time evaluation
----------------------------
-
-Currently, compile-time evaluation stops as soon as it encounters a runtime
-function.  Actually, that's not quite true.  It *does* evaluate the function's
-arguments, it just doesn't store them anywhere.
-
-What needs to happen, I think, is a modified version of the Eval visitor that
-tries to evaluate a tree.  However, if a call has to be delayed, it updates
-the tree instead of giving up entirely.
-
 Referring to symbols from inside macros
 ---------------------------------------
 

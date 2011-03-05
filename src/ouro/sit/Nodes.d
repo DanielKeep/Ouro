@@ -21,6 +21,7 @@ const Nodes =
     "EnclosedValue",
     "DeferredValue",
     "QuantumValue",
+    "RuntimeValue",
     "AstQuoteValue",
     "ClosureValue",
     "FunctionValue",
@@ -360,6 +361,38 @@ class QuantumValue : UnfixedValue, Resolvable
     override Value resolve()
     {
         return scop.lookup(astNode, ident);
+    }
+}
+
+class RuntimeValue : Value, Resolvable
+{
+    Expr expr;
+
+    protected Value value;
+
+    this(Ast.Node astNode, Expr expr)
+    in
+    {
+        assert( expr !is null );
+    }
+    body
+    {
+        super(astNode);
+        this.expr = expr;
+    }
+
+    void fixValue(Value value)
+    {
+        assert( this.value is null );
+        this.value = value;
+    }
+
+    override Value resolve()
+    {
+        if( value !is null )
+            return value;
+        else
+            return this;
     }
 }
 

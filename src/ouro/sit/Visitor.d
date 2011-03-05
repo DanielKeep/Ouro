@@ -93,6 +93,11 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.RuntimeValue node)
+        {
+            return defaultVisitResult;
+        }
+
         Result visit(Sit.AstQuoteValue node)
         {
             return defaultVisitResult;
@@ -232,6 +237,11 @@ abstract class Visitor(Result = void, Arg = void)
         }
 
         Result visit(Sit.QuantumValue node, Arg arg)
+        {
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.RuntimeValue node, Arg arg)
         {
             return defaultVisitResult;
         }
