@@ -18,6 +18,8 @@ class ReprVisitor : Visitor!(void, bool)
     StructuredOutput so;
     AstRepr.ReprVisitor arv;
 
+    bool[Sit.Node] defCache;
+
     this(StructuredOutput so)
     {
         this.so = so;
@@ -32,6 +34,11 @@ class ReprVisitor : Visitor!(void, bool)
     static ReprVisitor forStderr()
     {
         return new ReprVisitor(StructuredOutput.forStderr);
+    }
+
+    void clearDefCache()
+    {
+        defCache = defCache.init;
     }
 
     override void visitScope(Sit.Scope scop, bool showDef)
@@ -50,11 +57,6 @@ class ReprVisitor : Visitor!(void, bool)
     final void scopeName(Sit.Scope scop)
     {
         so.rf("0x{:x,8}", cast(void*) scop);
-    }
-
-    void visitBaseDef(Sit.Node node)
-    {
-        return visitBase(node, false);
     }
 
     override void visit(Sit.Module node, bool showDef)
@@ -87,7 +89,7 @@ class ReprVisitor : Visitor!(void, bool)
                 }
                 so.p("{").push;
                 {
-                    visitBaseDef(stmt.expr);
+                    visitBase(stmt.expr, showDef);
                 }
                 so.pop.p("}").l;
             }
@@ -101,7 +103,7 @@ class ReprVisitor : Visitor!(void, bool)
         so.r("Call ").r("{").push.l;
         {
             so.p("funcExpr: ").push;
-            visitBaseDef(node.funcExpr);
+            visitBase(node.funcExpr, showDef);
             so.pop.l;
 
             so.p("args: ").push("[").l;
@@ -110,7 +112,7 @@ class ReprVisitor : Visitor!(void, bool)
                 so.indent;
                 if( arg.explode )
                     so.r("explode ");
-                visitBaseDef(arg.expr);
+                visitBase(arg.expr, showDef);
                 so.l;
             }
             so.pop.p("]").l;
@@ -179,8 +181,10 @@ class ReprVisitor : Visitor!(void, bool)
     override void visit(Sit.FunctionValue node, bool showDef)
     {
         so.r("Function ").r(reprString(node.name));
-        if( showDef )
+        if( showDef && !(node in defCache) )
         {
+            defCache[node] = true;
+
             so.r(" {").push.l;
             so.p("args: [").push.l;
 
@@ -196,7 +200,7 @@ class ReprVisitor : Visitor!(void, bool)
             if( node.expr !is null )
             {
                 so.p("expr: ");
-                visitBaseDef(node.expr);
+                visitBase(node.expr, showDef);
                 so.l;
 
                 if( node.enclosedValues.length > 0 )
@@ -227,7 +231,7 @@ class ReprVisitor : Visitor!(void, bool)
         foreach( elemExpr ; node.elemExprs )
         {
             so.indent;
-            visitBaseDef(elemExpr);
+            visitBase(elemExpr, showDef);
             so.l;
         }
         so.pop.p("]").l;
@@ -241,7 +245,7 @@ class ReprVisitor : Visitor!(void, bool)
         foreach( elemValue ; node.elemValues )
         {
             so.indent;
-            visitBaseDef(elemValue);
+            visitBase(elemValue, showDef);
             so.l;
         }
         so.pop.p("]").l;
@@ -258,8 +262,8 @@ class ReprVisitor : Visitor!(void, bool)
         foreach( kvp ; node.kvps )
         {
             so.push("{");
-            visitBaseDef(kvp.key);
-            visitBaseDef(kvp.value);
+            visitBase(kvp.key, showDef);
+            visitBase(kvp.value, showDef);
             so.pop("}").l;
         }
         so.pop("}").l;
@@ -271,8 +275,8 @@ class ReprVisitor : Visitor!(void, bool)
         foreach( kvp ; node.kvps )
         {
             so.push("{");
-            visitBaseDef(kvp.key);
-            visitBaseDef(kvp.value);
+            visitBase(kvp.key, showDef);
+            visitBase(kvp.value, showDef);
             so.pop("}").l;
         }
         so.pop("}").l;
