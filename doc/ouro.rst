@@ -1157,8 +1157,91 @@ Differences between evaluation and folding are noted where they exist.
         If any sub-expression results in an ``Expr`` or ``RuntimeValue``,
         produce a new ``Expr`` instead.
 
+Module Paths
+============
+
+In Ouro, there is a 1:1 correspondence between modules and files, unlike C++
+or C#.
+
+A module value may be obtained using the ``module`` function, passing
+the path to the module like so::
+
+    let ast = module("/ouro/ast")
+
+The path passed is actually a URI, both relative and absolute URIs are
+supported.  Relative URIs are evaluated relative to the module's parent.  For
+example, the path ``../baz`` used from within the module ``/foo/bar`` resolves
+to ``/baz``.
+
+All URIs which do not specify the scheme default to the ``module`` scheme.
+Other schemes may be specified, although there is no requirement for schemes
+other than ``module``.  Nevertheless, standard behaviour for some schemes is
+provided below.
+
+Resolving a ``module`` URL to an actual resource depends on the import roots.
+This is an ordered list of absolute URIs used to resolve ``module`` URLs.
+For example, a typical Ouro environment running in a UNIX environment might
+have the following root URIs:
+
+    - ``file://$CD``
+    - ``file://$HOME/.ouro/lib``
+    - ``file:///usr/lib/ouro``
+
+Resolving a ``module`` URL involves combining the path of the ``module`` URL
+with the root URI and determining if the result is valid. If valid, the
+resulting URI is returned as the result; otherwise, the next root is tried.
+
+URIs and File Extensions
+------------------------
+
+Simply appending a ``module`` URL to a root URI is generally not sufficient to
+locate the actual module resource.  Modules will typically be stored as files
+with file extensions determining format.
+
+As such, combining a ``module`` URL with a root URI will often require
+"mangling" the path and then checking for existence.
+
+Below is a list of possible mangles.  Implementations are free to support
+others.  The only required mangle is the one which adds the ``.ouro`` file
+extension.
+
+- ``module.ouro`` - Ouro source files.
+- ``module.osem`` - Folded Ouro module semantic tree.
+- ``module.obc`` - Compiled Ouro bytecode.
+
+URI Schemes
+-----------
+
+``file`` URLs
+`````````````
+
+``file`` URLs behave as expected.
+
+``zip`` URLs
+````````````
+
+``zip`` URLs are of the form::
+
+    zip:url
+
+The ``url`` portion specifies a URL to another resource which must be a ZIP
+archive.
+
+See the note on packages for additional details.
+
+Packages
+--------
+
+Ouro modules may be stored in a package.  These include things such as
+compressed archives.
+
+Packages may contain a file called *TODO* which contains metadata on the
+package.  This includes a path prefix.
+
+**TODO**: work out details.
+
 Execution requirements
-----------------------
+======================
 
 Tail call elimination.
 
