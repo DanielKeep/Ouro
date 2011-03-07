@@ -148,6 +148,13 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         return visitExpr(astValue.ast, ctx);
     }
 
+    static Sit.Module createEmptyModule(Ast.Module node, char[] path)
+    {
+        return new Sit.Module(node, path,
+                new Sit.PartialScope(null, false),
+                new Sit.PartialScope(null, false));
+    }
+
     override Sit.Node visit(Ast.Module node, Context* ctx)
     {
         auto stmts = new Sit.Stmt[node.stmts.length];
@@ -192,7 +199,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                     auto modStmt = node.stmts[i];
 
                     subCtx.stmt = &stmt;
-                    subCtx.stmt.loc = modStmt.loc;
+                    subCtx.stmt.astNode = modStmt;
 
                     Stderr("Processing ")(modStmt)("...");
 
@@ -276,7 +283,10 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         }
         while( failedStmt )
 
-        return new Sit.Module(node, stmts, /*exportSymbols*/null, ctx.scop);
+        auto modul = new Sit.Module(node, node.loc.file, ctx.scop,
+                new Sit.PartialScope(null, false));
+        modul.stmts = stmts;
+        return modul;
     }
 
     override Sit.Node visit(Ast.ImportStmt node, Context* ctx)

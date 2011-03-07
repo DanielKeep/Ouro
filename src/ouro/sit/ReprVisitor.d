@@ -66,10 +66,13 @@ class ReprVisitor : Visitor!(void, bool)
             so.p("scope: ");
             visitScope(node.scop,false);
 
-            so.p("exportSymbols: ");
+            so.p("exports: ");
             so.r("[");
-            foreach( i,exportSymbol ; node.exportSymbols )
-                so.r(i==0 ? "" : ", ").r(reprIdent(exportSymbol));
+            {
+                size_t i=0;
+                foreach( exportSymbol,_ ; node.exportScop.entries )
+                    so.r((i++)==0 ? "" : ", ").r(reprIdent(exportSymbol));
+            }
             so.r("]").l;
 
             so.p("stmts: ").push("[").l;

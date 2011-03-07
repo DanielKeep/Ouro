@@ -148,27 +148,29 @@ class Node
 
 class Module : Node
 {
+    char[] path;
     Stmt[] stmts;
-    char[][] exportSymbols;
     Scope scop;
+    Scope exportScop;
 
-    this(Ast.Node astNode, Stmt[] stmts, char[][] exportSymbols, Scope scop)
+    this(Ast.Node astNode, char[] path, Scope scop, Scope exportScop)
     in
     {
         assert( scop !is null );
+        assert( exportScop !is null );
     }
     body
     {
         super(astNode);
-        this.stmts = stmts;
-        this.exportSymbols = exportSymbols;
+        this.path = path;
         this.scop = scop;
+        this.exportScop = exportScop;
     }
 }
 
 struct Stmt
 {
-    Location loc;
+    Ast.Node astNode;
     Expr expr;
     Value value;
     Object ex;
@@ -177,25 +179,32 @@ struct Stmt
     bool mergeAll;
     char[][] mergeList;
 
-    static Stmt opCall(Location loc, Expr expr)
+    static Stmt opCall(Ast.Node astNode)
     {
         Stmt r;
-        r.loc = loc;
+        r.astNode = astNode;
+        return r;
+    }
+
+    static Stmt opCall(Ast.Node astNode, Expr expr)
+    {
+        auto r = Stmt(astNode);
         r.expr = expr;
         return r;
     }
 
-    static Stmt opCall(Location loc, Expr expr, char[] bindIdent)
+    static Stmt opCall(Ast.Node astNode, Expr expr, char[] bindIdent)
     {
-        auto r = Stmt(loc, expr);
+        auto r = Stmt(astNode, expr);
         r.bind = true;
         r.bindIdent = bindIdent;
         return r;
     }
 
-    static Stmt opCall(Location loc, Expr expr, bool mergeAll, char[][] mergeList)
+    static Stmt opCall(Ast.Node astNode, Expr expr,
+            bool mergeAll, char[][] mergeList)
     {
-        auto r = Stmt(loc, expr);
+        auto r = Stmt(astNode, expr);
         r.mergeAll = mergeAll;
         r.mergeList = mergeList;
         return r;
