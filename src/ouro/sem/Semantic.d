@@ -379,7 +379,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                 ctx);
         else
             rhs = visitExpr(node.rhs, ctx);
-        
+
         return new Sit.CallExpr(node, func,
                 [Sit.CallArg(lhs, false), Sit.CallArg(rhs, false)]);
     }
@@ -561,7 +561,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         auto qq = qqRewrite(node.expr, subExprs);
 
         auto args = new Sit.CallArg[1 + subExprs.length];
-        
+
         args[0] = Sit.CallArg(qq, false);
 
         foreach( i,subExpr ; subExprs )

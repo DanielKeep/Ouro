@@ -162,7 +162,7 @@ class ReprVisitor : Visitor!(void, bool)
         arv.visitBase(node.ast);
         so.pop.r(" }").l;
     }
-    
+
     override void visit(Sit.ClosureValue node, bool showDef)
     {
         so.r("Closure {").push.l;

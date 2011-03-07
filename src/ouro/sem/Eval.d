@@ -313,7 +313,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
 
         foreach( i,elemExpr ; node.elemExprs )
             elemValues[i] = visitValue(elemExpr, ctx);
-        
+
         return new Sit.ListValue(node.astNode, elemValues);
     }
 
