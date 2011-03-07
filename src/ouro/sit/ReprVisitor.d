@@ -89,7 +89,12 @@ class ReprVisitor : Visitor!(void, bool)
                 }
                 so.p("{").push;
                 {
-                    visitBase(stmt.expr, showDef);
+                    if( stmt.value !is null )
+                        visitBase(stmt.value, showDef);
+                    else if( stmt.expr !is null )
+                        visitBase(stmt.expr, showDef);
+                    else
+                        so.p("(null)").l;
                 }
                 so.pop.p("}").l;
             }

@@ -177,93 +177,102 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             failedStmt = false;
             successStmt = false;
 
+        processStmt:
             foreach( i,ref stmt ; stmts )
             {
-                if( stmt.expr !is null )
+                if( stmt.value !is null )
                     // Already done this one!  YAY!
-                    continue;
+                    continue processStmt;
 
                 // Try to process
-                auto subCtx = ctx.dup;
-                auto modStmt = node.stmts[i];
-                Sit.Expr expr;
-
-                subCtx.stmt = &stmt;
-                subCtx.stmt.loc = modStmt.loc;
-
-                Stderr("Processing ")(modStmt)("...");
-
-                if( abortedNF({ expr = visitExpr(modStmt, &subCtx); }, lastEx) )
+                auto expr = stmt.expr;
+                if( expr is null )
                 {
-                    // Bastard.
-                    Stderr(" failed.").newline;
-                    failedStmt = true;
-                }
-                else
-                {
-                    // Hooray!
-                    Stderr(" success; fold");
+                    auto subCtx = ctx.dup;
+                    auto modStmt = node.stmts[i];
 
-                    debug(SemVerbose) if( subCtx.dumpNode !is null )
+                    subCtx.stmt = &stmt;
+                    subCtx.stmt.loc = modStmt.loc;
+
+                    Stderr("Processing ")(modStmt)("...");
+
+                    if( abortedNF({ expr = visitExpr(modStmt, &subCtx); },
+                                stmt.ex) )
                     {
-                        Stderr(" ");
-                        subCtx.dumpNode(expr);
-                        Stderr(" ");
-                    }
-
-                    /*
-                        We've got a semantic tree, but not (necessarily) an
-                        actual value.  This is important if we try to use an
-                        indirectly defined macro.
-
-                        Try to evaluate it.
-                     */
-                    Sit.Expr foldedExpr;
-                    Sit.Value foldedValue;
-                    
-                    if( aborted({ foldedExpr = foldExpr(expr); }, lastEx) )
-                    {
+                        // Bastard.
                         Stderr(" failed.").newline;
                         failedStmt = true;
+                        continue processStmt;
                     }
                     else
                     {
-                        Stderr(" worked.").newline;
-
-                        successStmt = true;
-                        foldedValue = cast(Sit.Value) foldedExpr;
-                    
-                        // If we couldn't fold to a value, create a
-                        // RuntimeValue.
-                        if( foldedValue is null )
-                            foldedValue = new Sit.RuntimeValue(
-                                expr.astNode, foldedExpr);
-
-                        if( subCtx.stmt.bind )
-                        {
-                            subCtx.scop.bind(subCtx.stmt.bindIdent,
-                                    foldedValue);
-                        }
-
-                        if( subCtx.stmt.mergeAll )
-                        {
-                            assert(false, "nyi");
-                        }
-                        else if( subCtx.stmt.mergeList.length != 0 )
-                        {
-                            assert(false, "nyi");
-                        }
-
-                        subCtx.stmt.expr = foldedValue;
+                        Stderr(" success.");
+                        stmt.expr = expr;
                     }
                 }
+
+                // Fold value
+                Stderr(" Fold");
+
+                debug(SemVerbose) if( subCtx.dumpNode !is null )
+                {
+                    Stderr(" ");
+                    subCtx.dumpNode(expr);
+                    Stderr(" ");
+                }
+
+                /*
+                    We've got a semantic tree, but not (necessarily) an
+                    actual value.  This is important if we try to use an
+                    indirectly defined macro.
+
+                    Try to evaluate it.
+                 */
+                Sit.Expr foldedExpr;
+                Sit.Value foldedValue;
+
+                if( aborted({ foldedExpr = foldExpr(expr); }, stmt.ex) )
+                {
+                    Stderr(" failed.").newline;
+                    failedStmt = true;
+                    continue processStmt;
+                }
+
+                Stderr(" worked.").newline;
+                successStmt = true;
+                foldedValue = cast(Sit.Value) foldedExpr;
+
+                // If we couldn't fold to a value, create a
+                // RuntimeValue.
+                if( foldedValue is null )
+                    foldedValue = new Sit.RuntimeValue(
+                        expr.astNode, foldedExpr);
+
+                if( stmt.bind )
+                {
+                    scop.bind(stmt.bindIdent, foldedValue);
+                }
+
+                if( stmt.mergeAll )
+                {
+                    assert(false, "nyi");
+                }
+                else if( stmt.mergeList.length != 0 )
+                {
+                    assert(false, "nyi");
+                }
+
+                stmt.value = foldedValue;
             }
 
             if( ! successStmt )
-                if( lastEx !is null )
-                    throw lastEx;
-                else
-                    assert( false, "could not complete semantic analysis" );
+            {
+                foreach( stmt ; stmts )
+                    if( stmt.ex !is null )
+                        throw stmt.ex;
+
+                assert( false, "could not complete semantic analysis" );
+            }
         }
         while( failedStmt )
 

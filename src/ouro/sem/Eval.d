@@ -123,7 +123,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
 
         foreach( stmt ; node.stmts )
         {
-            if( auto rv = cast(Sit.RuntimeValue) stmt.expr )
+            if( auto rv = cast(Sit.RuntimeValue) stmt.value )
             {
                 if( rv.resolve is rv )
                 {
@@ -136,7 +136,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
             }
             else
             {
-                result = visitBase(stmt.expr, ctx);
+                result = visitBase(stmt.value, ctx);
             }
         }
 

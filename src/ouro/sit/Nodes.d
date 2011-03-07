@@ -170,6 +170,8 @@ struct Stmt
 {
     Location loc;
     Expr expr;
+    Value value;
+    Object ex;
     bool bind;
     char[] bindIdent;
     bool mergeAll;
