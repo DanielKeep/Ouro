@@ -10,6 +10,7 @@ import ouro.sem.Semantic : SemInitialVisitor;
 import ouro.util.ImportRoot : ImportRoot, Resource, ImportRootSchemes;
 import ouro.util.TokenStream;
 import ouro.util.uriSchemes.File : FileRoot;
+import ouro.Location;
 import ouro.Source;
 
 import Ast = ouro.ast.Nodes;
@@ -76,7 +77,7 @@ struct ModulePool
         }
     }
 
-    Sit.Module load(char[] path)
+    Sit.Module load(char[] path, bool includeLang = true)
     {
         // Is it already there?
         if( auto idxptr = (path in pathToEntryIdx) )
@@ -121,6 +122,12 @@ struct ModulePool
         pathToEntryIdx[entry.sit.path] = entries.length-1;
 
         // Add to the statement pool
+        if( includeLang )
+            // Inject: import "/ouro/lang" : *
+            injectStmts(entry.sit, [new Ast.ImportStmt(Location.init,
+                        /*xport*/false, "/ouro/lang", /*ident*/null,
+                        /*all*/true, /*symbols*/null)]);
+
         injectStmts(entry.sit, entry.ast.stmts);
 
         // Return module object
@@ -321,8 +328,9 @@ processStmt:
         typeof(this.stmts) newStmts, injSlice;
         if( currentStmt == size_t.max )
         {
-            newStmts = new Stmt[stmts.length];
-            injSlice = newStmts;
+            newStmts = new Stmt[this.stmts.length+stmts.length];
+            newStmts[0..this.stmts.length] = this.stmts[];
+            injSlice = newStmts[this.stmts.length..$];
         }
         else
         {

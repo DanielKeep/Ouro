@@ -50,8 +50,8 @@ int main(char[][] argv)
     mp.addFileImportRoot(".");
 
     {
-        // Import and compile language support
-        auto langMod = mp.load("/ouro/lang");
+        // Import and compile language support.
+        auto langMod = mp.load("/ouro/lang", /*includeLang*/false);
         if( langMod is null )
             assert( false, "could not load /ouro/lang" );
         mp.compileStmts();
