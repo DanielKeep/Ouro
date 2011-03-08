@@ -57,7 +57,6 @@ class ImportStmt : Statement
     in
     {
         assert( modulePath != "" );
-        assert( ident != "" );
         if( all )
             assert( symbols.length == 0 );
         if( symbols != null )
