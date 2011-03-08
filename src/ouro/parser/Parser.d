@@ -82,16 +82,22 @@ Ast.ImportStmt tryparseImportStmt(TokenStream ts)
 {
     /*
         <import statement> =
-            "import", [ <identifier>, "=" ], <string>,
+            [ "export" ], "import", [ <identifier>, "=" ], <string>,
                 [ ":", ( <import identifier>, { ",", <import identifier> }
                        | "*"
                        ) ],
                 <term>;
     */
     
-    if( ts.peek.type != TOKimport ) return null;
+    if( (ts.peek.type == TOKexport && ts.peek(1).type != TOKimport)
+            || ts.peek.type != TOKimport )
+        return null;
     
+    bool xport = ts.peek.type == TOKexport;
     auto start = ts.pop.loc;
+
+    if( xport ) ts.pop;
+
     char[] ident = null;
 
     if( ts.peek.type == TOKidentifier )
@@ -124,24 +130,28 @@ Ast.ImportStmt tryparseImportStmt(TokenStream ts)
 
     auto end = ts.popExpectAny(TOKeol, TOKeos).loc;
 
-    return new Ast.ImportStmt(start.extendTo(end), modulePath,
+    return new Ast.ImportStmt(start.extendTo(end), xport, modulePath,
             ident, all, symbols);
 }
 
 Ast.LetStmt tryparseLetStmt(TokenStream ts)
 {
     /*
-        <let statement> = (
-              "let", <identifier>, "=", <expression>
-            | "let", [ "macro" ], <identifier>,
-                "(", [ <function argument names> ], ")", "=", <expression>
-            ),
-            <term>;
+        <let statement> =
+            [ "export" ], "let", [ "macro" ], <identifier>,
+            [ "(", [ <function argument names> ], ")" ],
+            "=", <expression>, <term>;
     */
 
-    if( ts.peek.type != TOKlet ) return null;
+    if( (ts.peek.type == TOKexport && ts.peek(1).type != TOKlet )
+            || ts.peek.type != TOKlet )
+        return null;
 
+    auto xport = ts.peek.type == TOKexport;
     auto start = ts.pop.loc;
+
+    if( xport ) ts.pop;
+
     bool isMacro;
 
     if( ts.peek.type == TOKmacro )
@@ -169,7 +179,7 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
         auto expr = parseExpr(ts);
         auto end = ts.popExpectAny(TOKeol, TOKeos).loc;
 
-        return new Ast.LetFuncStmt(start.extendTo(end), ident,
+        return new Ast.LetFuncStmt(start.extendTo(end), ident, xport,
                 isMacro, args, expr);
     }
     else
@@ -178,7 +188,7 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
         auto expr = parseExpr(ts);
         auto end = ts.popExpectAny(TOKeol, TOKeos).loc;
 
-        return new Ast.LetExprStmt(start.extendTo(end), ident, expr);
+        return new Ast.LetExprStmt(start.extendTo(end), ident, xport, expr);
     }
 }
 

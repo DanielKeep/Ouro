@@ -197,6 +197,7 @@ identifiers.
            ├─'import'──────┘    - Module import statement
            ├─'macro'───────┘    - Macro keyword
            ├─'range'───────┘    - Range constructor
+           ├─'export'──────┘    - Export binding(s)
            └─'__builtin__'─┘    - Builtin lookup
 
 Identifier
@@ -386,7 +387,7 @@ now, the code is canonical).
     <empty statement> = <term>;
 
     <import statement> =
-        "import", [ <identifier>, "=" ], <string>,
+        [ "export" ], "import", [ <identifier>, "=" ], <string>,
             [ ":", ( <import identifier>, { ",", <import identifier> }
                    | "*"
                    ) ],
@@ -395,7 +396,7 @@ now, the code is canonical).
     <import identifier> = <identifier>;
 
     <let statement> =
-        "let", [ "macro" ], <identifier>,
+        [ "export" ], "let", [ "macro" ], <identifier>,
         [ "(", [ <function argument names> ], ")" ],
         "=", <expression>, <term>;
 

@@ -226,12 +226,23 @@ processStmt:
                         stmt.mod.scop.bind(stmt.stmt.bindIdent, foldedValue);
                     }
 
+                    if( stmt.stmt.xport )
+                    {
+                        assert( false, "nyi" );
+                    }
+
                     if( stmt.stmt.mergeAll )
                     {
+                        if( cast(Sit.RuntimeValue) foldedValue !is null )
+                            assert( false, "cannot import from runtime value" );
+
                         assert( false, "nyi" );
                     }
                     else if( stmt.stmt.mergeList.length != 0 )
                     {
+                        if( cast(Sit.RuntimeValue) foldedValue !is null )
+                            assert( false, "cannot import from runtime value" );
+
                         assert( false, "nyi" );
                     }
 

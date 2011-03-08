@@ -26,6 +26,8 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.ImportStmt node)
     {
+        if( node.xport )
+            so.p("export ");
         so.p("import ");
 
         if( node.ident != "" )
@@ -47,6 +49,8 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.LetExprStmt node)
     {
+        if( node.xport )
+            so.p("export ");
         so.f("let {} = ", node.ident);
         visitBase(node.expr);
         so.l;
@@ -54,6 +58,8 @@ class ReprVisitor : Visitor!()
 
     override void visit(Ast.LetFuncStmt node)
     {
+        if( node.xport )
+            so.p("export ");
         so.f("let {}{}", node.isMacro ? "macro " : "",
                 reprIdent(node.ident));
         foreach( i,arg ; node.args )

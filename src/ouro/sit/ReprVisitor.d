@@ -79,6 +79,8 @@ class ReprVisitor : Visitor!(void, bool)
             foreach( stmt ; node.stmts )
             {
                 so.indent;
+                if( stmt.xport )
+                    so.p("export ");
                 if( stmt.bind )
                     so.r("bind ").r(reprIdent(stmt.bindIdent)).r(" ");
                 if( stmt.mergeAll )

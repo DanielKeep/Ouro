@@ -436,6 +436,7 @@ bool lexBasicIdentifierOrKeyword(Source src, out Token token)
         case "import":  type = TOKimport; break;
         case "macro":   type = TOKmacro; break;
         case "range":   type = TOKrange; break;
+        case "export":  type = TOKexport; break;
         case "__builtin__": type = TOKbuiltin; break;
         default:
     }

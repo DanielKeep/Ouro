@@ -292,12 +292,13 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
     override Sit.Node visit(Ast.ImportStmt node, Context* ctx)
     {
         assert( ctx.stmt !is null );
-        assert( false, "imports not implemented yet" );
 
         auto moduleExpr = new Sit.CallExpr(node,
             ctx.builtinFunction("ouro.module"),
             [Sit.CallArg(new Sit.StringValue(node, node.modulePath), false)]
         );
+
+        ctx.stmt.xport = node.xport;
 
         if( node.ident != "" )
         {
@@ -320,6 +321,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
     {
         assert( ctx.stmt !is null );
 
+        ctx.stmt.xport = node.xport;
         ctx.stmt.bind = true;
         ctx.stmt.bindIdent = node.ident;
 
@@ -332,6 +334,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         auto subCtx = ctx.dup;
 
+        subCtx.stmt.xport = node.xport;
         subCtx.stmt.bind = true;
         subCtx.stmt.bindIdent = node.ident;
 

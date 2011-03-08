@@ -65,6 +65,7 @@ const char[][] LiteralTokens =
     "import",
     "macro",
     "range",
+    "export",
 ];
 
 const char[][] OtherTokens =

@@ -175,6 +175,7 @@ struct Stmt
     Expr expr;
     Value value;
     Object ex;
+    bool xport;
     bool bind;
     char[] bindIdent;
     bool mergeAll;

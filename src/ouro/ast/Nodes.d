@@ -50,8 +50,9 @@ class ImportStmt : Statement
     char[] ident;
     bool all;
     char[][] symbols;
+    bool xport;
 
-    this(Location loc, char[] modulePath, char[] ident,
+    this(Location loc, bool xport, char[] modulePath, char[] ident,
             bool all, char[][] symbols)
     in
     {
@@ -70,15 +71,17 @@ class ImportStmt : Statement
         this.ident = ident;
         this.all = all;
         this.symbols = symbols;
+        this.xport = xport;
     }
 }
 
 class LetStmt : Statement
 {
     char[] ident;
+    bool xport;
     Expr expr;
 
-    this(Location loc, char[] ident, Expr expr)
+    this(Location loc, char[] ident, bool xport, Expr expr)
     in
     {
         assert( ident != "" );
@@ -88,15 +91,16 @@ class LetStmt : Statement
     {
         super(loc);
         this.ident = ident;
+        this.xport = xport;
         this.expr = expr;
     }
 }
 
 class LetExprStmt : LetStmt
 {
-    this(Location loc, char[] ident, Expr expr)
+    this(Location loc, char[] ident, bool xport, Expr expr)
     {
-        super(loc, ident, expr);
+        super(loc, ident, xport, expr);
     }
 }
 
@@ -105,10 +109,10 @@ class LetFuncStmt : LetStmt
     bool isMacro;
     Argument[] args;
 
-    this(Location loc, char[] ident, bool isMacro, Argument[] args,
+    this(Location loc, char[] ident, bool xport, bool isMacro, Argument[] args,
             Expr expr)
     {
-        super(loc, ident, expr);
+        super(loc, ident, xport, expr);
         this.isMacro = isMacro;
         this.args = args;
     }
