@@ -89,14 +89,19 @@ Ast.ImportStmt tryparseImportStmt(TokenStream ts)
                 <term>;
     */
     
-    if( (ts.peek.type == TOKexport && ts.peek(1).type != TOKimport)
-            || ts.peek.type != TOKimport )
-        return null;
+    {
+        bool maybeExImp = (ts.peek.type == TOKexport
+                && ts.peek(1).type == TOKimport);
+        bool maybeImp = (ts.peek.type == TOKimport);
+
+        if( !( maybeExImp || maybeImp ) )
+            return null;
+    }
     
     bool xport = ts.peek.type == TOKexport;
-    auto start = ts.pop.loc;
+    auto start = ts.popExpectAny(TOKimport, TOKexport).loc;
 
-    if( xport ) ts.pop;
+    if( xport ) ts.popExpect(TOKimport);
 
     char[] ident = null;
 
@@ -112,17 +117,19 @@ Ast.ImportStmt tryparseImportStmt(TokenStream ts)
 
     if( ts.peek.type == TOKcolon )
     {
-        ts.pop;
+        ts.popExpect(TOKcolon);
         if( ts.peek.type == TOKstar )
+        {
             all = true;
-
+            ts.popExpect(TOKstar);
+        }
         else
         {
             symbols ~= ts.popExpect(TOKidentifier).value;
 
             while( ts.peek.type == TOKcomma )
             {
-                ts.pop;
+                ts.popExpect(TOKcomma);
                 symbols ~= ts.popExpect(TOKidentifier).value;
             }
         }
@@ -143,9 +150,14 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
             "=", <expression>, <term>;
     */
 
-    if( (ts.peek.type == TOKexport && ts.peek(1).type != TOKlet )
-            || ts.peek.type != TOKlet )
-        return null;
+    {
+        bool maybeExLet = (ts.peek.type == TOKexport
+                && ts.peek(1).type == TOKlet);
+        bool maybeLet = (ts.peek.type == TOKlet);
+
+        if( !( maybeExLet || maybeLet ) )
+            return null;
+    }
 
     auto xport = ts.peek.type == TOKexport;
     auto start = ts.pop.loc;
