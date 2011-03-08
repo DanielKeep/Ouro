@@ -1361,8 +1361,24 @@ The following character sequences are treated specially:
     specific to the exact value being substituted.  Some common format
     options are listed below.
 
-    **TODO**: decide how to handle substitutions inside the format
-    options.
+    Simple substitutions of the form ``$*``, ``${}``, ``$n``, ``$ident``,
+    ``${n}`` or ``${ident}`` may be used within format options, either as a
+    complete option or as the argument to another option.  Some examples::
+
+        ("${0:$*}" (.format.) [16, "x"]) = "10"
+
+        ("${0:$1} ${0:(?:$2:$3)}" (.format.) [true, "(?:a:b)", "x", "y"])
+            = "a x"
+
+    You can also substitute the value of a string literal like so::
+
+        ("${0:(p:$'s':$\":\")}" (.format.) [2]) = ":"
+
+    String substitutions can be written as either ``$"..."`` or ``$'...'``;
+    the latter is allowed to make writing them inside string literals easier.
+
+    Note that an option or option argument can only be one of a literal,
+    string substitution or general substitution.
 
     -   General
 
@@ -1371,7 +1387,7 @@ The following character sequences are treated specially:
 
     -   Logical
 
-        ``(?t,f)``
+        ``(?:t:f)``
             Substitutes one of *t* or *f* based on value.
 
             **TODO**: clarify how substitutions work with this.
@@ -1414,14 +1430,14 @@ The following character sequences are treated specially:
             Uses scientific notation.  The case determines the case of the
             exponent letter.
 
-        ``(en)``, ``(En)``
+        ``(e:n)``, ``(E:n)``
             Uses scientific notation as above.  Forces the exponent to be
             *n* digits wide.
 
         ``o``
             Represents the number in octal.
 
-        ``(p:s_0,s_1,...)``
+        ``(p:s_0:s_1:...)``
             Substitutes *s*\ :sub:`0`, *s*\ :sub:`1`, ... based on the
             plurality of the number.
 
@@ -1430,7 +1446,7 @@ The following character sequences are treated specially:
         ``r``
             Rounds the number to the nearest integer.
 
-        ``(rR)``
+        ``(r:R)``
             Rounds the number based on the value of *R*.
 
         ``x``, ``X``
@@ -1441,7 +1457,7 @@ The following character sequences are treated specially:
             Inserts a separator (either a ``,``\ [*]_ or ``_``) between
             every 3 digits, counting out from the decimal place.
 
-        ``(,n)``, ``(_n)``
+        ``(,:n)``, ``(_:n)``
             Inserts a separator as above; instead of every 3 digits, it
             inserts it every *n* digits, where *n* is a positive integer.
 
@@ -1458,7 +1474,7 @@ The following character sequences are treated specially:
 
     -   Lists
 
-        ``:f...``
+        ``:f...``, ``(:f...)``
             Uses *f...* as the format options for elements.
 
         ``l``
@@ -1468,22 +1484,22 @@ The following character sequences are treated specially:
             Raw formatting: formats all elements without brackets,
             commas or spacing.
 
-        ``(sS...)``
+        ``(s:S...)``
             Uses *S...* as the separator between elements.
 
     -   Maps
 
-        ``:(fk...):(fv...)``
+        ``(k:...)``, ``(v:...)``
             Uses *fk...* and *fv...* as the format options for keys and
             values respectively.
 
         ``l``
             Substitutes the number of elements in the map.
 
-        ``(spS...)``
+        ``(p:S...)``
             Uses *S...* as the separator between key/value pairs.
 
-        ``(seS...)``
+        ``(s:S...)``
             Uses *S...* as the separator between elements.
 
 ``${x,a;p}``, ``${x,a:f}``, ``${x;p:f}``, ``${x,a;p:f}``
