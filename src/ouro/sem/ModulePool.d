@@ -33,6 +33,7 @@ struct ModulePool
 
     struct Stmt
     {
+        bool done = false;
         Sit.Module mod;
         Sit.Stmt stmt;
         Object ex;
@@ -166,7 +167,7 @@ processStmt:
                     currentModule = null;
                 }
 
-                if( stmt.stmt.value !is null )
+                if( stmt.done )
                     // Already done this one!  YAY!
                     continue processStmt;
 
@@ -197,56 +198,95 @@ processStmt:
                 // Attempt to fold
                 {
                     Sit.Expr foldedExpr;
-                    Sit.Value foldedValue;
+                    Sit.Value foldedValue = stmt.stmt.value;
 
-                    try
-                    {
-                        foldedExpr = sem.foldExpr(stmt.stmt.expr);
-                    }
-                    catch( Object ex )
-                    {
-                        stmt.ex = ex;
-                        failedStmt = true;
-                    }
-
-                    if( foldedExpr is null )
-                        continue processStmt;
-
-                    successStmt = true;
-                    foldedValue = cast(Sit.Value) foldedExpr;
-
-                    // If we couldn't fold, create a RuntimeValue.
                     if( foldedValue is null )
-                        foldedValue = new Sit.RuntimeValue(
-                                stmt.stmt.expr.astNode, foldedExpr);
+                    {
+                        try
+                        {
+                            foldedExpr = sem.foldExpr(stmt.stmt.expr);
+                        }
+                        catch( Object ex )
+                        {
+                            stmt.ex = ex;
+                            failedStmt = true;
+                        }
 
-                    // Handle bindings, etc.
+                        if( foldedExpr is null )
+                            continue processStmt;
+                        foldedValue = cast(Sit.Value) foldedExpr;
+
+                        // If we couldn't fold, create a RuntimeValue.
+                        if( foldedValue is null )
+                            foldedValue = new Sit.RuntimeValue(
+                                    stmt.stmt.expr.astNode, foldedExpr);
+
+                        stmt.stmt.value = foldedValue;
+                    }
+                }
+
+                // Handle bindings, etc.
+                {
                     if( stmt.stmt.bind )
                     {
-                        stmt.mod.scop.bind(stmt.stmt.bindIdent, foldedValue);
-                    }
+                        stmt.mod.scop.bind(stmt.stmt.bindIdent, stmt.stmt.value);
 
-                    if( stmt.stmt.xport )
-                    {
-                        assert( false, "nyi" );
+                        if( stmt.stmt.xport )
+                            stmt.mod.exportScop.bind(stmt.stmt.bindIdent,
+                                    stmt.stmt.value);
                     }
 
                     if( stmt.stmt.mergeAll )
                     {
-                        if( cast(Sit.RuntimeValue) foldedValue !is null )
+                        if( cast(Sit.RuntimeValue) stmt.stmt.value !is null )
                             assert( false, "cannot import from runtime value" );
 
-                        assert( false, "nyi" );
+                        if( auto mv = cast(Sit.ModuleValue) stmt.stmt.value )
+                        {
+                            if( ! mv.modul.complete )
+                            {
+                                stmt.ex = new Exception("cannot import all "
+                                    "symbols from module "~mv.modul.path~
+                                    " before it has been compiled.  Try a "
+                                    "selective import instead.");
+                                failedStmt = true;
+                                continue processStmt;
+                            }
+
+                            foreach( k,v ; mv.modul.exportScop.entries )
+                                stmt.mod.scop.bind(k, v);
+
+                            if( stmt.stmt.xport )
+                                foreach( k,v ; mv.modul.exportScop.entries )
+                                    stmt.mod.exportScop.bind(k, v);
+                        }
+                        else
+                            assert( false, "cannot import from "
+                                    ~stmt.stmt.value.toString );
                     }
                     else if( stmt.stmt.mergeList.length != 0 )
                     {
-                        if( cast(Sit.RuntimeValue) foldedValue !is null )
+                        if( cast(Sit.RuntimeValue) stmt.stmt.value !is null )
                             assert( false, "cannot import from runtime value" );
 
-                        assert( false, "nyi" );
+                        if( auto mv = cast(Sit.ModuleValue) stmt.stmt.value )
+                        {
+                            foreach( k ; stmt.stmt.mergeList )
+                                stmt.mod.scop.bind(k,
+                                    mv.modul.exportScop.lookup(null, k));
+
+                            if( stmt.stmt.xport )
+                                foreach( k ; stmt.stmt.mergeList )
+                                    stmt.mod.scop.bind(k,
+                                        mv.modul.exportScop.lookup(null, k));
+                        }
+                        else
+                            assert( false, "cannot import from "
+                                    ~stmt.stmt.value.toString );
                     }
 
-                    stmt.stmt.value = foldedValue;
+                    successStmt = true;
+                    stmt.done = true;
                 }
             }
 
@@ -263,7 +303,14 @@ processStmt:
 
         // Dump statements into their respective modules
         foreach( stmt ; stmts )
+        {
             stmt.mod.stmts ~= stmt.stmt;
+            
+            // Mark the module as complete, too.
+            // TODO: produce a set of modules from stmts, then mark those
+            // whilst ensuring no module is "completed" more than once.
+            stmt.mod.complete = true;
+        }
 
         // Clear list of statements to process
         stmts = null;

@@ -153,6 +153,7 @@ class Module : Node
     Stmt[] stmts;
     Scope scop;
     Scope exportScop;
+    bool complete = false;
 
     this(Ast.Node astNode, char[] path, Scope scop, Scope exportScop)
     in
