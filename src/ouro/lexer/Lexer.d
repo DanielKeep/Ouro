@@ -654,6 +654,32 @@ bool lexString(Source src, out Token token)
             parseString(src.sliceBetween(valBegMark, valEndMark)));
 }
 
+bool lexSymbolLiteral(Source src, out Token token)
+{
+    debug(TraceLexer) Stderr.format("(lexSymbolLiteral @ {})", src.loc.toString);
+    if( src[0] != '\'' )
+        return false;
+
+    auto mark = src.save;
+    src.advance;
+
+    Token subToken;
+    if( lexIdentifierOrKeyword(src, subToken) )
+        return popToken(token, src, TOKsymbol, mark, subToken.value);
+
+    else if( lexString(src, subToken) )
+        return popToken(token, src, TOKsymbol, mark, subToken.value);
+
+    else if( lexSymbol(src, subToken) )
+        return popToken(token, src, TOKsymbol, mark, subToken.value);
+
+    else
+    {
+        src.restore(mark);
+        return false;
+    }
+}
+
 const Lexers = [
     &lexEol,
     &lexEos,
@@ -662,6 +688,7 @@ const Lexers = [
     &lexIdentifierOrKeyword,
     &lexNumber,
     &lexString,
+    &lexSymbolLiteral,
 ];
 
 bool lexNext(Source src, out Token token)

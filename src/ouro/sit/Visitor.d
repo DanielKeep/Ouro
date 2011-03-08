@@ -170,6 +170,11 @@ abstract class Visitor(Result = void, Arg = void)
             return defaultVisitResult;
         }
 
+        Result visit(Sit.SymbolValue node)
+        {
+            return defaultVisitResult;
+        }
+
         Result visit(Sit.NumberValue node)
         {
             return defaultVisitResult;
@@ -314,6 +319,11 @@ abstract class Visitor(Result = void, Arg = void)
         }
 
         Result visit(Sit.StringValue node, Arg arg)
+        {
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.SymbolValue node, Arg arg)
         {
             return defaultVisitResult;
         }

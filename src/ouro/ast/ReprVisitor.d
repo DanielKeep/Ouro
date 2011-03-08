@@ -9,7 +9,8 @@ module ouro.ast.ReprVisitor;
 import Float = tango.text.convert.Float;
 
 import ouro.ast.Visitor;
-import ouro.util.Repr : reprIdent, reprString, reprReal, reprLogical, reprNil;
+import ouro.util.Repr : reprIdent, reprString, reprSymbol,
+       reprReal, reprLogical, reprNil;
 import ouro.util.StructuredOutput;
 
 import Ast = ouro.ast.Nodes;
@@ -107,6 +108,11 @@ class ReprVisitor : Visitor!()
     override void visit(Ast.StringExpr node)
     {
         so.r(reprString(node.value));
+    }
+
+    override void visit(Ast.SymbolExpr node)
+    {
+        so.r(reprSymbol(node.value));
     }
 
     override void visit(Ast.LogicalExpr node)

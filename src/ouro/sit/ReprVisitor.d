@@ -7,7 +7,7 @@
 module ouro.sit.ReprVisitor;
 
 import ouro.sit.Visitor;
-import ouro.util.Repr : reprIdent, reprString, reprReal;
+import ouro.util.Repr : reprIdent, reprString, reprSymbol, reprReal;
 import ouro.util.StructuredOutput;
 
 import AstRepr = ouro.ast.ReprVisitor;
@@ -303,6 +303,11 @@ class ReprVisitor : Visitor!(void, bool)
     override void visit(Sit.StringValue node, bool showDef)
     {
         so.r("String ").r(reprString(node.value));
+    }
+
+    override void visit(Sit.SymbolValue node, bool showDef)
+    {
+        so.r("Symbol ").r(reprSymbol(node.value));
     }
 
     override void visit(Sit.NumberValue node, bool showDef)

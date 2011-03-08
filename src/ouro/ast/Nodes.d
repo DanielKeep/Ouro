@@ -487,6 +487,17 @@ class StringExpr : Expr
     }
 }
 
+class SymbolExpr : Expr
+{
+    char[] value;
+
+    this(Location loc, char[] value)
+    {
+        super(loc);
+        this.value = value;
+    }
+}
+
 class LogicalExpr : Expr
 {
     bool value;

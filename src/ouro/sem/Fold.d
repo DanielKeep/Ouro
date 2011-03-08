@@ -299,6 +299,11 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         return node;
     }
 
+    override Sit.Expr visit(Sit.SymbolValue node, Context ctx)
+    {
+        return node;
+    }
+
     override Sit.Expr visit(Sit.NumberValue node, Context ctx)
     {
         return node;

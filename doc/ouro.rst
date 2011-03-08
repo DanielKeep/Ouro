@@ -327,6 +327,20 @@ String literal
            ├──'a..f'───┘ ╧
            └──'A..F'───┘
 
+Symbol literal
+``````````````
+
+Symbol literals are essentially just interned strings.  They trade efficient
+substring construction for efficient comparison.
+
+::
+
+    symbol literal
+        >>─"'"─┬─╢ identifier ╟───┐
+               ├───╢ string ╟───┘ ╧
+               ├───╢ symbol ╟───┘ ╧
+               └───╢ keyword ╟──┘ ╧
+
 Parsing
 =======
 
@@ -400,6 +414,7 @@ Note: eventually, pattern matching should be added here::
     <expression atom> = [ <prefix op> ],
                             ( <number expression>
                             | <string expression>
+                            | <symbol expression>
                             | <logical expression>
                             | <nil expression>
                             | <list expression>
@@ -431,6 +446,8 @@ Note: eventually, pattern matching should be added here::
     <number expression> = <number>;
 
     <string expression> = <string>;
+
+    <symbol expression> = <symbol literal>;
 
     <logical expression> = "true" | "false";
 
@@ -607,6 +624,9 @@ The following describes the structure of the AST nodes themselves.
         value : Real
 
     StringExpr : Expr
+        value : String
+
+    SymbolExpr : Expr
         value : String
 
     LogicalExpr : Expr
@@ -846,6 +866,9 @@ implementation allows for a function pointer.
         |-- Note: probably should have been called 'RealValue'
         value : Real
 
+    SymbolValue : Value
+        value : String
+
     RangeValue : Value
         incLower : Logical
         incUpper : Logical
@@ -973,6 +996,9 @@ called ``ctx``.  The meaning of *Eval* and *Fold* is explained later.
 
 ``Ast StringExpr``
     - Result is a ``StringValue`` node with ``node value``.
+
+``Ast SymbolExpr``
+    - Result is a ``SymbolValue`` node with ``node value``.
 
 ``Ast LogicalExpr``
     - Result is a ``LogicalValue`` node with ``node value``.
@@ -1138,7 +1164,7 @@ Differences between evaluation and folding are noted where they exist.
     *Folding*
         Return the node un-modified.
 
-``AstQuoteValue``, ``ListValue``, ``MapValue``, ``ModuleValue``, ``NilValue``, ``StringValue``, ``NumberValue``
+``AstQuoteValue``, ``ListValue``, ``MapValue``, ``ModuleValue``, ``NilValue``, ``StringValue``, ``NumberValue``, ``SymbolValue``
     Return the node un-modified.
 
 ``ClosureValue``

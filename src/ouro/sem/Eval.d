@@ -359,6 +359,11 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         return node;
     }
 
+    override Sit.Value visit(Sit.SymbolValue node, Context ctx)
+    {
+        return node;
+    }
+
     override Sit.Value visit(Sit.NumberValue node, Context ctx)
     {
         return node;

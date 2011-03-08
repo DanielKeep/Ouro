@@ -33,6 +33,7 @@ const Nodes =
     "ModuleValue",
     "NilValue",
     "StringValue",
+    "SymbolValue",
     "NumberValue",
 ];
 
@@ -846,6 +847,28 @@ class StringValue : Value
 
         // TODO: use proper Unicode Canonical equivalence
         return (this.value == rhs.value) ? Order.Eq : Order.Ne;
+    }
+}
+
+class SymbolValue : Value
+{
+    char[] value;
+
+    this(Ast.Node astNode, char[] value)
+    {
+        super(astNode);
+        this.value = value;
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(SymbolValue) rhsValue;
+        if( rhs is null ) return Order.Ne;
+
+        if( this.value is rhs.value )
+            return Order.Eq;
+
+        return Order.Ne;
     }
 }
 

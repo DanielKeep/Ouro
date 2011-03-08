@@ -75,6 +75,7 @@ const char[][] OtherTokens =
     "identifier",
     "number",
     "string",
+    "symbol",
     "builtin",
 ];
 

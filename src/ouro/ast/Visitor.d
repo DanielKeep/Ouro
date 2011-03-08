@@ -24,6 +24,7 @@ private
         "PostfixFuncExpr",
         "NumberExpr",
         "StringExpr",
+        "SymbolExpr",
         "LogicalExpr",
         "NilExpr",
         "ListExpr",
@@ -147,6 +148,11 @@ abstract class Visitor(Result = void, Arg = void)
         }
 
         Result visit(Ast.StringExpr node)
+        {
+            return defaultVisitResult;
+        }
+
+        Result visit(Ast.SymbolExpr node)
         {
             return defaultVisitResult;
         }
@@ -347,6 +353,11 @@ abstract class Visitor(Result = void, Arg = void)
         }
 
         Result visit(Ast.StringExpr node, Arg arg)
+        {
+            return defaultVisitResult;
+        }
+
+        Result visit(Ast.SymbolExpr node, Arg arg)
         {
             return defaultVisitResult;
         }

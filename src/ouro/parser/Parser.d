@@ -630,6 +630,7 @@ Ast.Expr tryparseExprAtom(TokenStream ts)
     (delegate Ast.Expr(){
         if( auto e = tryparseNumberExpr(ts) )       return e;
         if( auto e = tryparseStringExpr(ts) )       return e;
+        if( auto e = tryparseSymbolExpr(ts) )       return e;
         if( auto e = tryparseLogicalExpr(ts) )      return e;
         if( auto e = tryparseNilExpr(ts) )          return e;
         if( auto e = tryparseListExpr(ts) )         return e;
@@ -693,6 +694,19 @@ Ast.Expr tryparseStringExpr(TokenStream ts)
     auto loc = ts.peek.loc;
     char[] value = ts.pop.value;
     return new Ast.StringExpr(loc, value);
+}
+
+Ast.Expr tryparseSymbolExpr(TokenStream ts)
+{
+    /*
+        <symbol expression> = <symbol literal>;
+    */
+
+    if( ts.peek.type != TOKsymbol ) return null;
+
+    auto loc = ts.peek.loc;
+    char[] value = ts.pop.value;
+    return new Ast.SymbolExpr(loc, value);
 }
 
 Ast.Expr tryparseLogicalExpr(TokenStream ts)

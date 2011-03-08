@@ -30,6 +30,8 @@ char[] reprReal(real value)
 
 char[] reprIdent(char[] ident)
 {
+    assert( ident != "" );
+
     // First, check to see whether we can just output it verbatim.
     bool basic = true;
     foreach( i, dchar cp ; ident )
@@ -72,5 +74,17 @@ char[] reprString(char[] text)
     r ~= "\"";
 
     return r;
+}
+
+char[] reprSymbol(char[] text)
+{
+    auto ident = reprIdent(text);
+    if( ident.length >= 2 && ident[0..2] == "$\"" )
+    {
+        ident[0] = '\'';
+        return ident;
+    }
+    else
+        return '\'' ~ ident;
 }
 

@@ -446,6 +446,11 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         return new Sit.StringValue(node, node.value);
     }
 
+    override Sit.Node visit(Ast.SymbolExpr node, Context* ctx)
+    {
+        return new Sit.SymbolValue(node, node.value);
+    }
+
     override Sit.Node visit(Ast.LogicalExpr node, Context* ctx)
     {
         return new Sit.LogicalValue(node, node.value);
