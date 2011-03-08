@@ -83,7 +83,7 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
     }
 
     // Do the call.
-    if( fn.host.fn !is null )
+    if( fn.host.fn !is null || fn.host.dg !is null )
     {
         assert( clValues.length == 0 );
 
@@ -115,8 +115,10 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
         }
 
         // Ok, call it.
-        auto result = fn.host.fn(args);
-        return result;
+        if( fn.host.fn !is null )
+            return fn.host.fn(args);
+        else
+            return fn.host.dg(args);
     }
     else if( fn.expr !is null )
     {

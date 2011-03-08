@@ -487,8 +487,10 @@ class FunctionValue : CallableValue
         }
 
         alias Value function(Value[]) Fn;
+        alias Value delegate(Value[]) Dg;
 
         Fn fn;
+        Dg dg;
         EvalContext evalCtx = EvalContext.All;
 
         bool evalCtxCompatible(EvalContext evalCtx)
@@ -538,6 +540,23 @@ class FunctionValue : CallableValue
         this.name = name;
         this.args = args;
         this.host.fn = fn;
+        this.host.evalCtx = evalCtx;
+    }
+
+    this(char[] name, Argument[] args,
+            Host.Dg dg,
+            Host.EvalContext evalCtx = Host.EvalContext.All)
+    in
+    {
+        assert( name != "" );
+        assert( dg !is null );
+    }
+    body
+    {
+        super(null);
+        this.name = name;
+        this.args = args;
+        this.host.dg = dg;
         this.host.evalCtx = evalCtx;
     }
 
