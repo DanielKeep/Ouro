@@ -275,7 +275,7 @@ abstract class Value : Expr
 
     Order order(Value rhs)
     {
-        return (this is rhs) ? Order.Eq : Order.No;
+        return (this is rhs) ? Order.Eq : Order.Ne;
     }
 }
 
@@ -425,9 +425,9 @@ class AstQuoteValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(AstQuoteValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
-        return (this.ast == rhs.ast) ? Order.Eq : Order.No;
+        return (this.ast == rhs.ast) ? Order.Eq : Order.Ne;
     }
 }
 
@@ -651,16 +651,16 @@ class ListValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(ListValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
         if( this.elemValues.length != rhs.elemValues.length )
-            return Order.No;
+            return Order.Ne;
 
         foreach( i,lhsEl ; this.elemValues )
         {
             auto rhsEl = rhs.elemValues[i];
             if( lhsEl.order(rhsEl) != Order.Eq )
-                return Order.No;
+                return Order.Ne;
         }
 
         return Order.Eq;
@@ -680,9 +680,9 @@ class LogicalValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(LogicalValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
-        assert(false, "nyi");
+        return (this.value == rhs.value) ? Order.Eq : Order.Ne;
     }
 }
 
@@ -710,10 +710,10 @@ class MapValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(MapValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
         if( this.kvps.length != rhs.kvps.length )
-            return Order.No;
+            return Order.Ne;
 
         foreach( kvpL ; this.kvps )
         {
@@ -725,14 +725,14 @@ class MapValue : Value
                     continue;
 
                 if( kvpL.value.order(kvpR.value) != Order.Eq )
-                    return Order.No;
+                    return Order.Ne;
 
                 found = true;
                 break;
             }
 
             if( !found )
-                return Order.No;
+                return Order.Ne;
         }
 
         return Order.Eq;
@@ -799,9 +799,9 @@ class ModuleValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(ModuleValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
-        return (this.modul is rhs.modul) ? Order.Eq : Order.No;
+        return (this.modul is rhs.modul) ? Order.Eq : Order.Ne;
     }
 }
 
@@ -815,7 +815,7 @@ class NilValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(NilValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
         return Order.Eq;
     }
@@ -839,13 +839,13 @@ class StringValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(StringValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
         if( this.value is rhs.value )
             return Order.Eq;
 
         // TODO: use proper Unicode Canonical equivalence
-        return (this.value == rhs.value) ? Order.Eq : Order.No;
+        return (this.value == rhs.value) ? Order.Eq : Order.Ne;
     }
 }
 
@@ -862,7 +862,7 @@ class NumberValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(NumberValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
         // TODO: is there a faster way to do this?
         if( this.value == rhs.value )
@@ -900,14 +900,14 @@ class RangeValue : Value
     override Order order(Value rhsValue)
     {
         auto rhs = cast(RangeValue) rhsValue;
-        if( rhs is null ) return Order.No;
+        if( rhs is null ) return Order.Ne;
 
         return ((this.incLower == rhs.incLower)
              && (this.incUpper == rhs.incUpper)
              && (this.lowerValue.order(rhs.lowerValue) == Order.Eq)
              && (this.upperValue.order(rhs.upperValue) == Order.Eq))
             ? Order.Eq
-            : Order.No;
+            : Order.Ne;
     }
 }
 
