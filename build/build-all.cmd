@@ -11,6 +11,9 @@ if %errorlevel% neq 0 goto fail
 xfbuild %ARGS% +D.xf/SemFile.deps +O.xf/SemFile.objs +o..\bin\SemFile %1 %2 %3 %4 %5 %6 %7 %8 %9 ../src/ouro/sem/SemFile.d
 if %errorlevel% neq 0 goto fail
 
+xfbuild %ARGS% +D.xf/SemFile2.deps +O.xf/SemFile.objs +o..\bin\SemFile2 %1 %2 %3 %4 %5 %6 %7 %8 %9 ../src/ouro/sem/SemFile2.d
+if errorlevel 1 goto fail
+
 goto eof
 
 :fail
