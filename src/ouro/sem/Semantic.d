@@ -80,40 +80,9 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             throw new CompilerException(code, loc, arg0, arg1);
         }
 
-        Sit.Expr visitExpr(Ast.Node node, Context* ctx)
-        {
-            auto newNode = visitBase(node, ctx);
-            assert( newNode !is null );
-            auto expr = cast(Sit.Expr) newNode;
-            assert( expr !is null );
-            return expr;
-        }
-
         Eval.EvalVisitor eval;
         Fold.FoldVisitor fold;
         QQRewrite.QQRewriteVisitor qqr;
-
-        Sit.Value evalExpr(Sit.Expr expr)
-        {
-            alias Eval.Context Context;
-
-            Context ctx;
-            ctx.evalCtx = Context.EvalContext.Compile;
-            ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
-
-            return eval.visitValue(expr, ctx);
-        }
-
-        Sit.Expr foldExpr(Sit.Expr expr)
-        {
-            alias Eval.Context Context;
-
-            Context ctx;
-            ctx.evalCtx = Context.EvalContext.Compile;
-            ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
-
-            return fold.visitBase(expr, ctx);
-        }
 
         Sit.AstQuoteValue qqRewrite(Ast.Expr astExpr,
                 out Ast.Expr[] subExprs)
@@ -132,6 +101,37 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         eval = new Eval.EvalVisitor;
         fold = new Fold.FoldVisitor;
         qqr = new QQRewrite.QQRewriteVisitor;
+    }
+
+    Sit.Expr visitExpr(Ast.Node node, Context* ctx)
+    {
+        auto newNode = visitBase(node, ctx);
+        assert( newNode !is null );
+        auto expr = cast(Sit.Expr) newNode;
+        assert( expr !is null );
+        return expr;
+    }
+
+    Sit.Value evalExpr(Sit.Expr expr)
+    {
+        alias Eval.Context Context;
+
+        Context ctx;
+        ctx.evalCtx = Context.EvalContext.Compile;
+        ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
+
+        return eval.visitValue(expr, ctx);
+    }
+
+    Sit.Expr foldExpr(Sit.Expr expr)
+    {
+        alias Eval.Context Context;
+
+        Context ctx;
+        ctx.evalCtx = Context.EvalContext.Compile;
+        ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
+
+        return fold.visitBase(expr, ctx);
     }
 
     Sit.Node visitMacro(Context* ctx, Ast.Node node,
