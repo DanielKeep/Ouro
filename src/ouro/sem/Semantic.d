@@ -13,6 +13,8 @@ module ouro.sem.Semantic;
 
 import tango.io.Stdout;
 
+import Integer = tango.text.convert.Integer;
+
 import ouro.Error;
 import ouro.sem.Abort;
 import ouro.sem.Context;
@@ -502,7 +504,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         }
 
         auto expr = visitExpr(node.expr, &subCtx);
-        auto name = "λ @ " ~ node.loc.toString;
+        auto name = "λ " ~ Integer.toString(ctx.curModule.nextUniqueId)
+            ~ " @ " ~ node.loc.toString;
         auto fn = new Sit.FunctionValue(node, name, args,
                 subCtx.enclosedValues, subCtx.scop, expr);
 
