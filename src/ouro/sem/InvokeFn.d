@@ -123,7 +123,7 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
     else if( fn.expr !is null )
     {
         scope eval = new Eval.EvalVisitor;
-        return eval.invokeExprFn(fn, args, clValues);
+        return eval.invokeExprFn(fn, args, clValues, evalCtx);
     }
     else
     {
