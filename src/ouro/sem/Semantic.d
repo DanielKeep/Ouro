@@ -611,11 +611,11 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         auto subExpr = new Sit.AstQuoteValue(node.subExpr, node.subExpr);
 
-        return visitMacro(ctx, node,
-            ctx.builtinFunction("ouro.let"),
-            Sit.CallArg(bindListExpr, false),
-            Sit.CallArg(subExpr, false)
-        );
+        auto letFn = ctx.builtinFunction("ouro.let");
+        auto letArgs = [Sit.CallArg(bindListExpr, true),
+                        Sit.CallArg(subExpr, false)];
+
+        return visitMacro(ctx, node, letFn, letArgs);
     }
 
     override Sit.Node visit(Ast.ImportExpr node, Context* ctx)
