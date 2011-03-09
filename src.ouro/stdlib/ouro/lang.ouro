@@ -16,6 +16,12 @@ export let macro assert(expr) = (
 
 export let ast(v) = #"{#${v}}
 
+export let macro do(expr, exprs...) = (
+    if { exprs = [],
+         expr,
+         #"{ (\$"--ignore".#${do(exprs...)})(#${expr}) } }
+)
+
 export let filter(f, vs) = (
     if {
         vs = [],
