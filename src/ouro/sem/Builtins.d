@@ -231,7 +231,7 @@ Value ouro_qqsub(EC ec, Value[] args) // ast, subs...
     auto subs = chkArgList(args, 1).elemValues;
     auto subExprs = new Ast.Expr[subs.length];
     foreach( i,ref subExpr ; subExprs )
-        subExpr = chkArgAst(subs, i);
+        subExpr = valueToAst(subs[i]);
 
     scope qqsv = new QQSub.QQSubVisitor;
     return new Sit.AstQuoteValue(null, qqsv.visitExpr(qq, subExprs));
@@ -294,7 +294,15 @@ private Ast.Expr valueToAst(Value gv)
     }
     else if( auto v = cast(Sit.FunctionValue) gv )
     {
-        assert( false, "cannot convert function value to ast" );
+        if( v.srcModule !is null )
+        {
+            assert( false, "lookup nyi" );
+        }
+        else
+        {
+            assert( v.host.fn !is null || v.host.dg !is null );
+            return new Ast.BuiltinExpr(Location.init, v.name);
+        }
     }
     else if( auto v = cast(Sit.ListValue) gv )
     {
