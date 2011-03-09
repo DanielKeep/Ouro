@@ -45,7 +45,8 @@ int main(char[][] argv)
     {
         Path.PathParser pp;
         pp.parse(Path.standard(exec));
-        mp.addFileImportRoot(Path.join(pp.parent, "import/"));
+        mp.addFileImportRoot(Path.normalize(Path.join(
+                        pp.parent, "../src.ouro/stdlib/")));
     }
     mp.addFileImportRoot(".");
 

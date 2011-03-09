@@ -1,0 +1,86 @@
+(++
+
+    This module defines all language-defined functions, macros and constants.
+    
+ ++)
+
+export let branch = __builtin__("ouro.branch")
+export let fail = __builtin__("ouro.fail")
+export let $".dump" = __builtin__("ouro..dump")
+
+export let macro assert(expr) = (
+    #"{ if { #${expr},
+             nil,
+             fail("Assertion failed.") } }
+)
+
+export let ast(v) = #"{#${v}}
+
+export let filter(f, vs) = (
+    if {
+        vs = [],
+        [],
+        let {
+            [v, head(vs)],
+            [vs', tail(vs)],
+
+            if { f(v),
+                 v :: filter(f, vs'),
+                 filter(f, vs') }
+        }
+    }
+)
+
+export let format(msg, sub) = (
+    fail("format nyi")
+)
+
+export let macro if(l, expr_t, expr_f) = (
+    #"{ branch( #${l}, \.#${expr_t}, \.#${expr_f} ) }
+)
+
+export let macro head(l) = (
+    let {
+        [head', \l', l's... . l'],
+        [foo, 42],
+          head'(l...)
+    }
+)
+
+export let lookup = __builtin__("ouro.lookup")
+
+export let map(f, vs) = (
+    if {
+        vs = [],
+        [],
+        let {
+            [v, head(vs)],
+            [vs', tail(vs)],
+
+            f(v) :: map(f,vs')
+        }
+    }
+)
+
+export let module = __builtin__("ouro.module")
+
+export let macro reduce(f, vs) = (
+    let {
+        [v, head(vs)],
+        [vs', tail(vs)],
+
+        if {
+            vs' = [],
+            v,
+            f(v, reduce(f, vs'))
+        }
+    }    
+)
+
+export let macro tail(l) = (
+    let {
+        [tail', \l',l's... . l's],
+          tail'(l...)
+    }
+)
+
