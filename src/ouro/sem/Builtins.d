@@ -237,7 +237,35 @@ Value ouro_qqsub(Value[] args) // ast, subs...
 
 Value ouro_let(Value[] args)
 {
-    assert( false, "ouro.let nyi" );
+    chkArgNum(args, 2);
+    auto bindExprsList = chkArgList(args,0).elemValues;
+    auto subExpr = chkArgAst(args,args.length-1);
+
+    auto bindArgs = new Ast.Argument[](bindExprsList.length);
+    auto bindExprs = new Ast.Expr[](bindExprsList.length);
+
+    foreach( i,bindExpr ; bindExprsList )
+    {
+        auto bindExprAst = cast(Sit.AstQuoteValue) bindExpr;
+        assert( bindExprAst !is null );
+        auto bindListAst = cast(Ast.ListExpr) bindExprAst.ast;
+        assert( bindListAst !is null, "expected list expr, got "
+                ~bindExprAst.ast.classinfo.name );
+
+        assert( bindListAst.elemExprs.length == 2,
+                "expected two-element list expr" );
+
+        auto identAst = cast(Ast.VariableExpr) bindListAst.elemExprs[0];
+        assert( identAst !is null, "expected identifier" );
+
+        bindArgs[i] = Ast.Argument(identAst.loc, identAst.ident, false);
+        bindExprs[i] = bindListAst.elemExprs[1];
+    }
+
+    return new Sit.AstQuoteValue(null,
+            new Ast.CallExpr(Location.init, false,
+                new Ast.LambdaExpr(subExpr.loc, false, bindArgs, subExpr),
+                bindExprs));
 }
 
 Value ouro_import(Value[] args)
