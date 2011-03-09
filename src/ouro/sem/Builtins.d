@@ -306,6 +306,15 @@ Value ouro_branch(EC ec, Value[] args)
     return invoke(b, null, ec);
 }
 
+Value ouro_closure(EC ec, Value[] args)
+{
+    chkArgNum(args, 2);
+    auto fn = cast(Sit.FunctionValue) chkArgCall(args, 0);
+    auto vs = chkArgList(args, 1).elemValues;
+
+    return new Sit.ClosureValue(null, fn, vs);
+}
+
 Value ouro_fail(EC ec, Value[] args)
 {
     chkArgNum(args, 1);
@@ -330,6 +339,13 @@ private Ast.Expr valueToAst(Value gv)
     if( auto v = cast(Sit.AstQuoteValue) gv )
     {
         return new Ast.AstQuoteExpr(Location.init, cast(Ast.Expr) v.ast);
+    }
+    else if( auto v = cast(Sit.ClosureValue) gv )
+    {
+        return new Ast.CallExpr(Locnull, false,
+            new Ast.BuiltinExpr(Locnull, "ouro.closure"),
+            [valueToAst(v.fn),
+             valueToAst(new Sit.ListValue(null, v.values))]);
     }
     else if( auto v = cast(Sit.FunctionValue) gv )
     {
@@ -362,7 +378,21 @@ private Ast.Expr valueToAst(Value gv)
     }
     else if( auto v = cast(Sit.MapValue) gv )
     {
-        assert( false, "map to ast nyi" );
+        auto pairs = new Ast.KeyValuePair[v.kvps.length];
+        foreach( i,kvp ; v.kvps )
+        {
+            auto pair = &pairs[i];
+            pair.key = valueToAst(kvp.key);
+            pair.value = valueToAst(kvp.value);
+        }
+
+        return new Ast.MapExpr(Locnull, pairs);
+    }
+    else if( auto v = cast(Sit.ModuleValue) gv )
+    {
+        return new Ast.CallExpr(Locnull, false,
+            new Ast.BuiltinExpr(Locnull, "ouro.module"),
+            [new Ast.StringExpr(Locnull, v.modul.path)]);
     }
     else if( auto v = cast(Sit.NilValue) gv )
     {
@@ -371,6 +401,10 @@ private Ast.Expr valueToAst(Value gv)
     else if( auto v = cast(Sit.StringValue) gv )
     {
         return new Ast.StringExpr(Location.init, v.value);
+    }
+    else if( auto v = cast(Sit.SymbolValue) gv )
+    {
+        return new Ast.SymbolExpr(Locnull, v.value);
     }
     else if( auto v = cast(Sit.NumberValue) gv )
     {
