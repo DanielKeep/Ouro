@@ -1,3 +1,9 @@
+/**
+    Collects modules and uncompiled statements.
+
+    Authors: Daniel Keep <daniel.keep@gmail.com>
+    Copyright: See LICENSE.
+ */
 module ouro.sem.ModulePool;
 
 import tango.net.Uri;
