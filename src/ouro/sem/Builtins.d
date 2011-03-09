@@ -6,7 +6,7 @@
  */
 module ouro.sem.Builtins;
 
-import tango.math.Math : pow, floor;
+import tango.math.Math : pow, floor, trunc;
 
 import ouro.Location : Location;
 import ouro.sem.InvokeFn : invoke;
@@ -128,6 +128,8 @@ Value binaryNumberExpr(char[] expr)(EC ec, Value[] args)
 }
 
 alias binaryNumberExpr!("floor(lhs / rhs)")     ouro_opIntDiv;
+alias binaryNumberExpr!("lhs - rhs*floor(lhs / rhs)")   ouro_opMod;
+alias binaryNumberExpr!("lhs - rhs*trunc(lhs / rhs)")   ouro_opRem;
 alias binaryNumberExpr!("pow(lhs, rhs)")        ouro_opExp;
 
 Value binaryLogicalExpr(bool stopValue)(EC ec, Value[] args)
@@ -390,6 +392,8 @@ static this()
     builtins["ouro.opMul"] = new Sit.FunctionValue("ouro.opMul", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opMul);
     builtins["ouro.opDiv"] = new Sit.FunctionValue("ouro.opDiv", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opDiv);
     builtins["ouro.opIntDiv"] = new Sit.FunctionValue("ouro.opIntDiv", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opIntDiv);
+    builtins["ouro.opMod"] = new Sit.FunctionValue("ouro.opMod", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opMod);
+    builtins["ouro.opRem"] = new Sit.FunctionValue("ouro.opRem", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opRem);
     builtins["ouro.opExp"] = new Sit.FunctionValue("ouro.opExp", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opExp);
 
     builtins["ouro.opAnd"] = new Sit.FunctionValue("ouro.opAnd", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opAnd);

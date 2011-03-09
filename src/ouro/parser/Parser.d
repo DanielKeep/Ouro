@@ -280,6 +280,8 @@ Fixity fixityOf(Ast.BinaryExpr.Op op)
         case Op.Mul:
         case Op.Div:
         case Op.IntDiv:
+        case Op.Mod:
+        case Op.Rem:
         case Op.And:
         case Op.Or:
         case Op.Comp:

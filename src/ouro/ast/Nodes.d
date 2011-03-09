@@ -228,6 +228,8 @@ class BinaryExpr : Expr
             case Op.Mul:    return "*";
             case Op.Div:    return "/";
             case Op.IntDiv: return "//";
+            case Op.Mod:    return "mod";
+            case Op.Rem:    return "rem";
             case Op.Exp:    return "**";
             case Op.And:    return "and";
             case Op.Or:     return "or";
@@ -254,6 +256,8 @@ class BinaryExpr : Expr
             case Op.Mul:    return "Mul";
             case Op.Div:    return "Div";
             case Op.IntDiv: return "IntDiv";
+            case Op.Mod:    return "Mod";
+            case Op.Rem:    return "Rem";
             case Op.Exp:    return "Exp";
             case Op.And:    return "And";
             case Op.Or:     return "Or";
