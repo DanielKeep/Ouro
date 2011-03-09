@@ -1,4 +1,4 @@
-module ouro.parser.SemFile2;
+module ouro.parser.SemFile;
 
 import Path = tango.io.Path;
 
