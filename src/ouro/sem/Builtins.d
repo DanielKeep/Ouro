@@ -323,6 +323,8 @@ Value ouro_lookup(EC ec, Value[] args)
     return mod.scop.lookup(null, ident);
 }
 
+const Locnull = Location.init;
+
 private Ast.Expr valueToAst(Value gv)
 {
     if( auto v = cast(Sit.AstQuoteValue) gv )
@@ -333,7 +335,12 @@ private Ast.Expr valueToAst(Value gv)
     {
         if( v.srcModule !is null )
         {
-            assert( false, "lookup nyi" );
+            return new Ast.CallExpr(Locnull, false,
+                new Ast.BuiltinExpr(Locnull, "ouro.lookup"),
+                [cast(Ast.Expr) new Ast.CallExpr(Locnull, false,
+                    new Ast.BuiltinExpr(Locnull, "ouro.module"),
+                    [new Ast.StringExpr(Locnull, v.srcModule.path)]),
+                 new Ast.SymbolExpr(Locnull, v.srcIdent)]);
         }
         else
         {
