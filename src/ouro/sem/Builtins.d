@@ -15,6 +15,8 @@ import Ast      = ouro.ast.Nodes;
 import QQSub    = ouro.ast.QQSubVisitor;
 import Sit      = ouro.sit.Nodes;
 
+alias Sit.EvalContext EC;
+
 Sit.Value lookupBuiltin(char[] name)
 {
     if( auto fnp = name in builtins )
@@ -89,7 +91,7 @@ Ast.Expr chkArgAst(Value[] args, size_t i)
         assert( false, "expected ast; got " ~ args[i].classinfo.name );
 }
 
-Value compareOp(Sit.Order ord)(Value[] args)
+Value compareOp(Sit.Order ord)(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     return new Sit.LogicalValue(null, (args[0].order(args[1]) & ord) != 0);
@@ -104,7 +106,7 @@ alias compareOp!(Ord.Le) ouro_opLtEq;
 alias compareOp!(Ord.Gt) ouro_opGt;
 alias compareOp!(Ord.Ge) ouro_opGtEq;
 
-Value binaryNumberOp(char[] op)(Value[] args)
+Value binaryNumberOp(char[] op)(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     auto lhs = chkArgNumber(args, 0);
@@ -117,7 +119,7 @@ alias binaryNumberOp!("-")  ouro_opSub;
 alias binaryNumberOp!("*")  ouro_opMul;
 alias binaryNumberOp!("/")  ouro_opDiv;
 
-Value binaryNumberExpr(char[] expr)(Value[] args)
+Value binaryNumberExpr(char[] expr)(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     auto lhs = chkArgNumber(args, 0);
@@ -128,7 +130,7 @@ Value binaryNumberExpr(char[] expr)(Value[] args)
 alias binaryNumberExpr!("floor(lhs / rhs)")     ouro_opIntDiv;
 alias binaryNumberExpr!("pow(lhs, rhs)")        ouro_opExp;
 
-Value binaryLogicalExpr(bool stopValue)(Value[] args)
+Value binaryLogicalExpr(bool stopValue)(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     auto lhs = chkArgLogical(args, 0);
@@ -142,7 +144,7 @@ Value binaryLogicalExpr(bool stopValue)(Value[] args)
 alias binaryLogicalExpr!(false) ouro_opAnd;
 alias binaryLogicalExpr!(true)  ouro_opOr;
 
-Value ouro_opComp(Value[] args)
+Value ouro_opComp(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     auto lhs = chkArgCall(args, 0);
@@ -150,7 +152,7 @@ Value ouro_opComp(Value[] args)
     return Sit.FunctionValue.compose(lhs, rhs);
 }
 
-Value ouro_opCons(Value[] args)
+Value ouro_opCons(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     auto lhs = args[0];
@@ -158,7 +160,7 @@ Value ouro_opCons(Value[] args)
     return Sit.ListValue.cons(lhs, rhs);
 }
 
-Value ouro_opJoin(Value[] args)
+Value ouro_opJoin(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     if( auto lhs = cast(Sit.ListValue) args[0] )
@@ -175,7 +177,7 @@ Value ouro_opJoin(Value[] args)
         assert( false, "expected list or string" );
 }
 
-Value ternCmpOp(Sit.Order ordL, Sit.Order ordR)(Value[] args)
+Value ternCmpOp(Sit.Order ordL, Sit.Order ordR)(EC ec, Value[] args)
 {
     chkArgNum(args, 3);
     return new Sit.LogicalValue(null,
@@ -192,14 +194,14 @@ alias ternCmpOp!(Ord.Ge, Ord.Gt) ouro_opGeGt;
 alias ternCmpOp!(Ord.Gt, Ord.Ge) ouro_opGtGe;
 alias ternCmpOp!(Ord.Ge, Ord.Ge) ouro_opGeGe;
 
-Value unaryOp(alias chkArg, Result, char[] expr)(Value[] args)
+Value unaryOp(alias chkArg, Result, char[] expr)(EC ec, Value[] args)
 {
     chkArgNum(args, 1);
     auto rhs = chkArg(args, 0);
     return new Result(null, mixin(expr));
 }
 
-Value ouro_opPos(Value[] args)
+Value ouro_opPos(EC ec, Value[] args)
 {
     chkArgNum(args, 0);
     chkArgNumber(args, 0);
@@ -209,12 +211,12 @@ Value ouro_opPos(Value[] args)
 alias unaryOp!(chkArgNumber, Sit.NumberValue, "-rhs") ouro_opNeg;
 alias unaryOp!(chkArgLogical, Sit.LogicalValue, "! rhs") ouro_opNot;
 
-Value ouro_module(Value[] args)
+Value ouro_module(EC ec, Value[] args)
 {
     assert( false, "ouro.module nyi" );
 }
 
-Value ouro_range(Value[] args)
+Value ouro_range(EC ec, Value[] args)
 {
     chkArgNum(args, 4);
     auto li = chkArgLogical(args, 0);
@@ -222,7 +224,7 @@ Value ouro_range(Value[] args)
     return new Sit.RangeValue(null, li, ri, args[2], args[3]);
 }
 
-Value ouro_qqsub(Value[] args) // ast, subs...
+Value ouro_qqsub(EC ec, Value[] args) // ast, subs...
 {
     chkArgNum(args, 2);
     auto qq = chkArgAst(args, 0);
@@ -235,7 +237,7 @@ Value ouro_qqsub(Value[] args) // ast, subs...
     return new Sit.AstQuoteValue(null, qqsv.visitExpr(qq, subExprs));
 }
 
-Value ouro_let(Value[] args)
+Value ouro_let(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
     auto bindExprsList = chkArgList(args,0).elemValues;
@@ -268,12 +270,12 @@ Value ouro_let(Value[] args)
                 bindExprs));
 }
 
-Value ouro_import(Value[] args)
+Value ouro_import(EC ec, Value[] args)
 {
     assert( false, "ouro.import nyi" );
 }
 
-Value ouro_branch(Value[] args)
+Value ouro_branch(EC ec, Value[] args)
 {
     chkArgNum(args, 3);
     auto cond = chkArgLogical(args, 0);
@@ -281,7 +283,7 @@ Value ouro_branch(Value[] args)
     auto b1 = chkArgCall(args, 2);
 
     auto b = cond ? b0 : b1;
-    return invoke(b, null);
+    return invoke(b, null, ec);
 }
 
 private Ast.Expr valueToAst(Value gv)
@@ -330,7 +332,7 @@ private Ast.Expr valueToAst(Value gv)
     }
 }
 
-Value ouro_ast(Value[] args)
+Value ouro_ast(EC ec, Value[] args)
 {
     chkArgNum(args, 1);
     auto gv = args[0]; // generic value
@@ -349,7 +351,7 @@ static this()
     nil = new Sit.NilValue(null);
 }
 
-Value ouro_dot_dump(Value[] args)
+Value ouro_dot_dump(EC ec, Value[] args)
 {
     auto values = chkArgList(args, 0).elemValues;
     foreach( value ; values )

@@ -350,7 +350,7 @@ processStmt:
         this.stmts = newStmts;
     }
 
-    Sit.Value loadModule(Sit.Value[] vs)
+    Sit.Value loadModule(Sit.EvalContext ectx, Sit.Value[] vs)
     {
         if( vs.length != 1 )
             assert( false, "expected one argument for module" );

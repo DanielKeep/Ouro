@@ -489,8 +489,8 @@ class FunctionValue : CallableValue
 {
     struct Host
     {
-        alias Value function(Value[]) Fn;
-        alias Value delegate(Value[]) Dg;
+        alias Value function(EvalContext, Value[]) Fn;
+        alias Value delegate(EvalContext, Value[]) Dg;
 
         Fn fn;
         Dg dg;

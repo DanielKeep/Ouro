@@ -116,9 +116,9 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
 
         // Ok, call it.
         if( fn.host.fn !is null )
-            return fn.host.fn(args);
+            return fn.host.fn(evalCtx, args);
         else
-            return fn.host.dg(args);
+            return fn.host.dg(evalCtx, args);
     }
     else if( fn.expr !is null )
     {
