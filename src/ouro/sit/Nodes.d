@@ -467,34 +467,34 @@ class ClosureValue : CallableValue
     }
 }
 
+/**
+    The EvalContext of a function determines when it should be
+    evaluated.  This is necessary for functions which depend
+    specifically on either the compile-time or run-time environments.
+
+    For example, consider opening a file.  Generally, files should be
+    loaded only from the runtime environment.  On the other hand,
+    loading files as compile time can be useful.  As such, there is a
+    need to distinguish between the two.
+ */
+enum EvalContext
+{
+    All     = 0b11,
+    None    = 0b00,
+    Compile = 0b01,
+    Runtime = 0b10,
+}
+
 class FunctionValue : CallableValue
 {
     struct Host
     {
-        /**
-            The EvalContext of a host function determines when it should be
-            evaluated.  This is necessary for functions which depend
-            specifically on either the compile-time or run-time environments.
-
-            For example, consider opening a file.  Generally, files should be
-            loaded only from the runtime environment.  On the other hand,
-            loading files as compile time can be useful.  As such, there is a
-            need to distinguish between the two.
-         */
-        enum EvalContext
-        {
-            None    = 0b00,
-            Compile = 0b01,
-            Runtime = 0b10,
-            All = Compile | Runtime,
-        }
-
         alias Value function(Value[]) Fn;
         alias Value delegate(Value[]) Dg;
 
         Fn fn;
         Dg dg;
-        EvalContext evalCtx = EvalContext.All;
+        EvalContext evalCtx;
 
         bool evalCtxCompatible(EvalContext evalCtx)
         {
@@ -531,7 +531,7 @@ class FunctionValue : CallableValue
 
     this(char[] name, Argument[] args,
             Host.Fn fn,
-            Host.EvalContext evalCtx = Host.EvalContext.All)
+            EvalContext evalCtx = EvalContext.init)
     in
     {
         assert( name != "" );
@@ -548,7 +548,7 @@ class FunctionValue : CallableValue
 
     this(char[] name, Argument[] args,
             Host.Dg dg,
-            Host.EvalContext evalCtx = Host.EvalContext.All)
+            EvalContext evalCtx = EvalContext.init)
     in
     {
         assert( name != "" );

@@ -17,7 +17,7 @@ import InvokeFn = ouro.sem.InvokeFn;
 import Sit      = ouro.sit.Nodes;
 
 alias Eval.Context Context;
-alias Sit.FunctionValue.Host.EvalContext.Compile CompileCtx;
+alias Sit.EvalContext.Compile CompileCtx;
 
 class FoldVisitor : Visitor!(Sit.Expr, Context)
 {

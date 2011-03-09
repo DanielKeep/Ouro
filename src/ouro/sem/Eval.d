@@ -19,10 +19,9 @@ debug
 
 struct Context
 {
-    alias Sit.FunctionValue.Host.EvalContext    EvalContext;
     alias void function(Sit.UnfixedValue)       OnUnfixed;
 
-    EvalContext evalCtx = EvalContext.Runtime;
+    auto evalCtx = Sit.EvalContext.Runtime;
     FixScope* fixScope;
     OnUnfixed onUnfixed = &onUnfixedDefault;
     void delegate(Sit.Node) dumpNode;
@@ -179,7 +178,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
 
     Sit.Value invokeExprFn(Sit.FunctionValue fn,
             Sit.Value[] args, Sit.Value[] closureValues,
-            Context.EvalContext evalCtx = Context.EvalContext.Runtime)
+            Sit.EvalContext evalCtx = Sit.EvalContext.Runtime)
     {
         assert( fn.expr !is null );
 

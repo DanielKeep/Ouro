@@ -407,6 +407,6 @@ static this()
     builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
     builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
 
-    builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.FunctionValue.Host.EvalContext.Runtime);
+    builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.EvalContext.Runtime);
 }
 

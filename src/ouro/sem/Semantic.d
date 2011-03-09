@@ -117,7 +117,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         alias Eval.Context Context;
 
         Context ctx;
-        ctx.evalCtx = Context.EvalContext.Compile;
+        ctx.evalCtx = Sit.EvalContext.Compile;
         ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
 
         return eval.visitValue(expr, ctx);
@@ -128,7 +128,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         alias Eval.Context Context;
 
         Context ctx;
-        ctx.evalCtx = Context.EvalContext.Compile;
+        ctx.evalCtx = Sit.EvalContext.Compile;
         ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
 
         return fold.visitBase(expr, ctx);

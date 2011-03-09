@@ -12,7 +12,7 @@ import Eval = ouro.sem.Eval;
 import Sit  = ouro.sit.Nodes;
 
 Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
-        Eval.Context.EvalContext evalCtx = Eval.Context.EvalContext.Runtime)
+        Sit.EvalContext evalCtx = Sit.EvalContext.Runtime)
 {
     assert( callable !is null );
 
@@ -103,10 +103,10 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
              */
             switch( evalCtx )
             {
-                case Eval.Context.EvalContext.Compile:
+                case Sit.EvalContext.Compile:
                     throw new EarlyCallAbort;
 
-                case Eval.Context.EvalContext.Runtime:
+                case Sit.EvalContext.Runtime:
                     throw new LateCallAbort;
 
                 default:

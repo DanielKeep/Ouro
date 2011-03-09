@@ -142,7 +142,7 @@ struct ModulePool
         
         auto moduleFn = new Sit.FunctionValue("ouro.module",
                 [Sit.Argument("path", false)], &loadModule,
-                Sit.FunctionValue.Host.EvalContext.Compile);
+                Sit.EvalContext.Compile);
 
         Context ctx;
         ctx.builtinFn = (char[] name)
