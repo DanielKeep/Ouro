@@ -509,6 +509,9 @@ class FunctionValue : CallableValue
         }
     }
 
+    Module srcModule;
+    char[] srcIdent;
+
     char[] name;
     Argument[] args;
     Scope scop;

@@ -352,8 +352,13 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         auto expr = visitExpr(node.expr, &subCtx);
 
-        return new Sit.FunctionValue(node, node.ident, args, null,
+        auto fn = new Sit.FunctionValue(node, node.ident, args, null,
                 subCtx.scop, expr);
+
+        fn.srcModule = ctx.curModule;
+        fn.srcIdent = node.ident;
+
+        return fn;
     }
 
     override Sit.Node visit(Ast.ExprStmt node, Context* ctx)
@@ -509,7 +514,10 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         auto fn = new Sit.FunctionValue(node, name, args,
                 subCtx.enclosedValues, subCtx.scop, expr);
 
-        ctx.bindFn("--"~name, fn);
+        fn.srcModule = ctx.curModule;
+        fn.srcIdent = "--"~name;
+
+        ctx.bindFn(fn.srcIdent, fn);
 
         return fn;
     }
