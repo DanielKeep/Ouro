@@ -211,11 +211,6 @@ Value ouro_opPos(EC ec, Value[] args)
 alias unaryOp!(chkArgNumber, Sit.NumberValue, "-rhs") ouro_opNeg;
 alias unaryOp!(chkArgLogical, Sit.LogicalValue, "! rhs") ouro_opNot;
 
-Value ouro_module(EC ec, Value[] args)
-{
-    assert( false, "ouro.module nyi" );
-}
-
 Value ouro_range(EC ec, Value[] args)
 {
     chkArgNum(args, 4);
@@ -417,7 +412,6 @@ static this()
     builtins["ouro.opNeg"] = new Sit.FunctionValue("ouro.opNeg", [Sit.Argument("r")], &ouro_opNeg);
     builtins["ouro.opNot"] = new Sit.FunctionValue("ouro.opNot", [Sit.Argument("l")], &ouro_opNot);
 
-    builtins["ouro.module"] = new Sit.FunctionValue("ouro.module", [Sit.Argument("path")], &ouro_module);
     builtins["ouro.range"] = new Sit.FunctionValue("ouro.range", [Sit.Argument("li"), Sit.Argument("ui"), Sit.Argument("lv"), Sit.Argument("uv")], &ouro_range);
     builtins["ouro.qqsub"] = new Sit.FunctionValue("ouro.qqsub", [Sit.Argument("ast"), Sit.Argument("subs", true)], &ouro_qqsub);
     builtins["ouro.let"] = new Sit.FunctionValue("ouro.let", [Sit.Argument("bindings", true), Sit.Argument("expr")], &ouro_let);
