@@ -39,7 +39,7 @@ export let macro if(l, expr_t, expr_f) = (
     #"{ branch( #${l}, \.#${expr_t}, \.#${expr_f} ) }
 )
 
-export let macro head(l) = (
+export let head(l) = (
     let {
         [head', \l', l's... . l'],
         [foo, 42],
@@ -64,7 +64,7 @@ export let map(f, vs) = (
 
 export let module = __builtin__("ouro.module")
 
-export let macro reduce(f, vs) = (
+export let reduce(f, vs) = (
     let {
         [v, head(vs)],
         [vs', tail(vs)],
@@ -77,7 +77,7 @@ export let macro reduce(f, vs) = (
     }    
 )
 
-export let macro tail(l) = (
+export let tail(l) = (
     let {
         [tail', \l',l's... . l's],
           tail'(l...)
