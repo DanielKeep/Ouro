@@ -18,11 +18,11 @@ import SemCtx   = ouro.sem.Context;
 import Sit      = ouro.sit.Nodes;
 
 import ouro.Error : CompilerException;
-import ouro.Source;
 import ouro.sem.ModulePool : ModulePool;
-import ouro.sit.ReprVisitor;
 import ouro.util.StructuredOutput;
-import ouro.util.TokenStream;
+
+import AstRepr = ouro.ast.ReprVisitor;
+import SitRepr = ouro.sit.ReprVisitor;
 
 int main(char[][] argv)
 {
@@ -30,11 +30,11 @@ int main(char[][] argv)
     auto args = argv[1..$];
 
     bool throwExc = false;
+    bool showAst = false;
+    bool showSem = false;
     bool doEval = true;
 
     scope eval = new Eval.EvalVisitor;
-    auto repr = ReprVisitor.forStdout;
-    auto errRepr = ReprVisitor.forStderr;
 
     Sit.Value builtin(char[] name)
     {
@@ -62,18 +62,49 @@ int main(char[][] argv)
         if( path == "--throw" )
             throwExc = true;
 
+        else if( path == "--show-ast" )
+            showAst = true;
+
+        else if( path == "--show-sem" )
+            showSem = true;
+
         else if( path == "--no-eval" )
             doEval = false;
 
         else
         {
-
             try
             {
                 auto mod = mp.load(Path.standard(path));
                 if( mod is null )
                     assert( false, "could not import "~path );
                 mp.compileStmts();
+
+                if( showAst )
+                {
+                    scope repr = new AstRepr.ReprVisitor(
+                            StructuredOutput.forStdout);
+
+                    foreach( entry ; mp.entries )
+                    {
+                        Stdout("module ")(entry.sit.path)(" ast: ");
+                        repr.visitBase(entry.ast);
+                        Stdout.newline;
+                    }
+                }
+
+                if( showSem )
+                {
+                    scope repr = new SitRepr.ReprVisitor(
+                            StructuredOutput.forStdout);
+
+                    foreach( entry ; mp.entries )
+                    {
+                        Stdout("module ")(entry.sit.path)(" sit: ");
+                        repr.visitBase(entry.sit, true);
+                        Stdout.newline;
+                    }
+                }
 
                 if( doEval )
                     auto result = eval.evalModule(mod);
