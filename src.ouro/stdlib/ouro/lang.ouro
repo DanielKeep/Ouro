@@ -9,9 +9,9 @@ export let fail = __builtin__("ouro.fail")
 export let $".dump" = __builtin__("ouro..dump")
 
 export let macro assert(expr) = (
-    #"{ if { #${expr},
-             nil,
-             fail("Assertion failed.") } }
+    #"{ #${if} { #${expr},
+                 nil,
+                 #${fail}("Assertion failed.") } }
 )
 
 export let ast(v) = #"{#${v}}
@@ -36,14 +36,15 @@ export let format(msg, sub) = (
 )
 
 export let macro if(l, expr_t, expr_f) = (
-    #"{ branch( #${l}, \.#${expr_t}, \.#${expr_f} ) }
+    #"{ #${branch}( #${l}, \.#${expr_t}, \.#${expr_f} ) }
 )
 
 export let head(l) = (
     let {
         [head', \l', l's... . l'],
         [foo, 42],
-          head'(l...)
+
+        head'(l...)
     }
 )
 
