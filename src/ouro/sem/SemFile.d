@@ -17,6 +17,7 @@ import tango.core.tools.TraceExceptions;
 import Ast      = ouro.ast.Nodes;
 import Builtins = ouro.sem.Builtins;
 import Eval     = ouro.sem.Eval;
+import InvokeFn = ouro.sem.InvokeFn;
 import Lexer    = ouro.lexer.Lexer;
 import Parser   = ouro.parser.Parser;
 import Sem      = ouro.sem.Semantic;
@@ -38,7 +39,7 @@ int main(char[][] argv)
     bool throwExc = false;
     bool showAst = false;
     bool showSem = false;
-    bool doEval = true;
+    bool doRuntime = true;
 
     scope eval = new Eval.EvalVisitor;
 
@@ -64,9 +65,17 @@ int main(char[][] argv)
         mp.compileStmts();
     }
 
+    Sit.Module mainModule;
+    char[] mainModulePath;
+    bool argTail = false;
+    char[][] mainArgs;
+
     foreach( path ; args )
     {
-        if( path == "--throw" )
+        if( argTail )
+            mainArgs ~= path;
+
+        else if( path == "--throw" )
             throwExc = true;
 
         else if( path == "--show-ast" )
@@ -75,8 +84,11 @@ int main(char[][] argv)
         else if( path == "--show-sem" )
             showSem = true;
 
-        else if( path == "--no-eval" )
-            doEval = false;
+        else if( path == "--no-runtime" )
+            doRuntime = false;
+
+        else if( path == "--" )
+            argTail = true;
 
         else
         {
@@ -86,6 +98,12 @@ int main(char[][] argv)
                 if( mod is null )
                     assert( false, "could not import "~path );
                 mp.compileStmts();
+
+                if( mainModule is null )
+                {
+                    mainModule = mod;
+                    mainModulePath = path; // NB: As provided by user
+                }
 
                 if( showAst )
                 {
@@ -112,20 +130,38 @@ int main(char[][] argv)
                         Stdout.newline;
                     }
                 }
-
-                if( doEval )
-                    auto result = eval.evalModule(mod);
             }
             catch( CompilerException e )
             {
                 Stderr(e.toString).newline().flush();
-                
+
                 if( throwExc )
                     throw e;
 
                 else
                     return 1;
             }
+        }
+    }
+
+    if( doRuntime )
+    {
+        foreach( entry ; mp.entries )
+            eval.evalModule(entry.sit);
+
+        if( "main" in mainModule.exportScop.entries )
+        {
+            auto mainValue = mainModule.exportScop.entries["main"];
+            auto mainFn = cast(Sit.CallableValue) mainValue;
+
+            auto argValues = new Sit.Value[mainArgs.length+1];
+            argValues[0] = new Sit.StringValue(null, mainModulePath);
+
+            foreach( i,arg ; mainArgs )
+                argValues[i+1] = new Sit.StringValue(null, arg);
+
+            auto result = InvokeFn.invoke(mainFn,
+                [cast(Sit.Value) new Sit.ListValue(null, argValues)]);
         }
     }
 
