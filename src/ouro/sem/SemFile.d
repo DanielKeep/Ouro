@@ -1,3 +1,9 @@
+/**
+    Performs semantic analysis and evaluates source modules.
+
+    Authors: Daniel Keep <daniel.keep@gmail.com>
+    Copyright: See LICENSE.
+ */
 module ouro.parser.SemFile;
 
 import Path = tango.io.Path;
