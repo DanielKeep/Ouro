@@ -14,7 +14,7 @@ export let macro assert(expr) = (
                  #${fail}("Assertion failed.") } }
 )
 
-export let ast(v) = #"{#${v}}
+export let astOf(v) = #"{#${v}}
 
 export let macro do(expr, exprs...) = (
     if { exprs = [],

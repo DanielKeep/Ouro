@@ -1281,6 +1281,21 @@ Builtin Functions and Macros
 The ``ouro`` module is implicitly imported and merged into every module's
 scope.  Thus, it contains the "built-in" functions and macros.
 
+``assert{expr}``
+----------------
+
+Ensures that *expr* evaluates to ``true``; if it doesn't, it raises an error.
+
+``astOf(v)``
+------------
+
+Attempts to convert the given value into a semantically equivalent AST node.
+
+::
+
+    assert { astOf(42) = #'{ 42 } }
+    assert { astOf(['a,"b"]) = #'{ ['a, "b"] } }
+
 ``branch(l, b_t, b_f)``
 -----------------------
 
@@ -1295,6 +1310,24 @@ functions.
         if { l, b_t(), b_f() }
     )
 
+    assert { branch(true, \."yup", \."nope") = "yup" }
+    assert { branch(false, \."yup", \."nope") = "nope" }
+
+``do{exprs...}``
+----------------
+
+Evaluates ``exprs`` in strict left-to-right order, returning the result of the
+last.
+
+::
+
+    assert { do { 1, 2, 3 } = 3 }
+
+``fail(msg)``
+-------------
+
+Halts execution with the specified ``msg``.
+
 ``filter(f, l)``
 ----------------
 
@@ -1304,20 +1337,9 @@ Note that order of evaluation is *not* specified.
 
 ::
 
-    let filter(f, l) = (
-        if {
-            l = [],
-            [],
-            let {
-                [l', head(l)],
-                [ls, tail(l)],
+    let even?(x) = (x rem 2) = 0
 
-                if { f(l'),
-                     l' :: filter(f, ls),
-                     filter(f, ls) }
-            }
-        }
-    )
+    assert { filter(even?, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) = [0, 2, 4, 6, 8] }
 
 ``format(s_fmt, vs)``
 ---------------------
@@ -1536,22 +1558,6 @@ The following character sequences are treated specially:
 .. [*]  The actual character used may be modified by culture settings,
     although how this is performed is as-yet undefined.
 
-``head(l)``
------------
-
-Returns the first element of the list *l*.  Passing a list with zero
-elements is an error.
-
-::
-
-    let head(l) = (
-        let {
-            [head', \l', l's... . l'],
-
-            head'(l...)
-        }
-    )
-
 ``if{l, expr_t, expr_f}``
 -------------------------
 
@@ -1560,9 +1566,29 @@ based on the value of *l*.  The branch not chosen is not evaluated.
 
 ::
 
-    let macro if(l, expr_t, expr_f) = (
-        #"{ branch( #${l}, \.#${expr_t}, \.#${expr_f} ) }
-    )
+    assert { if { true, "yup", "nope" } = "yup" }
+    assert { if { false, "yup", "nope" } = "nope" }
+
+``head(l)``
+-----------
+
+Returns the first element of the list *l*.  Passing a list with zero
+elements is an error.
+
+::
+
+    assert { head([1,2,3]) = 1 }
+
+``lookup(v, sym)``
+------------------
+
+Looks up the value bound to ``sym`` in the value ``v``.
+
+Compile-time only.
+
+::
+
+    assert { lookup(module("/ouro/lang"), 'if) = if }
 
 ``map(f, l)``
 -------------
@@ -1573,18 +1599,22 @@ Note that order of evaluation is *not* specified.
 
 ::
 
-    let map(f, l) = (
-        if {
-            l = [],
-            [],
-            let {
-                [l', head(l)],
-                [ls, tail(l)],
+    let square(x) = x**2
 
-                f(l') :: map(f, ls)
-            }
-        }
-    )
+    assert { map(square, [0,1,2,3,4]) = [0,2,4,6,8] }
+
+``module(path)``
+----------------
+
+Returns the module specified by the string ``path``.
+
+Compile-time only.
+
+::
+
+    let lang = "/ouro/lang"
+
+    assert { module("/ouro/lang") = lang }
 
 ``reduce(f, l)``
 ----------------
@@ -1597,18 +1627,9 @@ Note that order of evaluation is *not* specified.
 
 ::
 
-    let reduce(f, l) = (
-        let {
-            [l', head(l)],
-            [ls, tail(l)],
+    let add(x,y) = x+y
 
-            if {
-                ls = [],
-                l',
-                f(l', reduce(f, ls))
-            }
-        }
-    )
+    assert { reduce(add, [0,1,2,3,4,5,6,7,8,9]) = 45 }
 
 ``tail(l)``
 -----------
@@ -1618,13 +1639,7 @@ an error.
 
 ::
 
-    let tail(l) = (
-        let {
-            [tail', \l', l's... . l's],
-
-            tail'(l...)
-        }
-    )
+    assert { tail([1,2,3]) = [2,3] }
 
 ..
     Some shortcuts, because I'm lazy.
