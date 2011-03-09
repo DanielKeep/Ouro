@@ -502,9 +502,13 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         }
 
         auto expr = visitExpr(node.expr, &subCtx);
-
-        return new Sit.FunctionValue(node, "λ", args,
+        auto name = "λ @ " ~ node.loc.toString;
+        auto fn = new Sit.FunctionValue(node, name, args,
                 subCtx.enclosedValues, subCtx.scop, expr);
+
+        ctx.bindFn("--"~name, fn);
+
+        return fn;
     }
 
     override Sit.Node visit(Ast.ExplodeExpr node, Context* ctx)

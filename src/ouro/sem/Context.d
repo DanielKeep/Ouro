@@ -11,10 +11,12 @@ import Sit = ouro.sit.Nodes;
 struct Context
 {
     alias Sit.Value delegate(char[] name) BuiltinFn;
+    alias void delegate(char[] name, Sit.Value) BindFn;
 
     Sit.Scope scop;
     Sit.Stmt* stmt;
     BuiltinFn builtinFn;
+    BindFn bindFn;
     Sit.EnclosedValue[] enclosedValues;
     void delegate(Sit.Node) dumpNode;
 

@@ -153,6 +153,12 @@ struct ModulePool
                 return Builtins.lookupBuiltin(name);
         };
 
+        ctx.bindFn = (char[] ident, Sit.Value value)
+        {
+            assert( currentModule !is null );
+            currentModule.scop.bind(ident, value);
+        };
+
         bool failedStmt = false;
         bool successStmt = false;
 
