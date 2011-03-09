@@ -1,8 +1,8 @@
 " Vim syntax file
 " Language:         Ouro
 " Maintainer:       Daniel Keep <daniel.keep@gmail.com>
-" Latest Revision:  4 March 2011
-" Remark:           Updated ast symbol syntax.
+" Latest Revision:  9 March 2011
+" Remark:           Added symbol literals.
 
 if version < 600
     syntax clear
@@ -43,6 +43,11 @@ syn match ouroNumber '\(\d[0-9_]*\([.]\(\d[0-9_]*\)\?\)\?\|[.]\d[0-9_]*\)\([eE][
 syn match ouroString /"\(\\.\|[^"]\)*"/
 syn match ouroStringUnterm /"\(\\.\|[^"]\)*$/
 
+syn match ouroSymbol /'[\x30-\x39\x41-\x5a\x61-\x7a\xaa\xb5\xba\xc0-\xd6\xd8-\xf6]\k*/
+syn match ouroSymbol /'"\(\\.\|[^"]\)*"/
+syn match ouroSymbolUnterm /'"\(\\.\|[^"]\)*$/
+syn match ouroSymbol /'\(#'\|#"\|#\$\|[-,=+/*<>\\:.]\|!=\|\/\/\|\*\*\|<=\|>=\|<>\|::\|++\|(\.)\)/
+
 syn region ouroSubExpr start="(" end=")" fold transparent
 syn region ouroListExpr start="\[" end="\]" fold transparent
 syn region ouroMapExpr start="\[:" end=":\]" fold transparent
@@ -67,6 +72,8 @@ hi def link ouroIdentUnterm Error
 hi def link ouroNumber Float
 hi def link ouroString String
 hi def link ouroStringUnterm Error
+hi def link ouroSymbol Constant
+hi def link ouroSymbolUnterm Error
 hi def link ouroCmmntNote Todo
 hi def link ouroLineCmmnt Comment
 hi def link ouroBlockCmmnt Comment
