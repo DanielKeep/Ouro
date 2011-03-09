@@ -228,7 +228,14 @@ Value ouro_qqsub(EC ec, Value[] args) // ast, subs...
     auto subs = chkArgList(args, 1).elemValues;
     auto subExprs = new Ast.Expr[subs.length];
     foreach( i,ref subExpr ; subExprs )
-        subExpr = valueToAst(subs[i]);
+    {
+        auto sub = subs[i];
+        if( auto astv = cast(Sit.AstQuoteValue) sub )
+            subExpr = cast(Ast.Expr) astv.ast;
+        else
+            subExpr = valueToAst(sub);
+        assert( subExpr !is null );
+    }
 
     scope qqsv = new QQSub.QQSubVisitor;
     return new Sit.AstQuoteValue(null, qqsv.visitExpr(qq, subExprs));
