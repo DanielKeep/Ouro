@@ -75,7 +75,7 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
                 args[vaBeg] = vaList;
 
                 foreach( i,val ; args[vaEnd..$] )
-                    args[vaBeg+i+i] = val;
+                    args[vaBeg+i+1] = val;
 
                 args = args[0..$-(vaLen-1)];
             }

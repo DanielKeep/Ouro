@@ -151,17 +151,13 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         assert( fn !is null );
 
         // Evaluate arguments
-        auto args = new Sit.Value[node.args.length];
-        size_t argIdx = 0;
+        Sit.Value[] args;
 
         void addArg(Sit.Value value, bool explode)
         {
             if( ! explode )
             {
-                if( argIdx < args.length )
-                    args[argIdx++] = value;
-                else
-                    args ~= value;
+                args ~= value;
             }
             else
             {
