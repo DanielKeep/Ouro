@@ -286,6 +286,14 @@ Value ouro_branch(EC ec, Value[] args)
     return invoke(b, null, ec);
 }
 
+Value ouro_fail(EC ec, Value[] args)
+{
+    chkArgNum(args, 1);
+    auto msg = chkArgStringValue(args, 0);
+
+    throw new Exception(msg.value);
+}
+
 private Ast.Expr valueToAst(Value gv)
 {
     if( auto v = cast(Sit.AstQuoteValue) gv )
@@ -415,6 +423,7 @@ static this()
     builtins["ouro.let"] = new Sit.FunctionValue("ouro.let", [Sit.Argument("bindings", true), Sit.Argument("expr")], &ouro_let);
     builtins["ouro.import"] = new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import);
     builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
+    builtins["ouro.fail"] = new Sit.FunctionValue("ouro.fail", [Sit.Argument("msg")], &ouro_fail);
     builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
 
     builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.EvalContext.Runtime);
