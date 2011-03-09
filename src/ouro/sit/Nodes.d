@@ -154,6 +154,7 @@ class Module : Node
     Scope scop;
     Scope exportScop;
     bool complete = false;
+    size_t numUniques = 0;
 
     this(Ast.Node astNode, char[] path, Scope scop, Scope exportScop)
     in
@@ -167,6 +168,12 @@ class Module : Node
         this.path = path;
         this.scop = scop;
         this.exportScop = exportScop;
+    }
+
+    size_t nextUniqueId()
+    {
+        assert( numUniques < numUniques.max );
+        return (numUniques++);
     }
 }
 
