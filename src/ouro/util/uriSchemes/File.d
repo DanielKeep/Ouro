@@ -31,7 +31,7 @@ class FileRoot : ImportRoot
     body
     {
         this.uri_ = uri;
-        this.basePath = pathFrom(uri);
+        this.basePath = basePathFrom(uri);
     }
 
     static ImportRoot createForUri(Uri uri)
@@ -68,6 +68,26 @@ class FileRoot : ImportRoot
             return null;
     }
 
+    char[] pathFrom(Uri uri)
+    {
+        if( uri.scheme != "file" )
+            return null;
+
+        // TODO: support scheme-relative uris.  Properly vet.
+        auto uriPath = basePathFrom(uri);
+        if( basePath.length < uriPath.length
+                && basePath == uriPath[0..basePath.length])
+        {
+            // basePath must be an ancestor *directory*.
+            if( uriPath[basePath.length-1] == '/' )
+                return uriPath[basePath.length-1..$];
+            else if( uriPath[basePath.length] == '/' )
+                return uriPath[basePath.length..$];
+        }
+
+        return null;
+    }
+
 private:
     static this()
     {
@@ -77,7 +97,7 @@ private:
     Uri uri_;
     char[] basePath;
 
-    static char[] pathFrom(Uri uri)
+    static char[] basePathFrom(Uri uri)
     {
         auto path = uri.path;
 

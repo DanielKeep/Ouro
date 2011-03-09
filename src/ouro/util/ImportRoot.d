@@ -13,6 +13,7 @@ interface ImportRoot
 {
     Uri uri();
     Resource resolve(char[] path);
+    char[] pathFrom(Uri uri);
 }
 
 interface Resource

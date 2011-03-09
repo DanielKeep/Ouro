@@ -83,6 +83,28 @@ struct ModulePool
         }
     }
 
+    Sit.Module load(Uri uri, bool includeLang = true)
+    {
+        // ouromod: URLs are easy.
+        if( uri.scheme == "ouromod" )
+            return load(uri.path, includeLang);
+
+        // We'll try each import root, looking for one which both 'owns' this
+        // uri and is willing to load it.
+        foreach( root ; importRoots )
+        {
+            auto path = root.pathFrom(uri);
+            if( path == "" )
+                continue;
+            auto res = root.resolve(path);
+            if( res is null )
+                return null;
+            return load(path, res, includeLang);
+        }
+
+        return null;
+    }
+
     Sit.Module load(char[] path, bool includeLang = true)
     {
         // Is it already there?
@@ -108,6 +130,11 @@ struct ModulePool
                 return null;
         }
 
+        return load(path, res, includeLang);
+    }
+
+    Sit.Module load(char[] path, Resource res, bool includeLang = true)
+    {
         Entry entry;
         entry.uri = res.uri;
 

@@ -10,6 +10,8 @@ import Path = tango.io.Path;
 
 import tango.io.Stdout;
 import tango.io.device.File;
+import tango.net.Uri;
+import tango.sys.Environment;
 import tango.text.Util : trimr;
 
 import tango.core.tools.TraceExceptions;
@@ -94,7 +96,57 @@ int main(char[][] argv)
         {
             try
             {
-                auto mod = mp.load(Path.standard(path));
+                auto stdPath = Path.standard(path);
+                Uri modUri;
+
+                if( stdPath.length >= 8 && stdPath[0..8] == "ouromod:" )
+                {
+                    // Module path; use it directly.
+                    auto modPath = stdPath[8..$];
+                    if( modPath[0] != '/' )
+                        // Assume lazy absolute
+                        modPath = '/' ~ modPath;
+
+                    modUri = new Uri("ouromod:" ~ modPath);
+                }
+                else
+                {
+                    Uri uri;
+
+                    // Check for a Windows absolute file path before parsing
+                    // as an URI.
+                    // TODO: better test; what about COMx?  LPTx?
+                    version( Windows )
+                        if( stdPath.length >= 2 && stdPath[1] == ':' )
+                        {
+                            // Probably a Windows absolute path.
+                            uri = new Uri("file:///"
+                                    ~ Path.normalize(stdPath));
+                        }
+
+                    if( uri is null )
+                        // Try to parse as URI
+                        uri = new Uri(stdPath);
+
+                    // If there's no scheme, assume filesystem.
+                    if( uri.scheme == "" )
+                    {
+                        auto uriPath = uri.path;
+                        auto pp = Path.PathParser(uriPath);
+                        if( ! pp.isAbsolute )
+                        {
+                            uriPath = Environment.toAbsolute(uriPath);
+                            version( Windows )
+                                uriPath = '/' ~ uriPath;
+                        }
+
+                        uri = new Uri("file", "", uriPath);
+                    }
+
+                    modUri = uri;
+                }
+
+                auto mod = mp.load(modUri);
                 if( mod is null )
                     assert( false, "could not import "~path );
                 mp.compileStmts();
