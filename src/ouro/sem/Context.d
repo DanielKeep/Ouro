@@ -18,6 +18,8 @@ struct Context
     BuiltinFn builtinFn;
     BindFn bindFn;
     Sit.EnclosedValue[] enclosedValues;
+    Sit.Module curModule;
+
     void delegate(Sit.Node) dumpNode;
 
     static Context opCall(Sit.Scope scop, Sit.Stmt* stmt, BuiltinFn builtinFn)

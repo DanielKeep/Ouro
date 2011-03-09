@@ -173,11 +173,11 @@ processStmt:
             {
                 auto stmt = &stmts[i];
                 currentStmt = i;
-                currentModule = stmt.mod;
+                ctx.curModule = currentModule = stmt.mod;
                 scope(exit)
                 {
                     currentStmt = size_t.max;
-                    currentModule = null;
+                    ctx.curModule = currentModule = null;
                 }
 
                 if( stmt.done )
