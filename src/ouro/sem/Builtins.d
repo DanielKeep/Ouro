@@ -91,6 +91,22 @@ Ast.Expr chkArgAst(Value[] args, size_t i)
         assert( false, "expected ast; got " ~ args[i].classinfo.name );
 }
 
+Sit.Module chkArgModule(Value[] args, size_t i)
+{
+    if( auto v = cast(Sit.ModuleValue) args[i] )
+        return v.modul;
+    else
+        assert( false, "expected module; got " ~ args[i].classinfo.name );
+}
+
+Sit.SymbolValue chkArgSymbol(Value[] args, size_t i)
+{
+    if( auto v = cast(Sit.SymbolValue) args[i] )
+        return v;
+    else
+        assert( false, "expected symbol; got " ~ args[i].classinfo.name );
+}
+
 Value compareOp(Sit.Order ord)(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
@@ -298,6 +314,15 @@ Value ouro_fail(EC ec, Value[] args)
     throw new Exception(msg.value);
 }
 
+Value ouro_lookup(EC ec, Value[] args)
+{
+    chkArgNum(args, 2);
+    auto mod = chkArgModule(args, 0);
+    auto ident = chkArgSymbol(args, 1).value;
+
+    return mod.scop.lookup(null, ident);
+}
+
 private Ast.Expr valueToAst(Value gv)
 {
     if( auto v = cast(Sit.AstQuoteValue) gv )
@@ -429,6 +454,7 @@ static this()
     builtins["ouro.import"] = new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import);
     builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
     builtins["ouro.fail"] = new Sit.FunctionValue("ouro.fail", [Sit.Argument("msg")], &ouro_fail);
+    builtins["ouro.lookup"] = new Sit.FunctionValue("ouro.lookup", [Sit.Argument("module"), Sit.Argument("ident")], &ouro_lookup, Sit.EvalContext.Compile);
     builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
 
     builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.EvalContext.Runtime);
