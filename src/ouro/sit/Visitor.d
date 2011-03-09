@@ -179,6 +179,11 @@ abstract class Visitor(Result = void, Arg = void)
         {
             return defaultVisitResult;
         }
+
+        Result visit(Sit.RangeValue node)
+        {
+            return defaultVisitResult;
+        }
     }
     else
     {
@@ -329,6 +334,11 @@ abstract class Visitor(Result = void, Arg = void)
         }
 
         Result visit(Sit.NumberValue node, Arg arg)
+        {
+            return defaultVisitResult;
+        }
+
+        Result visit(Sit.RangeValue node, Arg arg)
         {
             return defaultVisitResult;
         }

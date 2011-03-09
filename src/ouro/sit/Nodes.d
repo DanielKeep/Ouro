@@ -35,6 +35,7 @@ const Nodes =
     "StringValue",
     "SymbolValue",
     "NumberValue",
+    "RangeValue",
 ];
 
 class Scope

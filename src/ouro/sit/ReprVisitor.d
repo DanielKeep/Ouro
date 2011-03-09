@@ -316,5 +316,14 @@ class ReprVisitor : Visitor!(void, bool)
     {
         so.r("Number ").r(reprReal(node.value));
     }
+
+    override void visit(Sit.RangeValue node, bool showDef)
+    {
+        so.r("Range ").r(node.incLower ? "[" : "(").push;
+        visitBase(node.lowerValue, showDef);
+        so.r(", ");
+        visitBase(node.upperValue, showDef);
+        so.pop.r(node.incUpper ? "]" : ")");
+    }
 }
 
