@@ -49,7 +49,7 @@ struct Context
     Sit.Value builtin(char[] name)
     {
         auto v = builtinFn(name);
-        assert( v !is null );
+        assert( v !is null, "builtin "~name~" not defined" );
         return v;
     }
 
