@@ -1,10 +1,10 @@
 /**
-    Builtin functions.
+    Functions provided for the core language.
 
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
  */
-module ouro.sem.builtins.Builtins;
+module ouro.sem.builtins.Lang;
 
 import tango.math.Math : pow, floor, trunc;
 
@@ -16,14 +16,6 @@ import QQSub    = ouro.ast.QQSubVisitor;
 import Sit      = ouro.sit.Nodes;
 
 alias Sit.EvalContext EC;
-
-Sit.Value lookupBuiltin(char[] name)
-{
-    if( auto fnp = name in builtins )
-        return *fnp;
-    else
-        return null;
-}
 
 private:
 
@@ -449,55 +441,57 @@ Value ouro_dot_dump(EC ec, Value[] args)
     return nil;
 }
 
-Sit.FunctionValue[char[]] builtins;
+import Builtins = ouro.sem.builtins.Builtins;
 
 static this()
 {
-    builtins["ouro.opEq"] = new Sit.FunctionValue("ouro.opEq", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opEq);
-    builtins["ouro.opNe"] = new Sit.FunctionValue("ouro.opNe", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opNe);
-    builtins["ouro.opLt"] = new Sit.FunctionValue("ouro.opLt", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opLt);
-    builtins["ouro.opLtEq"] = new Sit.FunctionValue("ouro.opLtEq", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opLtEq);
-    builtins["ouro.opGt"] = new Sit.FunctionValue("ouro.opGt", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opGt);
-    builtins["ouro.opGtEq"] = new Sit.FunctionValue("ouro.opGtEq", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opGtEq);
+    alias Builtins.register reg;
 
-    builtins["ouro.opAdd"] = new Sit.FunctionValue("ouro.opAdd", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opAdd);
-    builtins["ouro.opSub"] = new Sit.FunctionValue("ouro.opSub", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opSub);
-    builtins["ouro.opMul"] = new Sit.FunctionValue("ouro.opMul", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opMul);
-    builtins["ouro.opDiv"] = new Sit.FunctionValue("ouro.opDiv", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opDiv);
-    builtins["ouro.opIntDiv"] = new Sit.FunctionValue("ouro.opIntDiv", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opIntDiv);
-    builtins["ouro.opMod"] = new Sit.FunctionValue("ouro.opMod", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opMod);
-    builtins["ouro.opRem"] = new Sit.FunctionValue("ouro.opRem", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opRem);
-    builtins["ouro.opExp"] = new Sit.FunctionValue("ouro.opExp", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opExp);
+    reg("ouro.opEq", new Sit.FunctionValue("ouro.opEq", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opEq));
+    reg("ouro.opNe", new Sit.FunctionValue("ouro.opNe", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opNe));
+    reg("ouro.opLt", new Sit.FunctionValue("ouro.opLt", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opLt));
+    reg("ouro.opLtEq", new Sit.FunctionValue("ouro.opLtEq", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opLtEq));
+    reg("ouro.opGt", new Sit.FunctionValue("ouro.opGt", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opGt));
+    reg("ouro.opGtEq", new Sit.FunctionValue("ouro.opGtEq", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opGtEq));
 
-    builtins["ouro.opAnd"] = new Sit.FunctionValue("ouro.opAnd", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opAnd);
-    builtins["ouro.opOr"] = new Sit.FunctionValue("ouro.opOr", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opOr);
+    reg("ouro.opAdd", new Sit.FunctionValue("ouro.opAdd", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opAdd));
+    reg("ouro.opSub", new Sit.FunctionValue("ouro.opSub", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opSub));
+    reg("ouro.opMul", new Sit.FunctionValue("ouro.opMul", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opMul));
+    reg("ouro.opDiv", new Sit.FunctionValue("ouro.opDiv", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opDiv));
+    reg("ouro.opIntDiv", new Sit.FunctionValue("ouro.opIntDiv", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opIntDiv));
+    reg("ouro.opMod", new Sit.FunctionValue("ouro.opMod", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opMod));
+    reg("ouro.opRem", new Sit.FunctionValue("ouro.opRem", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opRem));
+    reg("ouro.opExp", new Sit.FunctionValue("ouro.opExp", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opExp));
 
-    builtins["ouro.opComp"] = new Sit.FunctionValue("ouro.opComp", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opComp);
-    builtins["ouro.opCons"] = new Sit.FunctionValue("ouro.opCons", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opCons);
-    builtins["ouro.opJoin"] = new Sit.FunctionValue("ouro.opJoin", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opJoin);
+    reg("ouro.opAnd", new Sit.FunctionValue("ouro.opAnd", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opAnd));
+    reg("ouro.opOr", new Sit.FunctionValue("ouro.opOr", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opOr));
 
-    builtins["ouro.opLtLt"] = new Sit.FunctionValue("ouro.opLtLt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLtLt);
-    builtins["ouro.opLeLt"] = new Sit.FunctionValue("ouro.opLeLt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLeLt);
-    builtins["ouro.opLtLe"] = new Sit.FunctionValue("ouro.opLtLe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLtLe);
-    builtins["ouro.opLeLe"] = new Sit.FunctionValue("ouro.opLeLe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLeLe);
-    builtins["ouro.opGtGt"] = new Sit.FunctionValue("ouro.opGtGt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGtGt);
-    builtins["ouro.opGeGt"] = new Sit.FunctionValue("ouro.opGeGt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGeGt);
-    builtins["ouro.opGtGe"] = new Sit.FunctionValue("ouro.opGtGe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGtGe);
-    builtins["ouro.opGeGe"] = new Sit.FunctionValue("ouro.opGeGe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGeGe);
+    reg("ouro.opComp", new Sit.FunctionValue("ouro.opComp", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opComp));
+    reg("ouro.opCons", new Sit.FunctionValue("ouro.opCons", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opCons));
+    reg("ouro.opJoin", new Sit.FunctionValue("ouro.opJoin", [Sit.Argument("lhs"), Sit.Argument("rhs")], &ouro_opJoin));
 
-    builtins["ouro.opPos"] = new Sit.FunctionValue("ouro.opPos", [Sit.Argument("r")], &ouro_opPos);
-    builtins["ouro.opNeg"] = new Sit.FunctionValue("ouro.opNeg", [Sit.Argument("r")], &ouro_opNeg);
-    builtins["ouro.opNot"] = new Sit.FunctionValue("ouro.opNot", [Sit.Argument("l")], &ouro_opNot);
+    reg("ouro.opLtLt", new Sit.FunctionValue("ouro.opLtLt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLtLt));
+    reg("ouro.opLeLt", new Sit.FunctionValue("ouro.opLeLt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLeLt));
+    reg("ouro.opLtLe", new Sit.FunctionValue("ouro.opLtLe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLtLe));
+    reg("ouro.opLeLe", new Sit.FunctionValue("ouro.opLeLe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opLeLe));
+    reg("ouro.opGtGt", new Sit.FunctionValue("ouro.opGtGt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGtGt));
+    reg("ouro.opGeGt", new Sit.FunctionValue("ouro.opGeGt", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGeGt));
+    reg("ouro.opGtGe", new Sit.FunctionValue("ouro.opGtGe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGtGe));
+    reg("ouro.opGeGe", new Sit.FunctionValue("ouro.opGeGe", [Sit.Argument("lhs"), Sit.Argument("mid"), Sit.Argument("rhs")], &ouro_opGeGe));
 
-    builtins["ouro.range"] = new Sit.FunctionValue("ouro.range", [Sit.Argument("li"), Sit.Argument("ui"), Sit.Argument("lv"), Sit.Argument("uv")], &ouro_range);
-    builtins["ouro.qqsub"] = new Sit.FunctionValue("ouro.qqsub", [Sit.Argument("ast"), Sit.Argument("subs", true)], &ouro_qqsub);
-    builtins["ouro.let"] = new Sit.FunctionValue("ouro.let", [Sit.Argument("bindings", true), Sit.Argument("expr")], &ouro_let);
-    builtins["ouro.import"] = new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import);
-    builtins["ouro.branch"] = new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch);
-    builtins["ouro.fail"] = new Sit.FunctionValue("ouro.fail", [Sit.Argument("msg")], &ouro_fail);
-    builtins["ouro.lookup"] = new Sit.FunctionValue("ouro.lookup", [Sit.Argument("module"), Sit.Argument("ident")], &ouro_lookup, Sit.EvalContext.Compile);
-    builtins["ouro.ast"] = new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast);
+    reg("ouro.opPos", new Sit.FunctionValue("ouro.opPos", [Sit.Argument("r")], &ouro_opPos));
+    reg("ouro.opNeg", new Sit.FunctionValue("ouro.opNeg", [Sit.Argument("r")], &ouro_opNeg));
+    reg("ouro.opNot", new Sit.FunctionValue("ouro.opNot", [Sit.Argument("l")], &ouro_opNot));
 
-    builtins["ouro..dump"] = new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.EvalContext.Runtime);
+    reg("ouro.range", new Sit.FunctionValue("ouro.range", [Sit.Argument("li"), Sit.Argument("ui"), Sit.Argument("lv"), Sit.Argument("uv")], &ouro_range));
+    reg("ouro.qqsub", new Sit.FunctionValue("ouro.qqsub", [Sit.Argument("ast"), Sit.Argument("subs", true)], &ouro_qqsub));
+    reg("ouro.let", new Sit.FunctionValue("ouro.let", [Sit.Argument("bindings", true), Sit.Argument("expr")], &ouro_let));
+    reg("ouro.import", new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import));
+    reg("ouro.branch", new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch));
+    reg("ouro.fail", new Sit.FunctionValue("ouro.fail", [Sit.Argument("msg")], &ouro_fail));
+    reg("ouro.lookup", new Sit.FunctionValue("ouro.lookup", [Sit.Argument("module"), Sit.Argument("ident")], &ouro_lookup, Sit.EvalContext.Compile));
+    reg("ouro.ast", new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast));
+
+    reg("ouro..dump", new Sit.FunctionValue("ouro..dump", [Sit.Argument("values", true)], &ouro_dot_dump, Sit.EvalContext.Runtime));
 }
 
