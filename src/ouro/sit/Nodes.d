@@ -79,7 +79,7 @@ class Scope
     {
         if( auto entry = (ident in entries) )
             return *entry;
-        
+
         else if( parent !is null )
         {
             auto v = parent.lookup(astNode, ident, allowFallbacks);
@@ -391,7 +391,11 @@ class RuntimeValue : Value, Resolvable
 {
     Expr expr;
 
-    protected Value value;
+    protected
+    {
+        bool evaluating = false;
+        Value value;
+    }
 
     this(Ast.Node astNode, Expr expr)
     in
@@ -404,10 +408,16 @@ class RuntimeValue : Value, Resolvable
         this.expr = expr;
     }
 
-    void fixValue(Value value)
+    Value fixValue(Value delegate() fixDg)
     {
         assert( this.value is null );
-        this.value = value;
+        assert( ! this.evaluating, "self-referential runtime value" );
+
+        this.evaluating = true;
+        scope(exit) this.evaluating = false;
+
+        this.value = fixDg();
+        return this.value;
     }
 
     override Value resolve()
@@ -415,7 +425,11 @@ class RuntimeValue : Value, Resolvable
         if( value !is null )
             return value;
         else
+        {
+            if( this.evaluating )
+                assert( false, "self-referential runtime value" );
             return this;
+        }
     }
 }
 

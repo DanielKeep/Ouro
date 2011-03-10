@@ -121,23 +121,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         Sit.Value result;
 
         foreach( stmt ; node.stmts )
-        {
-            if( auto rv = cast(Sit.RuntimeValue) stmt.value )
-            {
-                if( rv.resolve is rv )
-                {
-                    auto v = visitBase(rv.expr, ctx);
-                    rv.fixValue(v);
-                    result = v;
-                }
-                else
-                    result = rv.resolve;
-            }
-            else
-            {
-                result = visitBase(stmt.value, ctx);
-            }
-        }
+            result = visitBase(stmt.value, ctx);
 
         return result;
     }
@@ -243,29 +227,36 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
 
     override Sit.Value visit(Sit.ArgumentValue node, Context ctx)
     {
-        return ctx.fixValue(node);
+        auto v = ctx.fixValue(node);
+        return visitBase(v, ctx);
     }
 
     override Sit.Value visit(Sit.EnclosedValue node, Context ctx)
     {
-        return ctx.fixValue(node.value);
+        auto v = ctx.fixValue(node.value);
+        return visitBase(v, ctx);
     }
 
     override Sit.Value visit(Sit.DeferredValue node, Context ctx)
     {
-        return ctx.fixValue(node);
+        auto v = ctx.fixValue(node);
+        return visitBase(v, ctx);
     }
 
     override Sit.Value visit(Sit.QuantumValue node, Context ctx)
     {
-        return ctx.fixValue(node);
+        auto v = ctx.fixValue(node);
+        return visitBase(v, ctx);
     }
 
     override Sit.Value visit(Sit.RuntimeValue node, Context ctx)
     {
         auto v = node.resolve;
-        if( v is null )
-            assert( false, "un-evaluated runtime value" );
+
+        if( v is node )
+            // Attempt to fix.
+            v = node.fixValue({ return visitBase(node.expr, ctx); });
+
         return v;
     }
 
