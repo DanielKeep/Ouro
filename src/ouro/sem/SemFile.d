@@ -29,6 +29,9 @@ import ouro.Error : CompilerException;
 import ouro.sem.ModulePool : ModulePool;
 import ouro.util.StructuredOutput;
 
+// Pull in all the builtin modules.
+import ouro.sem.builtins.All;
+
 import AstRepr = ouro.ast.ReprVisitor;
 import SitRepr = ouro.sit.ReprVisitor;
 

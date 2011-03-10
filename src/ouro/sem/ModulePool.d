@@ -183,7 +183,7 @@ struct ModulePool
             if( name == "ouro.module" )
                 return cast(Sit.Value) moduleFn;
             else
-                return Builtins.lookupBuiltin(name);
+                return Builtins.lookup(name);
         };
 
         ctx.bindFn = (char[] ident, Sit.Value value)
