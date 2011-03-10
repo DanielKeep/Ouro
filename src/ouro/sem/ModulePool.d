@@ -22,7 +22,7 @@ import ouro.Source;
 import Ast = ouro.ast.Nodes;
 import Sem = ouro.sem.Semantic;
 import Sit = ouro.sit.Nodes;
-import Builtins = ouro.sem.Builtins;
+import Builtins = ouro.sem.builtins.Builtins;
 import Lexer = ouro.lexer.Lexer;
 import Parser = ouro.parser.Parser;
 

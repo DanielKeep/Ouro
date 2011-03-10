@@ -4,7 +4,7 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
  */
-module ouro.sem.Builtins;
+module ouro.sem.builtins.Builtins;
 
 import tango.math.Math : pow, floor, trunc;
 
