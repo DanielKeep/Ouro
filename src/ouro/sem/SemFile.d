@@ -69,6 +69,7 @@ int main(char[][] argv)
 
     Sit.Module mainModule;
     char[] mainModulePath;
+    bool nextIsImport = false;
     bool argTail = false;
     char[][] mainArgs;
 
@@ -77,6 +78,11 @@ int main(char[][] argv)
         if( argTail )
             mainArgs ~= path;
 
+        else if( nextIsImport )
+        {
+            nextIsImport = false;
+            mp.addFileImportRoot(path);
+        }
         else if( path == "--throw" )
             throwExc = true;
 
@@ -88,6 +94,9 @@ int main(char[][] argv)
 
         else if( path == "--no-runtime" )
             doRuntime = false;
+
+        else if( path == "--import" )
+            nextIsImport = true;
 
         else if( path == "--" )
             argTail = true;
