@@ -6,6 +6,7 @@
  */
 module ouro.sem.ModulePool;
 
+debug(TraceModulePool) import tango.io.Stdout;
 import tango.net.Uri;
 
 import Path = tango.io.Path;
@@ -213,6 +214,8 @@ processStmt:
                     ctx.curModule = currentModule = null;
                 }
 
+                void resetStmtPtr() { stmt = &stmts[i]; }
+
                 if( stmt.done )
                     // Already done this one!  YAY!
                     continue processStmt;
@@ -226,15 +229,21 @@ processStmt:
                     subCtx.stmt = &stmt.stmt;
                     subCtx.scop = stmt.mod.scop;
 
+                    // Note: stmts may be reallocated due to additional
+                    // modules being loaded.  We need to update the stmt
+                    // pointer after the visit just in case.
+
                     try
                     {
                         stmt.stmt.expr = sem.visitExpr(astStmt, &subCtx);
                     }
                     catch( NonFatalAbort nf )
                     {
+                        resetStmtPtr;
                         stmt.ex = nf;
                         failedStmt = true;
                     }
+                    resetStmtPtr;
                 }
 
                 // Semantic failed
@@ -254,9 +263,11 @@ processStmt:
                         }
                         catch( Object ex )
                         {
+                            resetStmtPtr;
                             stmt.ex = ex;
                             failedStmt = true;
                         }
+                        resetStmtPtr;
 
                         if( foldedExpr is null )
                             continue processStmt;
@@ -331,6 +342,11 @@ processStmt:
                                     ~stmt.stmt.value.toString );
                     }
 
+                    if( stmt.stmt.expr is null )
+                        assert( false );
+                    if( stmt.stmt.value is null )
+                        assert( false );
+
                     successStmt = true;
                     stmt.done = true;
                 }
@@ -348,8 +364,21 @@ processStmt:
         while( failedStmt )
 
         // Dump statements into their respective modules
-        foreach( stmt ; stmts )
+        debug(TraceModulePool)
         {
+            Stderr.formatln("Dumping statements...");
+        }
+        foreach( i,stmt ; stmts )
+        {
+            debug(TraceModulePool)
+            {
+                Stderr.formatln(" {} #{}...", stmt.mod.path, i).flush;
+            }
+
+            if( stmt.stmt.expr is null )
+                assert( false );
+            if( stmt.stmt.value is null )
+                assert( false );
             stmt.mod.stmts ~= stmt.stmt;
             
             // Mark the module as complete, too.
