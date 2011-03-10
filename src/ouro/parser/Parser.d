@@ -914,17 +914,16 @@ Ast.Expr tryparseLambdaExpr(TokenStream ts)
 Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 {
     /*
-        <function expression> = <function prefix>, (
-            "(", <treat eol as whitespace(
+        <function or variable or sub expression> =
+            ( <variable expression>
+            | <function like keyword>
+            | <sub expression> ), [ <function tail>, { <function tail> } ];
+
+        <function tail> =
+            ( "(", <treat eol as whitespace(
                 [ <expression>, { ",", <expression> } ] )>, ")"
             | "{", <treat eol as whitespace(
                 [ <expression>, { ",", <expression> } ] )>, "}" );
-
-        <function prefix> = <identifier>
-                          | <function like keyword>
-                          | <sub expression>
-                          | <function expression>
-                          ;
     */
 
     Ast.Expr baseExpr;

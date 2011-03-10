@@ -424,9 +424,7 @@ Note: eventually, pattern matching should be added here::
                             | <map expression>
                             | <lambda expression>
                             | <range expression>
-                            | <function expression>
-                            | <variable expression>
-                            | <sub expression>
+                            | <function or variable or sub expression>
                             ),
                         [ <explode> ];
 
@@ -467,8 +465,13 @@ Note: eventually, pattern matching should be added here::
     <lambda expression> = "\", [ "macro" ], [ <function argument names> ],
         ".", <expression>;
 
-    <function expression> = <function prefix>, (
-        "(", <treat eol as whitespace(
+    <function or variable or sub expression> =
+        ( <variable expression>
+        | <function like keyword>
+        | <sub expression> ), [ <function tail>, { <function tail> } ];
+
+    <function tail> =
+        ( "(", <treat eol as whitespace(
             [ <expression>, { ",", <expression> } ] )>, ")"
         | "{", <treat eol as whitespace(
             [ <expression>, { ",", <expression> } ] )>, "}" );
@@ -477,12 +480,6 @@ Note: eventually, pattern matching should be added here::
                      | <sub expression>;
 
     <postfix function> = <infix function>;
-
-    <function prefix> = <identifier>
-                      | <function like keyword>
-                      | <sub expression>
-                      | <function expression>
-                      ;
 
     <function like keyword> = "#'"
                             | `#"`
