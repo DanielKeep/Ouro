@@ -308,5 +308,10 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
     {
         return node;
     }
+
+    override Sit.Value visit(Sit.RangeValue node, Context ctx)
+    {
+        return node;
+    }
 }
 
