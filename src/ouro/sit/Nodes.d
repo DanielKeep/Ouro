@@ -834,6 +834,15 @@ class NilValue : Value
 
         return Order.Eq;
     }
+
+    static NilValue instance()
+    {
+        if( instance_ is null )
+            instance_ = new NilValue(null);
+        return instance_;
+    }
+
+    protected static NilValue instance_;
 }
 
 class StringValue : Value
