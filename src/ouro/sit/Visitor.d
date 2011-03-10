@@ -32,6 +32,8 @@ abstract class Visitor(Result = void, Arg = void)
     {
         final Result visitBase(Sit.Node node)
         {
+            assert( node !is null, "cannot visit null" );
+
             mixin(genDispatch());
 
             return defaultVisit(node);
@@ -194,6 +196,8 @@ abstract class Visitor(Result = void, Arg = void)
     {
         final Result visitBase(Sit.Node node, Arg arg)
         {
+            assert( node !is null, "cannot visit null" );
+
             mixin(genDispatch(", arg"));
 
             return defaultVisit(node, arg);
