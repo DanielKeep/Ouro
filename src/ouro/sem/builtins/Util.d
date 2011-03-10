@@ -59,6 +59,11 @@ Sit.ListValue chkArgList(Value[] args, size_t i)
         assert( false, "expected list; got " ~ args[i].classinfo.name );
 }
 
+char[] chkArgString(Value[] args, size_t i)
+{
+    return chkArgStringValue(args, i).value;
+}
+
 Sit.StringValue chkArgStringValue(Value[] args, size_t i)
 {
     if( auto v = cast(Sit.StringValue) args[i] )
@@ -93,5 +98,15 @@ Sit.SymbolValue chkArgSymbol(Value[] args, size_t i)
         return v;
     else
         assert( false, "expected symbol; got " ~ args[i].classinfo.name );
+}
+
+Object chkArgObject(Value[] args, size_t i, bool silent = false)
+{
+    if( auto v = cast(Sit.HostObjectValue) args[i] )
+        return v.obj;
+    else if( silent )
+        return null;
+    else
+        assert( false, "expected host object; got " ~ args[i].classinfo.name );
 }
 

@@ -10,5 +10,7 @@ Ouro Standard Library
 
 .. contents::
 
+.. include:: ouro.io.rst
 .. include:: ouro.lang.rst
+.. include:: ouro.stdio.rst
 

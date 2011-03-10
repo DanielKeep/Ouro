@@ -1,0 +1,13 @@
+(++
+
+    This module contains definitions relating to the standard input/ouput
+    streams.
+ 
+ ++)
+
+let open~ = __builtin__("ouro.io.openStdStream~")
+
+export let cin = open~('STDIN)
+export let cout = open~('STDOUT)
+export let cerr = open~('STDERR)
+

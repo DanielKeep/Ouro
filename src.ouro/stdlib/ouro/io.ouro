@@ -1,0 +1,14 @@
+(++
+
+    This module defines the IO functions.
+ 
+ ++)
+
+export let closeStream! = __builtin__("ouro.io.closeStream!")
+export let copyIntoStream! = __builtin__("ouro.io.copyIntoStream!")
+export let flushStream! = __builtin__("ouro.io.flushStream!")
+export let hasCursor? = __builtin__("ouro.io.hasCursor?")
+export let openFile~ = __builtin__("ouro.io.openFile~")
+export let seekStream! = __builtin__("ouro.io.seekStream!")
+export let writeToStream! = __builtin__("ouro.io.writeToStream!")
+

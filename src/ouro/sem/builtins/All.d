@@ -6,5 +6,6 @@
  */
 module ouro.sem.builtins.All;
 
+import ouro.sem.builtins.Io;
 import ouro.sem.builtins.Lang;
 
