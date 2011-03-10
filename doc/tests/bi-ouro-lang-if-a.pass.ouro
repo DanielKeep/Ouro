@@ -1,0 +1,7 @@
+
+assert { if { true, 1, 0 } = 1 }
+assert { if { false, 1, 0 } = 0 }
+
+if { true, nil, fail("kaboom!") }
+if { false, fail("oh noes!"), nil }
+

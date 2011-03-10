@@ -1,0 +1,5 @@
+
+import lang = "/ouro/lang"
+
+assert { lookup(lang, 'if) = if }
+

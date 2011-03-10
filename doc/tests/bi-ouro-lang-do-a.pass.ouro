@@ -1,0 +1,5 @@
+
+assert { do { 1 } = 1 }
+assert { do { 1, 2 } = 2 }
+assert { do { 1, 2, 3 } = 3 }
+

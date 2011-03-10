@@ -1,0 +1,4 @@
+
+assert { branch(true, \.1, \.0) = 1 }
+assert { branch(false, \.1, \.0) = 0 }
+

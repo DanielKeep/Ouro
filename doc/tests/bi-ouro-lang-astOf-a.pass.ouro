@@ -1,0 +1,15 @@
+
+assert { astOf(nil) = #'{nil} }
+assert { astOf([]) = #'{[]} }
+assert { astOf([nil]) = #'{[nil]} }
+assert { astOf([nil, nil]) = #'{[nil,nil]} }
+assert { astOf(true) = #'{true} }
+assert { astOf(false) = #'{false} }
+assert { astOf([::]) = #'{[::]} }
+assert { astOf([:a:b:]) = #'{[:a:b:]} }
+assert { astOf([:a:b,c:d:]) = #'{[:a:b,c:d:]} }
+assert { astOf("blah") = #"{"blah"} }
+assert { astOf(42) = #'{42} }
+assert { astOf('foo) = #'{'foo} }
+assert { astOf(range [0,1)) = #'{range[0,1)} }
+

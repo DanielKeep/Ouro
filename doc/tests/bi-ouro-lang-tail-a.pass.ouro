@@ -1,0 +1,4 @@
+
+assert { tail([1]) = [] }
+assert { tail([1,2,3]) = [2,3] }
+

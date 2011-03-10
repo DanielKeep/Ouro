@@ -1,0 +1,5 @@
+
+import lang = "/ouro/lang"
+
+assert { module("/ouro/lang") = lang }
+
