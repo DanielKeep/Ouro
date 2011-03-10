@@ -435,12 +435,12 @@ Note: eventually, pattern matching should be added here::
                 | "**"
                 | "and" | "or"
                 | "." | "::" | "++"
-                | "(.", <infix function>, ".)"
+                | "(.", <treat eol as whitespace( <infix function> )>, ".)"
                 ;
 
     <prefix op> = "+" | "-" | "not";
 
-    <postfix op> = "(.", <postfix function>, ")";
+    <postfix op> = "(.", <treat eol as whitespace( <postfix function> )>, ")";
 
     <explode> = "...";
 
@@ -454,10 +454,11 @@ Note: eventually, pattern matching should be added here::
 
     <nil expression> = "nil";
 
-    <list expression> = "[", [ <expression>, { ",", <expression> } ], "]";
+    <list expression> = "[", <treat eol as whitespace(
+        [ <expression>, { ",", <expression> } ] )>, "]";
 
-    <map expression> = "[:",
-        [ <key value pair>, { ",", <key value pair> } ], ":]";
+    <map expression> = "[:", <treat eol as whitespace(
+        [ <key value pair>, { ",", <key value pair> } ] )>, ":]";
 
     <key value pair> = <expression>, ":", <expression>;
 
@@ -465,8 +466,10 @@ Note: eventually, pattern matching should be added here::
         ".", <expression>;
 
     <function expression> = <function prefix>, (
-        "(", [ <expression>, { ",", <expression> } ], ")"
-        | "{", [ <expression>, { ",", <expression> } ], "}" );
+        "(", <treat eol as whitespace(
+            [ <expression>, { ",", <expression> } ] )>, ")"
+        | "{", <treat eol as whitespace(
+            [ <expression>, { ",", <expression> } ] )>, "}" );
 
     <infix function> = <identifier>
                      | <sub expression>;

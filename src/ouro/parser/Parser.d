@@ -587,8 +587,12 @@ bool tryparseBinaryOp(TokenStream ts, out Ast.BinaryExpr.Op op,
         case TOKlparenperiod:
             {
                 auto start = ts.pop.loc;
-                infixFunc = parseInfixFunction(ts);
-                auto endTok = ts.popExpectAny(TOKperiodrparen,TOKrparen);
+                typeof(ts.pop()) endTok;
+                ts.skipEolDo
+                ({
+                    infixFunc = parseInfixFunction(ts);
+                    endTok = ts.popExpectAny(TOKperiodrparen,TOKrparen);
+                });
                 auto end = endTok.loc;
                 locSpan = start.extendTo(end);
 
@@ -763,7 +767,8 @@ Ast.Expr tryparseNilExpr(TokenStream ts)
 Ast.Expr tryparseListExpr(TokenStream ts)
 {
     /*
-        <list expression> = "[", [ <expression>, { ",", <expression> } ], "]";
+        <list expression> = "[", <treat eol as whitespace(
+            [ <expression>, { ",", <expression> } ] )>, "]";
     */
 
     if( ts.peek.type != TOKlbracket ) return null;
@@ -776,8 +781,9 @@ Ast.Expr tryparseListExpr(TokenStream ts)
         ({
             elements = parseCommaExprs(ts, TOKrbracket);
         });
-    
-    auto end = ts.popExpect(TOKrbracket).loc;
+
+    typeof(start) end;
+    ts.skipEolDo({ end = ts.popExpect(TOKrbracket).loc; });
 
     return new Ast.ListExpr(start.extendTo(end), elements);
 }
@@ -807,8 +813,8 @@ Ast.Expr[] parseCommaExprs(TokenStream ts, TOK stopType)
 Ast.Expr tryparseMapExpr(TokenStream ts)
 {
     /*
-        <map expression> = "[:",
-            [ <key value pair>, { ",", <key value pair> } ], ":]";
+        <map expression> = "[:", <treat eol as whitespace(
+            [ <key value pair>, { ",", <key value pair> } ] )>, ":]";
     */
 
     if( ts.peek.type != TOKlbracketcolon ) return null;
@@ -816,14 +822,20 @@ Ast.Expr tryparseMapExpr(TokenStream ts)
     auto start = ts.pop.loc;
     Ast.KeyValuePair[] pairs;
 
-    pairs ~= parseKeyValuePair(ts);
-    while( ts.peek.type != TOKcolonrbracket )
-    {
-        ts.popExpect(TOKcomma);
-        pairs ~= parseKeyValuePair(ts);
-    }
+    if( ts.peek.type != TOKcolonrbracket )
+        ts.skipEolDo
+        ({
+            pairs ~= parseKeyValuePair(ts);
+            while( ts.peek.type != TOKcolonrbracket )
+            {
+                ts.popExpect(TOKcomma);
+                pairs ~= parseKeyValuePair(ts);
+            }
+        });
 
-    auto end = ts.popExpect(TOKcolonrbracket).loc;
+    typeof(start) end;
+    ts.skipEolDo({ end = ts.popExpect(TOKcolonrbracket).loc; });
+
     return new Ast.MapExpr(start.extendTo(end), pairs);
 }
 
@@ -878,8 +890,10 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 {
     /*
         <function expression> = <function prefix>, (
-            "(", [ <expression>, { ",", <expression> } ], ")"
-            | "{", [ <expression>, { ",", <expression> } ], "}" );
+            "(", <treat eol as whitespace(
+                [ <expression>, { ",", <expression> } ] )>, ")"
+            | "{", <treat eol as whitespace(
+                [ <expression>, { ",", <expression> } ] )>, "}" );
 
         <function prefix> = <identifier>
                           | <function like keyword>
