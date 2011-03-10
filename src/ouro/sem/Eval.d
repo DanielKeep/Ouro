@@ -10,6 +10,7 @@
  */
 module ouro.sem.Eval;
 
+import ouro.sem.Formatters;
 import ouro.sit.Visitor;
 
 import InvokeFn = ouro.sem.InvokeFn;

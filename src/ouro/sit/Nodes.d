@@ -278,6 +278,19 @@ enum Order
     Ge = Gt | Eq,
 }
 
+interface Formatter
+{
+    alias void function(void*, void delegate(char[]), size_t,
+            char, char[], char[], char[][]) FormatFn;
+
+    void format(void delegate(char[]) emit,
+                size_t width,
+                char alignment,
+                char[] padding,
+                char[] precision,
+                char[][] options);
+}
+
 abstract class Value : Expr
 {
     this(Ast.Node astNode)
@@ -433,7 +446,7 @@ class RuntimeValue : Value, Resolvable
     }
 }
 
-class AstQuoteValue : Value
+class AstQuoteValue : Value, Formatter
 {
     Ast.Node ast;
 
@@ -454,6 +467,23 @@ class AstQuoteValue : Value
         if( rhs is null ) return Order.Ne;
 
         return (this.ast == rhs.ast) ? Order.Eq : Order.Ne;
+    }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
     }
 }
 
@@ -657,7 +687,7 @@ class ListExpr : Expr
     }
 }
 
-class ListValue : Value
+class ListValue : Value, Formatter
 {
     Value[] elemValues;
 
@@ -694,9 +724,26 @@ class ListValue : Value
 
         return Order.Eq;
     }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
+    }
 }
 
-class LogicalValue : Value
+class LogicalValue : Value, Formatter
 {
     bool value;
 
@@ -726,6 +773,23 @@ class LogicalValue : Value
 
         protected LogicalValue[2] instance_;
     }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
+    }
 }
 
 class MapExpr : Expr
@@ -739,7 +803,7 @@ class MapExpr : Expr
     }
 }
 
-class MapValue : Value
+class MapValue : Value, Formatter
 {
     ValueKVP[] kvps;
 
@@ -778,6 +842,23 @@ class MapValue : Value
         }
 
         return Order.Eq;
+    }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
     }
 }
 
@@ -872,7 +953,7 @@ class NilValue : Value
     protected static NilValue instance_;
 }
 
-class StringValue : Value
+class StringValue : Value, Formatter
 {
     char[] value;
 
@@ -898,9 +979,26 @@ class StringValue : Value
         // TODO: use proper Unicode Canonical equivalence
         return (this.value == rhs.value) ? Order.Eq : Order.Ne;
     }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
+    }
 }
 
-class SymbolValue : Value
+class SymbolValue : Value, Formatter
 {
     char[] value;
 
@@ -920,9 +1018,26 @@ class SymbolValue : Value
 
         return Order.Ne;
     }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
+    }
 }
 
-class NumberValue : Value
+class NumberValue : Value, Formatter
 {
     real value;
 
@@ -947,9 +1062,26 @@ class NumberValue : Value
         else
             return Order.No;
     }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
+    }
 }
 
-class RangeValue : Value
+class RangeValue : Value, Formatter
 {
     bool incLower, incUpper;
     Value lowerValue, upperValue;
@@ -981,6 +1113,23 @@ class RangeValue : Value
              && (this.upperValue.order(rhs.upperValue) == Order.Eq))
             ? Order.Eq
             : Order.Ne;
+    }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
     }
 }
 

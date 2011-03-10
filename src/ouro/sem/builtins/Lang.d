@@ -9,10 +9,12 @@ module ouro.sem.builtins.Lang;
 private:
 
 import tango.math.Math : pow, floor, trunc;
+import tango.io.device.Array;
 
 import ouro.Location : Location;
 import ouro.sem.builtins.Util; // many things
 
+import Fmts = ouro.sem.Formatters;
 import QQSub = ouro.ast.QQSubVisitor;
 
 Value compareOp(Sit.Order ord)(EC ec, Value[] args)
@@ -231,6 +233,20 @@ Value ouro_fail(EC ec, Value[] args)
     throw new Exception(msg.value);
 }
 
+Value ouro_format(EC ec, Value[] args)
+{
+    chkArgNum(args, 2);
+    auto fmt = chkArgString(args, 0);
+    auto vs = args[1];
+
+    auto sizeGuess = fmt.length + args.length*20;
+
+    scope buf = new Array(sizeGuess, 128);
+    Fmts.format(fmt, (char[] s) { buf.append(s); }, vs);
+
+    return new Sit.StringValue(null, cast(char[]) buf.slice);
+}
+
 Value ouro_lookup(EC ec, Value[] args)
 {
     chkArgNum(args, 2);
@@ -403,6 +419,7 @@ static this()
     reg("ouro.import", new Sit.FunctionValue("ouro.import", [Sit.Argument("scope"), Sit.Argument("symbols"), Sit.Argument("expr")], &ouro_import));
     reg("ouro.branch", new Sit.FunctionValue("ouro.branch", [Sit.Argument("cond"), Sit.Argument("b0"), Sit.Argument("b1")], &ouro_branch));
     reg("ouro.fail", new Sit.FunctionValue("ouro.fail", [Sit.Argument("msg")], &ouro_fail));
+    reg("ouro.format", new Sit.FunctionValue("ouro.format", [Sit.Argument("fmt"), Sit.Argument("values")], &ouro_format));
     reg("ouro.lookup", new Sit.FunctionValue("ouro.lookup", [Sit.Argument("module"), Sit.Argument("ident")], &ouro_lookup, Sit.EvalContext.Compile));
     reg("ouro.ast", new Sit.FunctionValue("ouro.ast", [Sit.Argument("value")], &ouro_ast));
 
