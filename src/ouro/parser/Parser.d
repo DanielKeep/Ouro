@@ -88,7 +88,7 @@ Ast.ImportStmt tryparseImportStmt(TokenStream ts)
                        ) ],
                 <term>;
     */
-    
+
     {
         bool maybeExImp = (ts.peek.type == TOKexport
                 && ts.peek(1).type == TOKimport);
@@ -97,7 +97,7 @@ Ast.ImportStmt tryparseImportStmt(TokenStream ts)
         if( !( maybeExImp || maybeImp ) )
             return null;
     }
-    
+
     bool xport = ts.peek.type == TOKexport;
     auto start = ts.popExpectAny(TOKimport, TOKexport).loc;
 
@@ -287,7 +287,7 @@ Fixity fixityOf(Ast.BinaryExpr.Op op)
         case Op.Comp:
         case Op.Join:
             return L;
-            
+
         case Op.Exp:
         case Op.Cons:
             return R;
@@ -939,7 +939,7 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
             ({
                 args ~= parseCommaExprs(ts, closer);
             });
-        
+
         // Remember: we need to skip over EOLs until we're out of the argument
         // list.
         typeof(ts.peek.loc) end;
@@ -1005,7 +1005,7 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 
                     if( auto arg0 = cast(Ast.StringExpr) args[0] )
                         baseExpr = new Ast.BuiltinExpr(loc, arg0.value);
-                    
+
                     else
                         ts.err(CEC.PBiArgType, loc);
 
