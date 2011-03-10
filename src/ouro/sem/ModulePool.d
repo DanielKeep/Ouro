@@ -27,6 +27,15 @@ import Builtins = ouro.sem.builtins.Builtins;
 import Lexer = ouro.lexer.Lexer;
 import Parser = ouro.parser.Parser;
 
+debug(TraceStmtSem)     debug=TraceStmt;
+debug(TraceStmtFold)    debug=TraceStmt;
+
+debug(TraceStmt)
+{
+    import SitRepr = ouro.sit.ReprVisitor;
+    import ouro.util.StructuredOutput;
+}
+
 const char[][] FileExtensions = [".ouro"];
 
 struct ModulePool
@@ -244,6 +253,16 @@ processStmt:
                         failedStmt = true;
                     }
                     resetStmtPtr;
+
+                    debug(TraceStmtSem) if( stmt.stmt.expr !is null )
+                    {
+                        scope repr = new SitRepr.ReprVisitor(
+                                StructuredOutput.forStdout);
+
+                        Stdout.format("{} SEM: ", stmt.stmt.astNode.loc);
+                        repr.visitBase(stmt.stmt.expr, true);
+                        Stdout.newline;
+                    }
                 }
 
                 // Semantic failed
@@ -279,6 +298,16 @@ processStmt:
                                     stmt.stmt.expr.astNode, foldedExpr);
 
                         stmt.stmt.value = foldedValue;
+                    }
+
+                    debug(TraceStmtFold) if( stmt.stmt.value !is null )
+                    {
+                        scope repr = new SitRepr.ReprVisitor(
+                                StructuredOutput.forStdout);
+
+                        Stdout.format("{} FLD: ", stmt.stmt.astNode.loc);
+                        repr.visitBase(stmt.stmt.value, true);
+                        Stdout.newline;
                     }
                 }
 
