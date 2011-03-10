@@ -1,0 +1,9 @@
+
+let bin(a,b) = nil
+
+nil (.bin
+     .) nil
+
+nil (.
+      bin.) nil
+

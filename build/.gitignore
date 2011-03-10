@@ -2,5 +2,8 @@
 /.xf
 /*.map
 /local
+/tests.err
+/tests.log
+/tests.out
 
 _backup/

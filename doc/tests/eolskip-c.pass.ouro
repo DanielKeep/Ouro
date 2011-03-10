@@ -1,0 +1,17 @@
+
+let I(x...) = nil
+
+I(
+  nil)
+
+I(nil
+  )
+
+I(
+  nil
+  )
+
+I(nil,
+  nil
+  )
+
