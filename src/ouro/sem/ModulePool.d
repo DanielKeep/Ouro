@@ -44,6 +44,7 @@ struct ModulePool
     {
         Uri uri;
         Source src;
+        size_t* stmtsNotDone;
         Ast.Module ast;
         Sit.Module sit;
     }
@@ -53,6 +54,7 @@ struct ModulePool
         bool done = false;
         Sit.Module mod;
         Sit.Stmt stmt;
+        size_t* stmtsNotDone;
         Object ex;
     }
 
@@ -160,6 +162,9 @@ struct ModulePool
         // Create module object
         entry.sit = SemInitialVisitor.createEmptyModule(entry.ast, path);
 
+        // Create counter for un-processed statements
+        entry.stmtsNotDone = new size_t;
+
         // Done making entry.
         entries ~= entry;
         pathToEntryIdx[entry.sit.path] = entries.length-1;
@@ -228,6 +233,13 @@ processStmt:
                 if( stmt.done )
                     // Already done this one!  YAY!
                     continue processStmt;
+
+                debug(TraceModulePool)
+                {
+                    Stderr.formatln("Compiling {} #{} - {}",
+                            stmt.mod.path, currentStmt,
+                            stmt.stmt.astNode.loc.toString);
+                }
 
                 // Try to process
                 if( stmt.stmt.expr is null )
@@ -378,6 +390,10 @@ processStmt:
 
                     successStmt = true;
                     stmt.done = true;
+                    (*stmt.stmtsNotDone)--;
+
+                    if( *stmt.stmtsNotDone == 0 )
+                        modDone(stmt.mod);
                 }
             }
 
@@ -392,32 +408,44 @@ processStmt:
         }
         while( failedStmt )
 
-        // Dump statements into their respective modules
-        debug(TraceModulePool)
-        {
-            Stderr.formatln("Dumping statements...");
-        }
+        // Double-check that all statements are done *and* the associated
+        // modules are done.
         foreach( i,stmt ; stmts )
         {
-            debug(TraceModulePool)
-            {
-                Stderr.formatln(" {} #{}...", stmt.mod.path, i).flush;
-            }
-
-            if( stmt.stmt.expr is null )
-                assert( false );
-            if( stmt.stmt.value is null )
-                assert( false );
-            stmt.mod.stmts ~= stmt.stmt;
-            
-            // Mark the module as complete, too.
-            // TODO: produce a set of modules from stmts, then mark those
-            // whilst ensuring no module is "completed" more than once.
-            stmt.mod.complete = true;
+            assert( stmt.done );
+            assert( stmt.mod.complete );
         }
 
         // Clear list of statements to process
         stmts = null;
+    }
+
+    void modDone(Sit.Module mod)
+    {
+        debug
+        {
+            Entry* entry;
+            // TODO: Better way of doing this
+            foreach( ref e ; entries )
+                if( e.sit is mod )
+                    entry = &e;
+            assert( entry !is null );
+            assert( *entry.stmtsNotDone == 0 );
+        }
+
+        assert( ! mod.complete );
+
+        foreach( stmt ; stmts )
+        {
+            if( stmt.mod !is mod )
+                continue;
+
+            assert( stmt.done );
+
+            stmt.mod.stmts ~= stmt.stmt;
+        }
+
+        mod.complete = true;
     }
 
     void injectStmts(Sit.Module mod, Ast.Statement[] stmts)
@@ -438,10 +466,20 @@ processStmt:
             injSlice = newStmts[currentStmt+1..currentStmt+1+stmts.length];
         }
 
+        // TODO: Better way of doing this
+        size_t* stmtsNotDone;
+        foreach( entry ; entries )
+            if( entry.sit is mod )
+                stmtsNotDone = entry.stmtsNotDone;
+
+        assert( stmtsNotDone !is null );
+
         foreach( i, ref stmt ; injSlice )
         {
             stmt.mod = mod;
             stmt.stmt.astNode = stmts[i];
+            stmt.stmtsNotDone = stmtsNotDone;
+            (*stmtsNotDone)++;
         }
 
         this.stmts = newStmts;
