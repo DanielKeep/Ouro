@@ -699,6 +699,19 @@ class LogicalValue : Value
 
         return (this.value == rhs.value) ? Order.Eq : Order.Ne;
     }
+
+    static
+    {
+        LogicalValue instance(bool value)
+        {
+            auto idx = (cast(size_t) value) & 1;
+            if( instance_[idx] is null )
+                instance_[idx] = new LogicalValue(null, value);
+            return instance_[idx];
+        }
+
+        protected LogicalValue[2] instance_;
+    }
 }
 
 class MapExpr : Expr
