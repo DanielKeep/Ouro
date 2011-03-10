@@ -1,0 +1,28 @@
+
+let a =
+    nil
+
+let b
+    = nil
+
+let
+    c = nil
+
+let f(x) =
+    nil
+
+let g(x)
+    = nil
+
+let h
+    (x) = nil
+
+let
+    i(x) = nil
+
+let macro
+    m(x) = nil
+
+let
+    macro n(x) = nil
+

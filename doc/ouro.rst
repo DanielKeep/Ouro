@@ -396,9 +396,11 @@ now, the code is canonical).
     <import identifier> = <identifier>;
 
     <let statement> =
-        [ "export" ], "let", [ "macro" ], <identifier>,
-        [ "(", [ <function argument names> ], ")" ],
-        "=", <expression>, <term>;
+        [ "export" ], "let", <treat eol as whitespace(
+            [ "macro" ], <identifier>,
+            [ "(", [ <function argument names> ], ")" ],
+            "="
+        )>, <expression>, <term>;
 
     <function argument names> = <argument name>, { ",", <argument name> };
 

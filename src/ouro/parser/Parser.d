@@ -145,9 +145,11 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
 {
     /*
         <let statement> =
-            [ "export" ], "let", [ "macro" ], <identifier>,
-            [ "(", [ <function argument names> ], ")" ],
-            "=", <expression>, <term>;
+            [ "export" ], "let", <treat eol as whitespace(
+                [ "macro" ], <identifier>,
+                [ "(", [ <function argument names> ], ")" ],
+                "="
+            )>, <expression>, <term>;
     */
 
     {
@@ -165,29 +167,44 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
     if( xport ) ts.pop;
 
     bool isMacro;
+    char[] ident;
 
-    if( ts.peek.type == TOKmacro )
-    {
-        isMacro = true;
-        ts.pop;
-    }
+    ts.skipEolDo
+    ({
+        if( ts.peek.type == TOKmacro )
+        {
+            isMacro = true;
+            ts.pop;
+        }
+    
+        ident = ts.popExpect(TOKidentifier).value;
+    });
 
-    auto ident = ts.popExpect(TOKidentifier).value;
+    bool nextIsLparen = false;
+    ts.skipEolDo({ nextIsLparen = (ts.peek.type == TOKlparen); });
 
-    if( isMacro || ts.peek.type == TOKlparen )
+    if( isMacro || nextIsLparen )
     {
         Ast.Argument[] args;
-        ts.popExpect(TOKlparen);
+        ts.skipEolDo
+        ({
+            ts.popExpect(TOKlparen);
+    
+            if( ts.peek.type != TOKrparen )
+                ts.skipEolDo
+                ({
+                    args = parseFuncArgNames(ts, TOKrparen);
+                });
+    
+            ts.popExpect(TOKrparen);
 
-        if( ts.peek.type != TOKrparen )
-            ts.skipEolDo
-            ({
-                args = parseFuncArgNames(ts, TOKrparen);
-            });
+            ts.popExpect(TOKeq);
+        });
 
-        ts.popExpect(TOKrparen);
+        // Eat eols
+        while( ts.peek.type == TOKeol )
+            ts.pop;
 
-        ts.popExpect(TOKeq);
         auto expr = parseExpr(ts);
         auto end = ts.popExpectAny(TOKeol, TOKeos).loc;
 
@@ -196,7 +213,15 @@ Ast.LetStmt tryparseLetStmt(TokenStream ts)
     }
     else
     {
-        ts.popExpect(TOKeq);
+        ts.skipEolDo
+        ({
+            ts.popExpect(TOKeq);
+        });
+
+        // Eat eols
+        while( ts.peek.type == TOKeol )
+            ts.pop;
+
         auto expr = parseExpr(ts);
         auto end = ts.popExpectAny(TOKeol, TOKeos).loc;
 
