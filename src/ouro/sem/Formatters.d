@@ -133,6 +133,7 @@ fmtLoop:
             while( '0' <= c && c <= '9' )
 
             format(vs[idx], emit, 0, '>', " ", "", null);
+            fmt = fmt1;
             continue;
         }
 
@@ -303,6 +304,9 @@ fmtLoop:
                             if( ! popcx )
                                 continue fmtLoop;
                         }
+
+                        if( ! popcx )
+                            continue fmtLoop;
 
                         o = o[0..ol];
                         addOpt(o);
