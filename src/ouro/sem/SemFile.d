@@ -17,7 +17,6 @@ import tango.text.Util : trimr;
 import tango.core.tools.TraceExceptions;
 
 import Ast      = ouro.ast.Nodes;
-import Builtins = ouro.sem.Builtins;
 import Eval     = ouro.sem.Eval;
 import InvokeFn = ouro.sem.InvokeFn;
 import Lexer    = ouro.lexer.Lexer;
@@ -44,11 +43,6 @@ int main(char[][] argv)
     bool doRuntime = true;
 
     scope eval = new Eval.EvalVisitor;
-
-    Sit.Value builtin(char[] name)
-    {
-        return Builtins.lookupBuiltin(name);
-    }
 
     ModulePool mp;
     {
