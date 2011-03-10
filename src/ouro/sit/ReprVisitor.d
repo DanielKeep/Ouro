@@ -328,7 +328,8 @@ class ReprVisitor : Visitor!(void, bool)
 
     override void visit(Sit.HostObjectValue node, bool showDef)
     {
-        so.f("HostObject 0x{:x,8}", cast(void*) node.obj);
+        so.f("HostObject {} 0x{:x,8}", node.obj.classinfo.name,
+                cast(void*) node.obj);
     }
 }
 
