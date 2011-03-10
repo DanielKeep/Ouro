@@ -16,6 +16,11 @@ abstract class Node
     {
         this.loc = loc;
     }
+
+    override equals_t opEquals(Object rhs)
+    {
+        return this is rhs;
+    }
 }
 
 class Module : Node
@@ -136,6 +141,12 @@ struct Argument
         r.isVararg = isVararg;
         return r;
     }
+
+    equals_t opEquals(ref Argument rhs)
+    {
+        return this.ident == rhs.ident
+            && this.isVararg == rhs.isVararg;
+    }
 }
 
 class ExprStmt : Statement
@@ -160,6 +171,28 @@ abstract class Expr : Node
     {
         super(loc);
     }
+
+    override equals_t opEquals(Object rhsObj)
+    {
+        auto rhs = cast(Node) rhsObj;
+        if( rhs is null ) return cast(equals_t) false;
+
+        while(true)
+        {
+            if( auto rhsRw = cast(RewrittenExpr) rhs )
+                rhs = rhsRw.original;
+            else
+                break;
+        }
+
+        auto rhsExpr = cast(Expr) rhs;
+        if( rhsExpr is null )
+            return cast(equals_t) false;
+
+        return exprEquals(rhsExpr);
+    }
+
+    abstract equals_t exprEquals(Expr rhs);
 }
 
 class RewrittenExpr : Expr
@@ -178,6 +211,14 @@ class RewrittenExpr : Expr
         super(loc);
         this.original = original;
         this.rewrite = rewrite;
+    }
+
+    override equals_t exprEquals(Expr rhs)
+    {
+        auto lhs = cast(Expr) original;
+        if( lhs is null ) return cast(equals_t) false;
+
+        return lhs == rhs;
     }
 }
 
@@ -267,6 +308,16 @@ class BinaryExpr : Expr
 
             default:        assert(false);
         }
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(BinaryExpr) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.op == rhs.op
+            && this.lhs == rhs.lhs
+            && this.rhs == rhs.rhs;
     }
 }
 
@@ -378,6 +429,17 @@ class TernaryExpr : Expr
             default:        assert(false);
         }
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.op == rhs.op
+            && this.lhs == rhs.lhs
+            && this.mid == rhs.mid
+            && this.rhs == rhs.rhs;
+    }
 }
 
 class InfixFuncExpr : Expr
@@ -398,6 +460,16 @@ class InfixFuncExpr : Expr
         this.funcExpr = funcExpr;
         this.lhs = lhs;
         this.rhs = rhs;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.funcExpr == rhs.funcExpr
+            && this.lhs == rhs.lhs
+            && this.rhs == rhs.rhs;
     }
 }
 
@@ -451,6 +523,15 @@ class PrefixExpr : Expr
             default:        assert(false);
         }
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.op == rhs.op
+            && this.subExpr == rhs.subExpr;
+    }
 }
 
 class PostfixFuncExpr : Expr
@@ -470,6 +551,15 @@ class PostfixFuncExpr : Expr
         this.funcExpr = funcExpr;
         this.subExpr = subExpr;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.funcExpr == rhs.funcExpr
+            && this.subExpr == rhs.subExpr;
+    }
 }
 
 class NumberExpr : Expr
@@ -480,6 +570,14 @@ class NumberExpr : Expr
     {
         super(loc);
         this.value = value;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.value == rhs.value;
     }
 }
 
@@ -492,6 +590,14 @@ class StringExpr : Expr
         super(loc);
         this.value = value;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.value == rhs.value;
+    }
 }
 
 class SymbolExpr : Expr
@@ -502,6 +608,14 @@ class SymbolExpr : Expr
     {
         super(loc);
         this.value = value;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.value == rhs.value;
     }
 }
 
@@ -514,6 +628,14 @@ class LogicalExpr : Expr
         super(loc);
         this.value = value;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.value == rhs.value;
+    }
 }
 
 class NilExpr : Expr
@@ -521,6 +643,14 @@ class NilExpr : Expr
     this(Location loc)
     {
         super(loc);
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return cast(equals_t) true;
     }
 }
 
@@ -540,6 +670,21 @@ class ListExpr : Expr
         super(loc);
         this.elemExprs = elemExprs;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        if( this.elemExprs.length != rhs.elemExprs.length )
+            return cast(equals_t) false;
+
+        foreach( i,elemExpr ; this.elemExprs )
+            if( elemExpr != rhs.elemExprs[i] )
+                return cast(equals_t) false;
+
+        return cast(equals_t) true;
+    }
 }
 
 class MapExpr : Expr
@@ -550,6 +695,24 @@ class MapExpr : Expr
     {
         super(loc);
         this.keyValuePairs = keyValuePairs;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        if( this.keyValuePairs.length != rhs.keyValuePairs.length )
+            return cast(equals_t) false;
+
+        foreach( i,lkvp ; this.keyValuePairs )
+        {
+            auto rkvp = &rhs.keyValuePairs[i];
+            if( lkvp.key != rkvp.key ) return cast(equals_t) false;
+            if( lkvp.value != rkvp.value ) return cast(equals_t) false;
+        }
+
+        return cast(equals_t) true;
     }
 }
 
@@ -592,6 +755,19 @@ class LambdaExpr : Expr
         this.args = args;
         this.expr = expr;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        foreach( i,arg ; this.args )
+            if( arg != rhs.args[i] )
+                return cast(equals_t) false;
+
+        return this.isMacro == rhs.isMacro
+            && this.expr == rhs.expr;
+    }
 }
 
 class ExplodeExpr : Expr
@@ -607,6 +783,14 @@ class ExplodeExpr : Expr
     {
         super(loc);
         this.subExpr = subExpr;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.subExpr == rhs.subExpr;
     }
 }
 
@@ -632,6 +816,19 @@ class CallExpr : Expr
         this.funcExpr = funcExpr;
         this.argExprs = argExprs;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        foreach( i,argExpr ; this.argExprs )
+            if( argExpr != rhs.argExprs[i] )
+                return cast(equals_t) false;
+
+        return this.isMacro == rhs.isMacro
+            && this.funcExpr == rhs.funcExpr;
+    }
 }
 
 class VariableExpr : Expr
@@ -642,6 +839,14 @@ class VariableExpr : Expr
     {
         super(loc);
         this.ident = ident;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.ident == rhs.ident;
     }
 }
 
@@ -665,6 +870,17 @@ class RangeExpr : Expr
         this.lowerExpr = lowerExpr;
         this.upperExpr = upperExpr;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.incLower == rhs.incLower
+            && this.incUpper == rhs.incUpper
+            && this.lowerExpr == rhs.lowerExpr
+            && this.upperExpr == rhs.upperExpr;
+    }
 }
 
 class AstQuoteExpr : Expr
@@ -681,6 +897,14 @@ class AstQuoteExpr : Expr
         super(loc);
         this.expr = expr;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.expr == rhs.expr;
+    }
 }
 
 class AstQuasiQuoteExpr : Expr
@@ -696,6 +920,14 @@ class AstQuasiQuoteExpr : Expr
     {
         super(loc);
         this.expr = expr;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.expr == rhs.expr;
     }
 }
 
@@ -720,6 +952,20 @@ class AstQQSubExpr : Expr
         super(loc);
         this.index = index;
     }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        if( index != ~0 )
+            return this.index == rhs.index;
+
+        if( rhs.index != ~0 )
+            return cast(equals_t) false;
+
+        return this.expr == rhs.expr;
+    }
 }
 
 class BuiltinExpr : Expr
@@ -735,6 +981,14 @@ class BuiltinExpr : Expr
     {
         super(loc);
         this.ident = ident;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.ident == rhs.ident;
     }
 }
 
@@ -753,6 +1007,18 @@ class LetExpr : Expr
         super(loc);
         this.bindExprs = bindExprs;
         this.subExpr = subExpr;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        foreach( i,bindExpr ; this.bindExprs )
+            if( bindExpr != rhs.bindExprs[i] )
+                return cast(equals_t) false;
+
+        return this.subExpr == rhs.subExpr;
     }
 }
 
@@ -775,6 +1041,16 @@ class ImportExpr : Expr
         this.scopeExpr = scopeExpr;
         this.symbolsExpr = symbolsExpr;
         this.subExpr = subExpr;
+    }
+
+    override equals_t exprEquals(Expr rhsExpr)
+    {
+        auto rhs = cast(typeof(this)) rhsExpr;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.scopeExpr == rhs.scopeExpr
+            && this.symbolsExpr == rhs.symbolsExpr
+            && this.subExpr == rhs.subExpr;
     }
 }
 
