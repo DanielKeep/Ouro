@@ -368,5 +368,10 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
     {
         return node;
     }
+
+    override Sit.Value visit(Sit.HostObjectValue node, Context ctx)
+    {
+        return node;
+    }
 }
 

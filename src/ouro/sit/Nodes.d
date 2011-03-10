@@ -36,6 +36,7 @@ const Nodes =
     "SymbolValue",
     "NumberValue",
     "RangeValue",
+    "HostObjectValue",
 ];
 
 class Scope
@@ -944,6 +945,30 @@ class RangeValue : Value
              && (this.upperValue.order(rhs.upperValue) == Order.Eq))
             ? Order.Eq
             : Order.Ne;
+    }
+}
+
+class HostObjectValue : Value
+{
+    Object obj;
+
+    this(Object obj)
+    in
+    {
+        assert( obj !is null );
+    }
+    body
+    {
+        super(null);
+        this.obj = obj;
+    }
+
+    override Order order(Value rhsValue)
+    {
+        auto rhs = cast(typeof(this)) rhsValue;
+        if( rhs is null ) return Order.Ne;
+
+        return (this.obj is rhs.obj) ? Order.Eq : Order.Ne;
     }
 }
 

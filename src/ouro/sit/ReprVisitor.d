@@ -325,5 +325,10 @@ class ReprVisitor : Visitor!(void, bool)
         visitBase(node.upperValue, showDef);
         so.pop.r(node.incUpper ? "]" : ")");
     }
+
+    override void visit(Sit.HostObjectValue node, bool showDef)
+    {
+        so.f("HostObject 0x{:x,8}", cast(void*) node.obj);
+    }
 }
 
