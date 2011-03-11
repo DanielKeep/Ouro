@@ -6,6 +6,7 @@
 */
 module ouro.ast.Nodes;
 
+import ouro.util.EnumCtfe : genEnum_ctfe;
 import ouro.Location;
 
 abstract class Node
@@ -224,13 +225,13 @@ class RewrittenExpr : Expr
 
 class BinaryExpr : Expr
 {
-    enum Op
-    {
-        Eq, Ne,
-        Lt, LtEq, Gt, GtEq,
-        Add, Sub, Mul, Div, IntDiv, Mod, Rem,
-        Exp, And, Or, Comp, Cons, Join,
-    }
+    mixin(genEnum_ctfe
+    (
+        "Op", ["Eq"[], "Ne", "Lt", "LtEq", "Gt", "GtEq",
+               "Add", "Sub", "Mul", "Div", "IntDiv", "Mod", "Rem",
+               "Exp", "And", "Or", "Comp", "Cons", "Join"],
+        "OpStrings", "opToString", "opFromString"
+    ));
 
     Op op;
     Expr lhs, rhs;
@@ -282,34 +283,6 @@ class BinaryExpr : Expr
         }
     }
 
-    static char[] opToString(Op op)
-    {
-        switch( op )
-        {
-            case Op.Eq:     return "Eq";
-            case Op.Ne:     return "Ne";
-            case Op.Lt:     return "Lt";
-            case Op.LtEq:   return "LtEq";
-            case Op.Gt:     return "Gt";
-            case Op.GtEq:   return "GtEq";
-            case Op.Add:    return "Add";
-            case Op.Sub:    return "Sub";
-            case Op.Mul:    return "Mul";
-            case Op.Div:    return "Div";
-            case Op.IntDiv: return "IntDiv";
-            case Op.Mod:    return "Mod";
-            case Op.Rem:    return "Rem";
-            case Op.Exp:    return "Exp";
-            case Op.And:    return "And";
-            case Op.Or:     return "Or";
-            case Op.Comp:   return "Comp";
-            case Op.Cons:   return "Cons";
-            case Op.Join:   return "Join";
-
-            default:        assert(false);
-        }
-    }
-
     override equals_t exprEquals(Expr rhsExpr)
     {
         auto rhs = cast(BinaryExpr) rhsExpr;
@@ -323,11 +296,12 @@ class BinaryExpr : Expr
 
 class TernaryExpr : Expr
 {
-    enum Op
-    {
-        LtLt, LeLt, LtLe, LeLe,
-        GtGt, GeGt, GtGe, GeGe,
-    }
+    mixin(genEnum_ctfe
+    (
+        "Op", ["LtLt"[], "LeLt", "LtLe", "LeLe",
+               "GtGt", "GeGt", "GtGe", "GeGe"],
+        "OpStrings", "opToString", "opFromString"
+    ));
 
     Op op;
     Expr lhs, mid, rhs;
@@ -413,23 +387,6 @@ class TernaryExpr : Expr
         }
     }
 
-    static char[] opToString(Op op)
-    {
-        switch( op )
-        {
-            case Op.LtLt:   return "LtLt";
-            case Op.LeLt:   return "LeLt";
-            case Op.LtLe:   return "LtLe";
-            case Op.LeLe:   return "LeLe";
-            case Op.GtGt:   return "GtGt";
-            case Op.GeGt:   return "GeGt";
-            case Op.GtGe:   return "GtGe";
-            case Op.GeGe:   return "GeGe";
-
-            default:        assert(false);
-        }
-    }
-
     override equals_t exprEquals(Expr rhsExpr)
     {
         auto rhs = cast(typeof(this)) rhsExpr;
@@ -475,10 +432,11 @@ class InfixFuncExpr : Expr
 
 class PrefixExpr : Expr
 {
-    enum Op
-    {
-        Pos, Neg, Not
-    }
+    mixin(genEnum_ctfe
+    (
+        "Op", ["Pos"[], "Neg", "Not"],
+        "OpStrings", "opToString", "opFromString"
+    ));
 
     Op op;
     Expr subExpr;
@@ -507,18 +465,6 @@ class PrefixExpr : Expr
             case Op.Pos:    return "+";
             case Op.Neg:    return "-";
             case Op.Not:    return "not";
-
-            default:        assert(false);
-        }
-    }
-
-    static char[] opToString(Op op)
-    {
-        switch( op )
-        {
-            case Op.Pos:    return "Pos";
-            case Op.Neg:    return "Neg";
-            case Op.Not:    return "Not";
 
             default:        assert(false);
         }
