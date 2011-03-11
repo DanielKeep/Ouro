@@ -497,8 +497,11 @@ processStmt:
         assert( currentModule !is null );
 
         auto path = sv.value;
-        return new Sit.ModuleValue(null,
-                loadRelativeToModule(currentModule, path));
+        auto mod = loadRelativeToModule(currentModule, path);
+        if( mod is null )
+            return Sit.NilValue.instance;
+        else
+            return new Sit.ModuleValue(null, mod);
     }
 }
 
