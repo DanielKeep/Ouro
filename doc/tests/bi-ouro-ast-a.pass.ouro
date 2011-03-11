@@ -1,0 +1,21 @@
+
+import "/ouro/ast" : *
+
+let aList   = #'{ [1+1, 2*2, 3::[]] }
+let aCmp    = #'{ foo = 42 }
+let aVar    = #'{ blargh }
+let anExpl  = #'{ x... }
+let aNil    = #'{ nil }
+
+assert { nodeType(aList) = 'ListExpr }
+assert { nodeType(aCmp) = 'BinaryExpr }
+assert { nodeType(aVar) = 'VariableExpr }
+assert { nodeType(anExpl) = 'ExplodeExpr }
+assert { nodeType(aNil) = 'NilExpr }
+
+assert { isBinaryExpr?(aCmp) }
+assert { binaryExprOp(aCmp) = 'Eq }
+
+assert { isVariableExpr?(aVar) }
+assert { variableIdent(aVar) = 'blargh }
+

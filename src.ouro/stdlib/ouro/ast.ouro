@@ -1,0 +1,17 @@
+
+|-- NB: temporary names until types are in.
+export let LambdaExpr|new = __builtin__("ouro.ast.new_LambdaExpr")
+
+export let binaryExprLhs = __builtin__("ouro.ast.binaryExprLhs")
+export let binaryExprOp = __builtin__("ouro.ast.binaryExprOp")
+export let binaryExprRhs = __builtin__("ouro.ast.binaryExprRhs")
+export let listExprElems = __builtin__("ouro.ast.listExprElems")
+export let nodeType = __builtin__("ouro.ast.nodeType")
+export let variableIdent = __builtin__("ouro.ast.variableIdent")
+
+export let isBinaryExpr?(ast) = nodeType(ast) = 'BinaryExpr
+export let isBinaryOpExpr?(ast, op) =
+    isBinaryExpr?(ast) and binaryExprOp(ast) = op
+export let isListExpr?(ast) = nodeType(ast) = 'ListExpr
+export let isVariableExpr?(ast) = nodeType(ast) = 'VariableExpr
+
