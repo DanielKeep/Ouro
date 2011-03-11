@@ -131,7 +131,7 @@ class FileResource : Resource
     char[] data()
     {
         if( file is null )
-            file = new MappedFile(path, File.ReadExisting);
+            file = new MappedFile(path, File.ReadShared);
 
         return cast(char[]) file.map;
     }
