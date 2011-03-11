@@ -75,9 +75,7 @@ struct UtfPadder
     char a = '>';
     char[] p = " ";
 
-    char[20] backing;
     char[] buffer;
-    size_t backingIdx = 0;
     size_t cpc = 0;
 
     static UtfPadder opCall(void delegate(char[]) emitFn,
@@ -93,7 +91,6 @@ struct UtfPadder
 
     void init()
     {
-        buffer = backing;
     }
 
     void lock()
@@ -106,10 +103,10 @@ struct UtfPadder
             emit = &emitLeft, flush = &flushLeft;
 
         else if( a == '|' )
-            emit = &emitCentre, flush = &flushCentre;
+            emit = &emitBuffered, flush = &flushCentre;
 
         else // if( a == '>' )
-            emit = &emitRight, flush = &flushRight;
+            emit = &emitBuffered, flush = &flushRight;
     }
 
     void delegate(char[]) emit;
@@ -131,6 +128,64 @@ struct UtfPadder
 
         auto n = (w-cpc);
 
+        emitPadding(n);
+    }
+
+    void emitBuffered(char[] s)
+    {
+        // TODO: use a static backing buffer for small strings
+        if( cpc >= w )
+            emitFn(s);
+        else
+            buffer ~= s;
+
+        // Count number of code points
+        foreach( i,dchar c ; s )
+            cpc ++;
+
+        if( cpc >= w && buffer !is null )
+        {
+            emitFn(buffer);
+            buffer = null;
+        }
+    }
+
+    void flushCentre()
+    {
+        if( cpc >= w ) return;
+
+        if( buffer.length == 0 )
+            emitPadding(w);
+
+        else
+        {
+            size_t diff = (w - cpc);
+            auto l = diff / 2;
+            auto r = diff - l;
+
+            emitPadding(l);
+            emitFn(buffer);
+            emitPadding(r);
+        }
+    }
+
+    void flushRight()
+    {
+        if( cpc >= w ) return;
+
+        if( buffer.length == 0 )
+            emitPadding(w);
+
+        else
+        {
+            size_t n = (w - cpc);
+            emitPadding(n);
+            emitFn(buffer);
+        }
+    }
+
+    void emitPadding(size_t n)
+    {
         if( p.length == 1 )
         {
             while( n > 0 )
@@ -146,7 +201,7 @@ struct UtfPadder
             {
                 auto s = p;
                 uint ate;
-                while( s != "" )
+                while( s != "" && n > 0 )
                 {
                     Utf.decode(s, ate);
                     emitFn(s[0..ate]);
@@ -155,22 +210,6 @@ struct UtfPadder
                 }
             }
         }
-    }
-
-    void emitCentre(char[] s)
-    {
-    }
-
-    void flushCentre()
-    {
-    }
-
-    void emitRight(char[] s)
-    {
-    }
-
-    void flushRight()
-    {
     }
 }
 
