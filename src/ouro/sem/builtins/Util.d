@@ -81,7 +81,19 @@ Ast.Expr chkArgAst(Value[] args, size_t i)
         return expr;
     }
     else
-        assert( false, "expected ast; got " ~ args[i].classinfo.name );
+        assert( false, "expected ast expr; got " ~ args[i].classinfo.name );
+}
+
+Ast.Node chkArgAstNode(Value[] args, size_t i)
+{
+    if( auto v = cast(Sit.AstQuoteValue) args[i] )
+    {
+        auto expr = cast(Ast.Node) v.ast;
+        assert( expr !is null );
+        return expr;
+    }
+    else
+        assert( false, "expected ast node; got " ~ args[i].classinfo.name );
 }
 
 Sit.Module chkArgModule(Value[] args, size_t i)
