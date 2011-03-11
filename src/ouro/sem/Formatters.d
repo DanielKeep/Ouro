@@ -550,8 +550,9 @@ void format_SymbolValue(void* ptr, void delegate(char[]) emit,
         char[] precision, char[][] options)
 {
     auto node = cast(Sit.SymbolValue) ptr;
+    // TODO: be more intelligent about this
     emit("'");
-    emit(node.value);
+    emit(reprString(node.value));
 }
 
 static this()
