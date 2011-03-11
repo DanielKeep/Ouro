@@ -184,6 +184,14 @@ fmtLoop:
                     opt ~= s;
             }
 
+            char[][] optSlice()
+            {
+                if( optIdx < OptBufferLen )
+                    return opt[0..optIdx];
+                else
+                    return opt;
+            }
+
             // Are we expecting an index?
             bool gotIdx;
             switch( c )
@@ -263,6 +271,9 @@ fmtLoop:
                 }
 
                 pa = pa[0..pal];
+
+                if( pa == "" )
+                    pa = " ";
             }
 
             // c == ';': parse precision
@@ -278,6 +289,8 @@ fmtLoop:
                         continue fmtLoop;
                 }
                 while( c != '}' && c != ':' )
+
+                prl --;
 
                 pr = pr[0..prl];
             }
@@ -328,7 +341,7 @@ fmtLoop:
             }
 
             // Do the format
-            format(vs[idx], emit, w, a, pa, pr, opt);
+            format(vs[idx], emit, w, a, pa, pr, optSlice);
         }
     }
 }
