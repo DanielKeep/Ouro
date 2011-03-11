@@ -9,6 +9,8 @@ module ouro.util.Formatting;
 import Integer = tango.text.convert.Integer;
 import Utf = tango.text.convert.Utf;
 
+alias void delegate(char[]) Emit;
+
 struct UtfTruncator
 {
     void delegate(char[]) emitFn;
@@ -211,5 +213,45 @@ struct UtfPadder
             }
         }
     }
+}
+
+void wrapStdPrec(Emit emit,
+        char[] precision,
+        void delegate(Emit) dg)
+{
+    UtfTruncator tr;
+
+    if( parseTruncate(precision, 't', tr.l) )
+    {
+        tr.emitFn = emit;
+        emit = &tr.emit;
+    }
+
+    dg(emit);
+}
+
+void wrapAlign(Emit emit,
+        size_t width, char alignment, char[] padding,
+        void delegate(Emit) dg)
+{
+    auto pa = UtfPadder(emit, width, alignment, padding);
+    pa.init;
+    pa.lock;
+    dg(pa.emit);
+    pa.flush();
+}
+
+void wrapAlignAndStdPrec(Emit emit,
+        size_t width, char alignment, char[] padding,
+        char[] precision,
+        void delegate(Emit) dg)
+{
+    wrapAlign(emit, width, alignment, padding, (Emit emit)
+    {
+        wrapStdPrec(emit, precision, (Emit emit)
+        {
+            dg(emit);
+        });
+    });
 }
 
