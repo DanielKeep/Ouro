@@ -1077,7 +1077,7 @@ class SymbolValue : Value, Formatter
         auto rhs = cast(SymbolValue) rhsValue;
         if( rhs is null ) return Order.Ne;
 
-        if( this.value is rhs.value )
+        if( this.value == rhs.value )
             return Order.Eq;
 
         return Order.Ne;
