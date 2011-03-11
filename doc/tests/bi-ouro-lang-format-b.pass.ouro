@@ -1,0 +1,31 @@
+
+let f(v) = format("$*", [v])
+
+assert { f(#'{nil})     = "nil" }
+assert { f(#'{6*7})     = "(6)*(7)" }
+
+assert { f(if)          = "if(l,expr_t,expr_f)" }
+assert { f(branch)      = "__builtin__(\"ouro.branch\")(cond,b0,b1)" }
+assert { f(\x,y.nil)    = "λx,y." }
+
+assert { f([1,2,3])     = "[1, 2, 3]" }
+
+assert { f(false)       = "false" }
+assert { f(true)        = "true" }
+
+assert { f([:'a:1,'b:2:]) = "[:'\"a\":1, '\"b\":2:]" }
+
+assert { f(module("/ouro/io")) = "module(\"/ouro/io\")" }
+
+assert { f(nil)         = "nil" }
+
+assert { f("abc")       = "abc" }
+
+assert { f(123.0)       = "123" }
+assert { f(12.34)       = "12.34" }
+assert { f(-1)          = "-1" }
+
+assert { f('abc)        = "'\"abc\"" }
+
+assert { f(range [0,1)) = "range [0, 1)" }
+

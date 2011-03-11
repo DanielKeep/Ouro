@@ -11,7 +11,7 @@ export let $".dump" = __builtin__("ouro..dump")
 export let macro assert(expr) = (
     #"{ #${if} { #${expr},
                  nil,
-                 #${fail}("Assertion failed.") } }
+                 #${fail}(#${"Assertion failed: $*" (.format.) [expr]}) } }
 )
 
 export let astOf(v) = #"{#${v}}
@@ -37,9 +37,7 @@ export let filter(f, vs) = (
     }
 )
 
-export let format(msg, sub) = (
-    fail("format nyi")
-)
+export let format = __builtin__("ouro.format")
 
 export let macro if(l, expr_t, expr_f) = (
     #"{ #${branch}( #${l}, \.#${expr_t}, \.#${expr_f} ) }
