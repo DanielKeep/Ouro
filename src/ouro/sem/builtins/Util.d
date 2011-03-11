@@ -9,6 +9,7 @@ module ouro.sem.builtins.Util;
 public:
 
 import ouro.sem.InvokeFn : invoke;
+import ouro.Location;
 
 import Ast = ouro.ast.Nodes;
 import Builtins = ouro.sem.builtins.Builtins;
@@ -120,5 +121,11 @@ Object chkArgObject(Value[] args, size_t i, bool silent = false)
         return null;
     else
         assert( false, "expected host object; got " ~ args[i].classinfo.name );
+}
+
+void chkArgNil(Value[] args, size_t i)
+{
+    auto v = cast(Sit.NilValue) args[i];
+    assert( v !is null, "expected nil; got " ~ args[i].classinfo.name );
 }
 
