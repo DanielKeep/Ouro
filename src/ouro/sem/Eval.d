@@ -85,6 +85,29 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
 
     Sit.Value visitValue(Sit.Node node, Context ctx)
     {
+        Sit.Value r;
+        Sit.TailCall tail;
+
+        try
+        {
+            r = visitValueTail(node, ctx);
+        }
+        catch( Sit.TailCall tc )
+        {
+            tail = tc;
+        }
+
+        if( tail !is null )
+            return InvokeFn.invoke(tail.callable, tail.args, ctx.evalCtx);
+        else
+        {
+            assert( r !is null );
+            return r;
+        }
+    }
+
+    Sit.Value visitValueTail(Sit.Node node, Context ctx)
+    {
         auto result = visitBase(node, ctx);
         assert( result !is null, "expected non-null result node" );
         auto resultValue = cast(Sit.Value) result;
@@ -122,7 +145,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         Sit.Value result;
 
         foreach( stmt ; node.stmts )
-            result = visitBase(stmt.value, ctx);
+            result = visitValue(stmt.value, ctx);
 
         return result;
     }
@@ -158,7 +181,7 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         foreach( i,nodeArg ; node.args )
             addArg(visitValue(nodeArg.expr, ctx), nodeArg.explode);
 
-        return InvokeFn.invoke(callable, args, ctx.evalCtx);
+        return Sit.TailCall.call(callable, args);
     }
 
     Sit.Value invokeExprFn(Sit.FunctionValue fn,

@@ -266,6 +266,31 @@ struct CallArg
     }
 }
 
+/*
+    This is a hack so that I don't have to re-write both Eval and Fold.
+*/
+class TailCall
+{
+    CallableValue callable;
+    Value[] args;
+
+    this(CallableValue callable, Value[] args)
+    {
+        this.callable = callable;
+        this.args = args;
+    }
+
+    /*
+        Returns a Value so it can be used like so:
+
+        return TailCall.call(fn, args);
+     */
+    static Value call(CallableValue callable, Value[] args)
+    {
+        throw new TailCall(callable, args);
+    }
+}
+
 enum Order
 {
     No = 0b1000,

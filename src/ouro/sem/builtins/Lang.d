@@ -66,7 +66,7 @@ Value binaryLogicalExpr(bool stopValue)(EC ec, Value[] args)
     if( lhs == stopValue )
         return new Sit.LogicalValue(null, stopValue);
     else
-        return invoke(rhsFn, null);
+        return Sit.TailCall.call(rhsFn, null);
 }
 
 alias binaryLogicalExpr!(false) ouro_opAnd;
@@ -213,7 +213,7 @@ Value ouro_branch(EC ec, Value[] args)
     auto b1 = chkArgCall(args, 2);
 
     auto b = cond ? b0 : b1;
-    return invoke(b, null, ec);
+    return Sit.TailCall.call(b, null);
 }
 
 Value ouro_closure(EC ec, Value[] args)
