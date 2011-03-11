@@ -11,6 +11,7 @@ import tango.io.stream.Snoop : SnoopOutput;
 
 import Float = tango.text.convert.Float;
 
+import ouro.util.Repr : reprIdent, reprString;
 import ouro.util.StructuredOutput;
 
 import AstRepr = ouro.ast.ReprVisitor;
@@ -378,6 +379,50 @@ void format_AstQuoteValue(void* ptr, void delegate(char[]) emit,
 
 static this()
 {
+    Sit.FunctionValue.formatFn = &format_FunctionValue;
+}
+
+void format_FunctionValue(void* ptr, void delegate(char[]) emit,
+        size_t width, char alignment, char[] padding,
+        char[] precision, char[][] options)
+{
+    auto node = cast(Sit.FunctionValue) ptr;
+
+    void emitArgs()
+    {
+        foreach( i,arg ; node.args )
+        {
+            if( i > 0 ) emit(",");
+            emit(reprIdent(arg.ident));
+            if( arg.isVararg ) emit("...");
+        }
+    }
+
+    if( node.name == "" || node.name[0.."λ".length] == "λ" )
+    {
+        emit("λ");
+        emitArgs;
+        emit(".");
+    }
+    else if( node.expr !is null )
+    {
+        emit(reprIdent(node.name));
+        emit("(");
+        emitArgs;
+        emit(")");
+    }
+    else
+    {
+        emit("__builtin__(");
+        emit(reprString(node.name));
+        emit(")(");
+        emitArgs;
+        emit(")");
+    }
+}
+
+static this()
+{
     Sit.ListValue.formatFn = &format_ListValue;
 }
 
@@ -427,6 +472,21 @@ void format_MapValue(void* ptr, void delegate(char[]) emit,
         format(kvp.value, emit, width, alignment, padding, precision, options);
     }
     emit(":]");
+}
+
+static this()
+{
+    Sit.ModuleValue.formatFn = &format_ModuleValue;
+}
+
+void format_ModuleValue(void* ptr, void delegate(char[]) emit,
+        size_t width, char alignment, char[] padding,
+        char[] precision, char[][] options)
+{
+    auto node = (cast(Sit.ModuleValue) ptr).modul;
+    emit("module(");
+    emit(reprString(node.path));
+    emit(")");
 }
 
 static this()

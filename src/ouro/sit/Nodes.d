@@ -538,7 +538,7 @@ enum EvalContext
     Runtime = 0b10,
 }
 
-class FunctionValue : CallableValue
+class FunctionValue : CallableValue, Formatter
 {
     struct Host
     {
@@ -647,6 +647,23 @@ class FunctionValue : CallableValue
         );
 
         return fc;
+    }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
     }
 }
 
@@ -904,7 +921,7 @@ struct ValueKVP
     }
 }
 
-class ModuleValue : Value
+class ModuleValue : Value, Formatter
 {
     Module modul;
 
@@ -925,6 +942,23 @@ class ModuleValue : Value
         if( rhs is null ) return Order.Ne;
 
         return (this.modul is rhs.modul) ? Order.Eq : Order.Ne;
+    }
+
+    static Formatter.FormatFn formatFn;
+
+    override void format
+    (
+        void delegate(char[]) emit,
+        size_t width,
+        char alignment,
+        char[] padding,
+        char[] precision,
+        char[][] options
+    )
+    {
+        assert( formatFn !is null );
+        formatFn(cast(void*) this, emit, width,
+                alignment, padding, precision, options);
     }
 }
 
