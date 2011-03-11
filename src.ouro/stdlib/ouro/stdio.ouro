@@ -18,7 +18,7 @@ let write!(stream, vs) =
         vs = [],
         nil,
         do {
-            writeToStream!(stream, format("$*", head(vs))),
+            writeToStream!(stream, format("$*", [head(vs)])),
             write!(stream, tail(vs))
         }
     }
