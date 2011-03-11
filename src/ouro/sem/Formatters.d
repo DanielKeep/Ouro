@@ -6,12 +6,11 @@
  */
 module ouro.sem.Formatters;
 
-import tango.io.device.BitBucket;
-import tango.io.stream.Snoop : SnoopOutput;
 
 import Float = tango.text.convert.Float;
 
 import ouro.util.Repr : reprIdent, reprString;
+import ouro.util.EmitStream;
 import ouro.util.StructuredOutput;
 
 import AstRepr = ouro.ast.ReprVisitor;
@@ -354,13 +353,6 @@ void format(char[] fmt, void delegate(char[]) emit, Sit.MapValue values)
 
 private:
 
-BitBucket bb;
-
-static this()
-{
-    bb = new BitBucket;
-}
-
 static this()
 {
     Sit.AstQuoteValue.formatFn = &format_AstQuoteValue;
@@ -371,8 +363,8 @@ void format_AstQuoteValue(void* ptr, void delegate(char[]) emit,
         char[] precision, char[][] options)
 {
     auto node = cast(Sit.AstQuoteValue) ptr;
-    scope snoop = new SnoopOutput(bb, emit);
-    scope so = new StructuredOutput(snoop);
+    scope emitStream = new EmitStream(emit);
+    scope so = new StructuredOutput(emitStream);
     scope repr = new AstRepr.ReprVisitor(so);
     repr.visitBase(node.ast);
 }
