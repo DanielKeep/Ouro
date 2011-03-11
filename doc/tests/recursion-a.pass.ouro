@@ -1,0 +1,45 @@
+(++
+    This tests an implementation's ability to perform tail call elimination.
+    The naive semantic interpreter blows the stack somewhere between n=200 and
+    n=300.
+ ++)
+
+import "/ouro/io" : *
+import "/ouro/stdio" : *
+
+let limit = 2**11
+
+let woutF~(fmt, v...) =
+    do {
+        writeToStream!(cout, fmt (.format.) v),
+        flushStream!(cout)
+    }
+
+let woutFL~(fmt, v...) =
+    do {
+        writeToStream!(cout, fmt (.format.) v),
+        writeToStream!(cout, "\n"),
+        flushStream!(cout)
+    }
+
+let macro where(cond, expr) =
+    #"{ #${if} { #${cond}, #${expr}, nil } }
+
+let f(n) =
+    if {
+        n >= limit,
+        n,
+        do {
+            where { n mod 100 < 1, woutF~(", $*", n) },
+            f(n+1)
+        }
+    }
+
+export let main(args) =
+    do {
+        woutFL~("Running recusion test.  Limit is $*.", limit),
+        woutF~("Depth = 0"),
+        woutFL~("; stopped at $*.", f(1)),
+        nil
+    }
+
