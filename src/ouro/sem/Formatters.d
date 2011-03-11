@@ -25,8 +25,11 @@ void format(Object obj, void delegate(char[]) emit,
     
     else
     {
-        // TODO: handle alignment
-        emit(obj.toString);
+        wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+        (Emit emit)
+        {
+            emit(obj.toString);
+        });
     }
 }
 
@@ -362,11 +365,15 @@ void format_AstQuoteValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.AstQuoteValue) ptr;
-    scope emitStream = new EmitStream(emit);
-    scope so = new StructuredOutput(emitStream);
-    scope repr = new AstRepr.ReprVisitor(so);
-    repr.visitBase(node.ast);
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
+    {
+        auto node = cast(Sit.AstQuoteValue) ptr;
+        scope emitStream = new EmitStream(emit);
+        scope so = new StructuredOutput(emitStream);
+        scope repr = new AstRepr.ReprVisitor(so);
+        repr.visitBase(node.ast);
+    });
 }
 
 static this()
@@ -378,39 +385,43 @@ void format_FunctionValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.FunctionValue) ptr;
-
-    void emitArgs()
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
     {
-        foreach( i,arg ; node.args )
+        auto node = cast(Sit.FunctionValue) ptr;
+
+        void emitArgs()
         {
-            if( i > 0 ) emit(",");
-            emit(reprIdent(arg.ident));
-            if( arg.isVararg ) emit("...");
+            foreach( i,arg ; node.args )
+            {
+                if( i > 0 ) emit(",");
+                emit(reprIdent(arg.ident));
+                if( arg.isVararg ) emit("...");
+            }
         }
-    }
 
-    if( node.name == "" || node.name[0.."λ".length] == "λ" )
-    {
-        emit("λ");
-        emitArgs;
-        emit(".");
-    }
-    else if( node.expr !is null )
-    {
-        emit(reprIdent(node.name));
-        emit("(");
-        emitArgs;
-        emit(")");
-    }
-    else
-    {
-        emit("__builtin__(");
-        emit(reprString(node.name));
-        emit(")(");
-        emitArgs;
-        emit(")");
-    }
+        if( node.name == "" || node.name[0.."λ".length] == "λ" )
+        {
+            emit("λ");
+            emitArgs;
+            emit(".");
+        }
+        else if( node.expr !is null )
+        {
+            emit(reprIdent(node.name));
+            emit("(");
+            emitArgs;
+            emit(")");
+        }
+        else
+        {
+            emit("__builtin__(");
+            emit(reprString(node.name));
+            emit(")(");
+            emitArgs;
+            emit(")");
+        }
+    });
 }
 
 static this()
@@ -422,14 +433,19 @@ void format_ListValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.ListValue) ptr;
-    emit("[");
-    foreach( i,elemValue ; node.elemValues )
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
     {
-        if( i > 0 ) emit(", ");
-        format(elemValue, emit, width, alignment, padding, precision, options);
-    }
-    emit("]");
+        // TODO: extract tail options
+        auto node = cast(Sit.ListValue) ptr;
+        emit("[");
+        foreach( i,elemValue ; node.elemValues )
+        {
+            if( i > 0 ) emit(", ");
+            format(elemValue, emit, 0, '>', " ", null, null);
+        }
+        emit("]");
+    });
 }
 
 static this()
@@ -441,8 +457,12 @@ void format_LogicalValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.LogicalValue) ptr;
-    emit(node.value ? "true" : "false");
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
+    {
+        auto node = cast(Sit.LogicalValue) ptr;
+        emit(node.value ? "true" : "false");
+    });
 }
 
 static this()
@@ -454,16 +474,20 @@ void format_MapValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.MapValue) ptr;
-    emit("[:");
-    foreach( i,kvp ; node.kvps )
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
     {
-        if( i > 0 ) emit(", ");
-        format(kvp.key, emit, width, alignment, padding, precision, options);
-        emit(":");
-        format(kvp.value, emit, width, alignment, padding, precision, options);
-    }
-    emit(":]");
+        auto node = cast(Sit.MapValue) ptr;
+        emit("[:");
+        foreach( i,kvp ; node.kvps )
+        {
+            if( i > 0 ) emit(", ");
+            format(kvp.key, emit, 0, '>', " ", null, null);
+            emit(":");
+            format(kvp.value, emit, 0, '>', " ", null, null);
+        }
+        emit(":]");
+    });
 }
 
 static this()
@@ -475,10 +499,14 @@ void format_ModuleValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = (cast(Sit.ModuleValue) ptr).modul;
-    emit("module(");
-    emit(reprString(node.path));
-    emit(")");
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
+    {
+        auto node = (cast(Sit.ModuleValue) ptr).modul;
+        emit("module(");
+        emit(reprString(node.path));
+        emit(")");
+    });
 }
 
 static this()
@@ -490,54 +518,37 @@ void format_StringValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.StringValue) ptr;
-    auto emit1 = emit;
-
-    // alignment
-    auto pa = UtfPadder(emit, width, alignment, padding);
-    pa.init;
-    pa.lock;
-    emit = pa.emit;
-
-    // precision
-    UtfTruncator tr;
-
-    // options
-    bool raw = false;
-    bool length = false;
-
-    // process precision
-    if( parseTruncate(precision, 't', tr.l) )
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
     {
-        tr.emitFn = emit;
-        emit = &tr.emit;
-    }
-    // else ellipsis
+        auto node = cast(Sit.StringValue) ptr;
 
-    // process options
-    foreach( opt ; options )
-        switch( opt )
+        // options
+        bool raw = false;
+        bool length = false;
+
+        foreach( opt ; options )
+            switch( opt )
+            {
+                case "R": raw = true; break;
+                case "l": length = true; break;
+                default:
+            }
+
+        if( raw )
         {
-            case "R": raw = true; break;
-            case "l": length = true; break;
-            default:
+            emit(reprString(node.value));
         }
-
-    if( raw )
-    {
-        emit(reprString(node.value));
-    }
-    else if( length )
-    {
-        char[12] buffer;
-        emit(Integer.format(buffer, node.value.length));
-    }
-    else
-    {
-        emit(node.value);
-    }
-
-    pa.flush();
+        else if( length )
+        {
+            char[12] buffer;
+            emit(Integer.format(buffer, node.value.length));
+        }
+        else
+        {
+            emit(node.value);
+        }
+    });
 }
 
 static this()
@@ -549,10 +560,14 @@ void format_SymbolValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.SymbolValue) ptr;
-    // TODO: be more intelligent about this
-    emit("'");
-    emit(reprString(node.value));
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
+    {
+        auto node = cast(Sit.SymbolValue) ptr;
+        // TODO: be more intelligent about this
+        emit("'");
+        emit(reprString(node.value));
+    });
 }
 
 static this()
@@ -564,8 +579,12 @@ void format_NumberValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.NumberValue) ptr;
-    emit(Float.toString(node.value));
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
+    {
+        auto node = cast(Sit.NumberValue) ptr;
+        emit(Float.toString(node.value));
+    });
 }
 
 static this()
@@ -577,12 +596,18 @@ void format_RangeValue(void* ptr, void delegate(char[]) emit,
         size_t width, char alignment, char[] padding,
         char[] precision, char[][] options)
 {
-    auto node = cast(Sit.RangeValue) ptr;
-    emit("range ");
-    emit(node.incLower ? "[" : "(");
-    format(node.lowerValue, emit, width, alignment, padding, precision, options);
-    emit(", ");
-    format(node.upperValue, emit, width, alignment, padding, precision, options);
-    emit(node.incUpper ? "]" : ")");
+    wrapAlignAndStdPrec(emit, width, alignment, padding, precision,
+    (Emit emit)
+    {
+        auto node = cast(Sit.RangeValue) ptr;
+        emit("range ");
+        emit(node.incLower ? "[" : "(");
+        format(node.lowerValue, emit, width, alignment,
+            padding, precision, options);
+        emit(", ");
+        format(node.upperValue, emit, width, alignment,
+            padding, precision, options);
+        emit(node.incUpper ? "]" : ")");
+    });
 }
 
