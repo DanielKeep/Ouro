@@ -9,6 +9,39 @@ module ouro.ast.Nodes;
 import ouro.util.EnumCtfe : genEnum_ctfe;
 import ouro.Location;
 
+const char[][] Nodes =
+[
+    "Module"[],
+    "ImportStmt",
+    "LetExprStmt",
+    "LetFuncStmt",
+    "ExprStmt",
+    "RewrittenExpr",
+    "BinaryExpr",
+    "InfixFuncExpr",
+    "PrefixExpr",
+    "PostfixFuncExpr",
+    "NumberExpr",
+    "StringExpr",
+    "SymbolExpr",
+    "LogicalExpr",
+    "NilExpr",
+    "ListExpr",
+    "MapExpr",
+    "LambdaExpr",
+    "ExplodeExpr",
+    "CallExpr",
+    "VariableExpr",
+    "RangeExpr",
+    "AstQuoteExpr",
+    "AstQuasiQuoteExpr",
+    "AstQQSubExpr",
+    "LetExpr",
+    "ImportExpr",
+    "TernaryExpr",
+    "BuiltinExpr",
+];
+
 abstract class Node
 {
     Location loc;

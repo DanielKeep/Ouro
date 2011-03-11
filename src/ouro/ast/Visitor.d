@@ -10,38 +10,7 @@ import Ast = ouro.ast.Nodes;
 
 private
 {
-    const char[][] AstClassList =
-    [
-        "Module"[],
-        "ImportStmt",
-        "LetExprStmt",
-        "LetFuncStmt",
-        "ExprStmt",
-        "RewrittenExpr",
-        "BinaryExpr",
-        "InfixFuncExpr",
-        "PrefixExpr",
-        "PostfixFuncExpr",
-        "NumberExpr",
-        "StringExpr",
-        "SymbolExpr",
-        "LogicalExpr",
-        "NilExpr",
-        "ListExpr",
-        "MapExpr",
-        "LambdaExpr",
-        "ExplodeExpr",
-        "CallExpr",
-        "VariableExpr",
-        "RangeExpr",
-        "AstQuoteExpr",
-        "AstQuasiQuoteExpr",
-        "AstQQSubExpr",
-        "LetExpr",
-        "ImportExpr",
-        "TernaryExpr",
-        "BuiltinExpr",
-    ];
+    alias Ast.Nodes AstClassList;
 
     char[] genDispatch(char[] callSuffix = "")
     {
