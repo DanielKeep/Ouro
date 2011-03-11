@@ -6,11 +6,11 @@
  */
 module ouro.sem.Formatters;
 
-
 import Float = tango.text.convert.Float;
 
 import ouro.util.Repr : reprIdent, reprString;
 import ouro.util.EmitStream;
+import ouro.util.Formatting;
 import ouro.util.StructuredOutput;
 
 import AstRepr = ouro.ast.ReprVisitor;
@@ -491,7 +491,53 @@ void format_StringValue(void* ptr, void delegate(char[]) emit,
         char[] precision, char[][] options)
 {
     auto node = cast(Sit.StringValue) ptr;
-    emit(node.value);
+    auto emit1 = emit;
+
+    // alignment
+    auto pa = UtfPadder(emit, width, alignment, padding);
+    pa.init;
+    pa.lock;
+    emit = pa.emit;
+
+    // precision
+    UtfTruncator tr;
+
+    // options
+    bool raw = false;
+    bool length = false;
+
+    // process precision
+    if( parseTruncate(precision, 't', tr.l) )
+    {
+        tr.emitFn = emit;
+        emit = &tr.emit;
+    }
+    // else ellipsis
+
+    // process options
+    foreach( opt ; options )
+        switch( opt )
+        {
+            case "R": raw = true; break;
+            case "l": length = true; break;
+            default:
+        }
+
+    if( raw )
+    {
+        emit(reprString(node.value));
+    }
+    else if( length )
+    {
+        char[12] buffer;
+        emit(Integer.format(buffer, node.value.length));
+    }
+    else
+    {
+        emit(node.value);
+    }
+
+    pa.flush();
 }
 
 static this()
