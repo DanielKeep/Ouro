@@ -4,22 +4,15 @@
     n=300.
  ++)
 
-import "/ouro/io" : *
-import "/ouro/stdio" : *
+import "/ouro/io" : flushStream!
+import "/ouro/stdio" : woutF~, woutFL~, stdout
 
 let limit = 2**11
 
-let woutF~(fmt, v...) =
+let woutFF~(fmt, v...) =
     do {
-        writeToStream!(cout, fmt (.format.) v),
-        flushStream!(cout)
-    }
-
-let woutFL~(fmt, v...) =
-    do {
-        writeToStream!(cout, fmt (.format.) v),
-        writeToStream!(cout, "\n"),
-        flushStream!(cout)
+        woutF~(fmt, v...),
+        flushStream!(stdout)
     }
 
 let macro where(cond, expr) =

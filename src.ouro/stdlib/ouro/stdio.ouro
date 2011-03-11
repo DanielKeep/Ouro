@@ -5,9 +5,48 @@
  
  ++)
 
+import "/ouro/io" : *
+
 let open~ = __builtin__("ouro.io.openStdStream~")
 
-export let cin = open~('STDIN)
-export let cout = open~('STDOUT)
-export let cerr = open~('STDERR)
+export let stdin = open~('STDIN)
+export let stdout = open~('STDOUT)
+export let stderr = open~('STDERR)
+
+let write!(stream, vs) =
+    if {
+        vs = [],
+        nil,
+        do {
+            writeToStream!(stream, format("$*", head(vs))),
+            write!(stream, tail(vs))
+        }
+    }
+
+let writeL!(stream, vs) =
+    do {
+        write!(stream, vs),
+        writeToStream!(stream, "\n"),
+        flushStream!(stream)
+    }
+
+let writeF!(stream, fmt, vs) =
+    writeToStream!(stream, format(fmt, vs))
+
+let writeFL!(stream, fmt, vs) =
+    do {
+        writeF!(stream, fmt, vs),
+        writeToStream!(stream, "\n"),
+        flushStream!(stream)
+    }
+
+export let wout~(vs...)         = write!(stdout, vs)
+export let woutL~(vs...)        = writeL!(stdout, vs)
+export let woutF~(fmt, vs...)   = writeF!(stdout, fmt, vs)
+export let woutFL~(fmt, vs...)  = writeFL!(stdout, fmt, vs)
+
+export let werr~(vs...)         = write!(stderr, vs)
+export let werrL~(vs...)        = writeL!(stderr, vs)
+export let werrF~(fmt, vs...)   = writeF!(stderr, fmt, vs)
+export let werrFL~(fmt, vs...)  = writeFL!(stderr, fmt, vs)
 
