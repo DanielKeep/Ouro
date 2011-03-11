@@ -1,0 +1,35 @@
+
+|-- Test the common alignment and precision settings.
+let macro test(opt, result) = #"{
+    let {
+        [fr,    #${format}("${"++#${opt}++"}", ["zyzzy"])],
+
+        #${if} {
+            fr != #${result},
+            #${fail}("Test of ${:R} failed; expected ${:R} got ${:R}"
+                     (.(#${format}).) [#${opt}, #${result}, fr]),
+            nil
+        }
+    }
+}
+
+test { ",3",        "zyzzy" }
+test { ",5",        "zyzzy" }
+test { ",7",        "  zyzzy" }
+test { ",7<",       "zyzzy  " }
+test { ",7|",       " zyzzy " }
+test { ",7>",       "  zyzzy" }
+test { ",10<.",     "zyzzy....." }
+test { ",10|.",     "..zyzzy..." }
+test { ",10>.",     ".....zyzzy" }
+test { ",10<.-'",   "zyzzy.-'.-" }
+test { ",10|.-'",   ".-zyzzy.-'" }
+test { ",10>.-'",   ".-'.-zyzzy" }
+
+test { ";t0",       "" }
+test { ";t3",       "zyz" }
+test { ";t5",       "zyzzy" }
+test { ";t7",       "zyzzy" }
+
+test { ",8|~;t3",   "~~zyz~~~" }
+
