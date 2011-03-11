@@ -127,16 +127,22 @@ fmtLoop:
         // $n - shortcut for ${n}
         if( '0' <= c && c <= '9' )
         {
+            bool atEnd = false;
             size_t idx = 0;
             do
             {
                 idx = idx*10 + (c-'0');
-                if( ! popc ) break;
+                if( ! popc )
+                {
+                    atEnd = true;
+                    break;
+                }
             }
             while( '0' <= c && c <= '9' )
 
             format(vs[idx], emit, 0, '>', " ", "", null);
-            fmt = fmt1;
+            if( ! atEnd )
+                fmt = fmt1;
             continue;
         }
 
