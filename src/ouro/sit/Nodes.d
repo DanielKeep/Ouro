@@ -951,6 +951,11 @@ class NilValue : Value
     }
 
     protected static NilValue instance_;
+
+    char[] toString()
+    {
+        return "nil";
+    }
 }
 
 class StringValue : Value, Formatter
