@@ -10,6 +10,7 @@
  */
 module ouro.sem.Eval;
 
+import ouro.sem.Abort;
 import ouro.sem.Formatters;
 import ouro.sit.Visitor;
 
@@ -29,7 +30,7 @@ struct Context
 
     static void onUnfixedDefault(Sit.UnfixedValue value)
     {
-        assert( false, "unexpected unfixed value "~value.ident );
+        NonFatalAbort.throwForUnfixed(value);
     }
 
     Sit.Value fixValue(Sit.Value value)
@@ -63,7 +64,7 @@ struct Context
         }
 
         // Oh damn it all to hell
-        debug if( dumpNode !is null )
+        debug(DumpUnfixed) if( dumpNode !is null )
             dumpNode(value);
         onUnfixed(uv);
     }
