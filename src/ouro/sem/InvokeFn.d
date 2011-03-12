@@ -68,7 +68,14 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
                 auto vaList = new Sit.ListValue(null, vaListElems);
 
                 // Adjust arg list
-                if( vaBeg == args.length )
+                if( vaLen == 0 )
+                {
+                    // There was nothing in the vararg portion of the argument
+                    // list.  We need to insert it in the middle.
+                    args = args[0..vaBeg] ~ cast(Sit.Value) vaList
+                        ~ args[vaBeg..$];
+                }
+                else if( vaBeg == args.length )
                 {
                     // This means that the caller only supplied enough arguments
                     // for the non-vararg portion.  We'll just add a new one.
