@@ -4,9 +4,17 @@
     
  ++)
 
+|--
+|-- Builtins
+|--
+
 export let branch = __builtin__("ouro.branch")
 export let fail = __builtin__("ouro.fail")
 export let $".dump" = __builtin__("ouro..dump")
+
+|--
+|-- Functions defined in terms of builtins.
+|--
 
 export let macro assert(expr) = (
     #"{ #${if} { #${expr},
@@ -88,4 +96,47 @@ export let tail(l) = (
           tail'(l...)
     }
 )
+
+
+(--
+    Builtins that use other modules.
+
+    IMPORTANT: Do not, under *any* circumstances, use a mass import within
+    this module.  Mass imports can only be resolved once one of the modules
+    has been completely compiled.  This would be impossible here since every
+    module mass imports this one.
+--)
+
+import "/ouro/ast" : isListExpr?, listExprElems, isVariableExpr?, variableIdent, LambdaExpr|new
+
+export let macro let'(b, bs..., expr) =
+    do {
+        assert { b (.isListExpr?) },
+    let {
+        [b', listExprElems(b)],
+    let {
+        [b0, b' (.head)],
+        [b1, b' (.(tail(.)head))],
+        [bt, b' (.(tail(.)tail))],
+    do {
+        assert { b0 (.isVariableExpr?) },
+        assert { bt = [] },
+    let {
+        [bi, b0 (.variableIdent)],
+    let {
+        [se, if {
+                bs = [],
+                expr,
+                let'(bs..., expr) }],
+    let {
+        [le, LambdaExpr|new(nil, false, [bi], se)],
+
+        #"{ (#${le})(#${b1}) }
+    }
+    }
+    }
+    }
+    }
+    }
+    }
 
