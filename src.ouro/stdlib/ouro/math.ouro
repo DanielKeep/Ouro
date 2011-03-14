@@ -1,0 +1,30 @@
+(++
+    Math builtins.
+ ++)
+
+export let e    = __builtin__("ouro.math.e")
+export let π    = __builtin__("ouro.math.π")
+export let pi   = π
+
+export let abs      = __builtin__("ouro.math.abs")
+export let signbit  = __builtin__("ouro.math.sign")
+export let sign(x)  = if { signbit(x) = 0, 1, -1 }
+
+export let cos      = __builtin__("ouro.math.cos")
+export let sin      = __builtin__("ouro.math.sin")
+export let tan      = __builtin__("ouro.math.tan")
+
+export let sqrt     = __builtin__("ouro.math.sqrt")
+export let log      = __builtin__("ouro.math.log")
+export let log2     = __builtin__("ouro.math.log₂")
+export let log10    = __builtin__("ouro.math.log₁₀")
+
+|-- There *is* a builtin round, but it rounds toward even numbers.  /shrug
+export let floor    = __builtin__("ouro.math.floor")
+export let ceil     = __builtin__("ouro.math.ceil")
+|-- let round(x)  = sign(x)*floor(abs(x)+0.5)
+export let trunc    = __builtin__("ouro.math.trunc")
+
+export let erfc     = __builtin__("ouro.math.erfc")
+export let erf      = __builtin__("ouro.math.erf")
+
