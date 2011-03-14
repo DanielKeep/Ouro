@@ -398,7 +398,11 @@ processStmt:
                     (*stmt.stmtsNotDone)--;
 
                     if( *stmt.stmtsNotDone == 0 )
+                    {
+                        debug(TraceModulePool)
+                            Stderr.formatln("Compiled {}.", stmt.mod.path);
                         modDone(stmt.mod);
+                    }
                 }
             }
 
