@@ -395,6 +395,7 @@ processStmt:
 
                     successStmt = true;
                     stmt.done = true;
+                    stmt.ex = null;
                     (*stmt.stmtsNotDone)--;
 
                     if( *stmt.stmtsNotDone == 0 )
