@@ -54,7 +54,6 @@ export let macro if(l, expr_t, expr_f) = (
 export let head(l) = (
     let {
         [head', \l', l's... . l'],
-        [foo, 42],
 
         head'(l...)
     }
