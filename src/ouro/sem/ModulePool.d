@@ -338,13 +338,16 @@ processStmt:
                     if( stmt.stmt.mergeAll )
                     {
                         if( cast(Sit.RuntimeValue) stmt.stmt.value !is null )
-                            assert( false, "cannot import from runtime value" );
+                            assert( false, stmt.stmt.astNode.loc.toString
+                                    ~": cannot import from runtime value" );
 
                         if( auto mv = cast(Sit.ModuleValue) stmt.stmt.value )
                         {
                             if( ! mv.modul.complete )
                             {
-                                stmt.ex = new Exception("cannot import all "
+                                stmt.ex = new Exception(
+                                    stmt.stmt.astNode.loc.toString
+                                    ~": cannot import all "
                                     "symbols from module "~mv.modul.path~
                                     " before it has been compiled.  Try a "
                                     "selective import instead.");
@@ -360,7 +363,8 @@ processStmt:
                                     stmt.mod.exportScop.bind(k, v);
                         }
                         else
-                            assert( false, "cannot import from "
+                            assert( false, stmt.stmt.astNode.loc.toString
+                                    ~": cannot import from "
                                     ~stmt.stmt.value.toString );
                     }
                     else if( stmt.stmt.mergeList.length != 0 )
