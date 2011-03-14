@@ -131,7 +131,7 @@ Value unaryOp(alias chkArg, Result, char[] expr)(EC ec, Value[] args)
 
 Value ouro_opPos(EC ec, Value[] args)
 {
-    chkArgNum(args, 0);
+    chkArgNum(args, 1);
     chkArgNumber(args, 0);
     return args[0];
 }
