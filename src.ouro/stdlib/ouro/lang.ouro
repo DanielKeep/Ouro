@@ -92,7 +92,8 @@ export let reduce(f, vs) = (
 export let tail(l) = (
     let {
         [tail', \l',l's... . l's],
-          tail'(l...)
+
+        tail'(l...)
     }
 )
 
