@@ -16,6 +16,11 @@ export let $".dump" = __builtin__("ouro..dump")
 |-- Functions defined in terms of builtins.
 |--
 
+|-- We define if first since it's used so much.
+export let macro if(l, expr_t, expr_f) = (
+    #"{ #${branch}( #${l}, \.#${expr_t}, \.#${expr_f} ) }
+)
+
 export let macro assert(expr) = (
     #"{ #${if} { #${expr},
                  nil,
@@ -46,10 +51,6 @@ export let filter(f, vs) = (
 )
 
 export let format = __builtin__("ouro.format")
-
-export let macro if(l, expr_t, expr_f) = (
-    #"{ #${branch}( #${l}, \.#${expr_t}, \.#${expr_f} ) }
-)
 
 export let head(l) = (
     let {
