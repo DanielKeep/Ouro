@@ -170,13 +170,14 @@ struct ModulePool
         pathToEntryIdx[entry.sit.path] = entries.length-1;
 
         // Add to the statement pool
+        auto stmts = entry.ast.stmts;
         if( includeLang )
             // Inject: import "/ouro/lang" : *
-            injectStmts(entry.sit, [new Ast.ImportStmt(Location.init,
+            stmts = [new Ast.ImportStmt(Location.init,
                         /*xport*/false, "/ouro/lang", /*ident*/null,
-                        /*all*/true, /*symbols*/null)]);
+                        /*all*/true, /*symbols*/null)] ~ stmts;
 
-        injectStmts(entry.sit, entry.ast.stmts);
+        injectStmts(entry.sit, stmts);
 
         // Return module object
         return entry.sit;
