@@ -67,6 +67,25 @@ Note that order of evaluation is *not* specified.
 
     assert { filter(even?, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) = [0, 2, 4, 6, 8] }
 
+``forEach{binding, expr}``
+--------------------------
+
+Given a binding of the form ``[i, e]``, it evaluates *expr* once for each
+element of *e*, binding the element's value to *i*.
+
+*expr* may also use ``$".index"``; this contains the zero-based index of the
+element during each evaluation.
+
+Example::
+
+    |-- Print out the arguments passed to the program.
+    import "/ouro/stdio" : woutFL~
+    export let main(args) =
+        forEach {
+            [arg, tail(args)],
+            woutFL~(" args[$*] = ${:R}", $".index"+1, arg)
+        }
+
 ``format(s_fmt, vs)``
 ---------------------
 

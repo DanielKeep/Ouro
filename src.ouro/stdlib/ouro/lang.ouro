@@ -110,6 +110,48 @@ export let tail(l) = (
 
 import "/ouro/ast" : isListExpr?, listExprElems, isVariableExpr?, variableIdent, LambdaExpr|new
 
+export let forEach(binding, expr) = (
+    let' {
+        |-- Using let' like this is cheating.  Oh well.
+        [_,     assert { binding (.isListExpr?) }],
+        [b,     binding (.listExprElems)],
+        [_,     assert { (b (.tail)) != [] }],
+        [_,     assert { (b (.(tail(.)tail))) = [] }],
+        [bi',   b (.head)],
+        [_,     assert { bi' (.isVariableExpr?) }],
+        [bi,    bi' (.variableIdent)],
+        [be,    b (.(tail(.)head))],
+
+        #" {
+            let {
+                [body,  #${
+                            LambdaExpr|new(nil, false, ['".index", bi], expr)
+                        }],
+                [seq,   #${be}],
+            let {
+                [step,  \step,i,e,es.
+                            do {
+                                body(i,e),
+                                if {
+                                    es = [],
+                                    nil,
+                                    step(step, i+1,
+                                         head(es), tail(es))
+                                }
+                            }
+                        ],
+
+                if {
+                    seq = [],
+                    nil,
+                    step(step, 0, head(seq), tail(seq))
+                }
+            }
+            }
+        }
+    }
+)
+
 export let macro let'(b, bs..., expr) =
     do {
         assert { b (.isListExpr?) },
