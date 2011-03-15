@@ -53,7 +53,8 @@ void[] valueToNative(Value value, Type ty, void[] buffer = null)
             if( null !is cast(Sit.NilValue) value )
                 return copyValue(cast(void*) null, buffer);
             auto hov = cast(Sit.HostObjectValue) value;
-            assert( hov !is null );
+            assert( hov !is null, "expected "~ty.toString~"; got "
+                    ~ value.classinfo.name );
             auto v = cast(Handle) hov.obj;
             assert( v !is null );
             assert( v.type == ty );
