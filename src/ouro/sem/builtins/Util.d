@@ -134,6 +134,15 @@ Object chkArgObject(Value[] args, size_t i, bool silent = false)
         assert( false, "expected host object; got " ~ args[i].classinfo.name );
 }
 
+T chkArgObjectT(T)(Value[] args, size_t i)
+{
+    auto obj = chkArgObject(args, i, /*silent*/true);
+    auto v = cast(T) obj;
+    assert( v !is null, "expected "~T.stringof~"; got "
+            ~ args[i].classinfo.name );
+    return v;
+}
+
 void chkArgNil(Value[] args, size_t i)
 {
     auto v = cast(Sit.NilValue) args[i];
