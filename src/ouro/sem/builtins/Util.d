@@ -73,6 +73,17 @@ Sit.StringValue chkArgStringValue(Value[] args, size_t i)
         assert( false, "expected string; got " ~ args[i].classinfo.name );
 }
 
+char[] chkArgStringOrSymbol(Value[] args, size_t i)
+{
+    if( auto v = cast(Sit.StringValue) args[i] )
+        return v.value;
+    else if( auto v = cast(Sit.SymbolValue) args[i] )
+        return v.value;
+    else
+        assert( false, "expected string of symbol; got "
+                ~ args[i].classinfo.name );
+}
+
 Ast.Expr chkArgAst(Value[] args, size_t i)
 {
     if( auto v = cast(Sit.AstQuoteValue) args[i] )
