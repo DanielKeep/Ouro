@@ -195,6 +195,7 @@ bool retViaEaxEdx(Type.Id id)
     switch( id )
     {
         case Type.Id.Word:
+        case Type.Id.Handle:
         case Type.Id.Bool:
         case Type.Id.Char:
         case Type.Id.SInt:

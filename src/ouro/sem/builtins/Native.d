@@ -16,7 +16,7 @@ import ouro.sem.builtins.Util;
 import ouro.util.invoke.CallConv : CallConv,
        callConvToString, callConvFromString;
 import ouro.util.invoke.Platform : getCallBuilder, releaseCallBuilder;
-import ouro.util.invoke.Type : Type, Variadic;
+import ouro.util.invoke.Type : Type, HandleType, Variadic;
 
 class NativeFn
 {
@@ -45,40 +45,49 @@ SharedLib chkArgSharedLib(Value[] args, size_t i)
     return r;
 }
 
+Type typeFromName(char[] name)
+{
+    switch( name )
+    {
+        case "void":        return Type.t_void;
+        case "word":        return Type.t_word;
+
+        case "bool":        return Type.t_bool;
+
+        case "char8":       return Type.t_char8;
+        case "char16":      return Type.t_char16;
+        case "char32":      return Type.t_char32;
+
+        case "sint8":       return Type.t_sint8;
+        case "sint16":      return Type.t_sint16;
+        case "sint32":      return Type.t_sint32;
+        case "sint64":      return Type.t_sint64;
+
+        case "uint8":       return Type.t_uint8;
+        case "uint16":      return Type.t_uint16;
+        case "uint32":      return Type.t_uint32;
+        case "uint64":      return Type.t_uint64;
+
+        case "float32":     return Type.t_float32;
+        case "float64":     return Type.t_float64;
+
+        case "void_p":      return Type.t_void_p;
+        case "sz":          return Type.t_sz;
+
+        case "wsz":         return Type.t_wsz;
+
+        default:            return null;
+    }
+}
+
 Type chkArgType(Value[] args, size_t i)
 {
     if( auto v = cast(Sit.SymbolValue) args[i] )
     {
-        switch( v.value )
-        {
-            case "void":        return Type.t_void;
-            case "word":        return Type.t_word;
-
-            case "bool":        return Type.t_bool;
-
-            case "char8":       return Type.t_char8;
-            case "char16":      return Type.t_char16;
-            case "char32":      return Type.t_char32;
-
-            case "sint8":       return Type.t_sint8;
-            case "sint16":      return Type.t_sint16;
-            case "sint32":      return Type.t_sint32;
-            case "sint64":      return Type.t_sint64;
-
-            case "uint8":       return Type.t_uint8;
-            case "uint16":      return Type.t_uint16;
-            case "uint32":      return Type.t_uint32;
-            case "uint64":      return Type.t_uint64;
-
-            case "float32":     return Type.t_float32;
-            case "float64":     return Type.t_float64;
-
-            case "void_p":      return Type.t_void_p;
-            case "sz":          return Type.t_sz;
-
-            default:
-                assert( false, "unknown Native Type "~v.value );
-        }
+        auto ty = typeFromName(v.value);
+        if( ty is null )
+            assert( false, "unknown Native Type "~v.value );
+        return ty;
     }
     else
     {
@@ -112,20 +121,20 @@ Value native_loadLibrary(EC ec, Value[] args)
 
 static this()
 {
-    Builtins.register("ouro.native.loadSymbol",
-            new Sit.FunctionValue("ouro.native.loadSymbol", [
+    Builtins.register("ouro.native.loadFunction",
+            new Sit.FunctionValue("ouro.native.loadFunction", [
                     Sit.Argument("lib"),
                     Sit.Argument("name"),
                     Sit.Argument("callConv"),
                     Sit.Argument("returnType"),
                     Sit.Argument("argTypes"),
                     Sit.Argument("variadic")
-                ], &native_loadSymbol, EC.Runtime));
+                ], &native_loadFunction, EC.Runtime));
 }
 
-Value native_loadSymbol(EC ec, Value[] args)
+Value native_loadFunction(EC ec, Value[] args)
 {
-    // loadSymbol(lib, name, callConv, return, args, variadic)
+    // loadFunction(lib, name, callConv, return, args, variadic)
     chkArgNum(args, 6);
     auto lib = chkArgSharedLib(args, 0);
     auto symName = chkArgStringOrSymbol(args, 1);
@@ -190,5 +199,73 @@ Value native_invoke(EC ec, Value[] args)
     );
 
     return nativeToValue(ret, fn.returnType);
+}
+
+static this()
+{
+    Builtins.register("ouro.native.Type|basic",
+            new Sit.FunctionValue("ouro.native.Type|basic", [
+                Sit.Argument("id")
+            ], &native_Type_basic));
+}
+
+Value native_Type_basic(EC ec, Value[] args)
+{
+    chkArgNum(args, 1);
+    auto id = chkArgSymbol(args, 0).value;
+    auto type = typeFromName(id);
+
+    if( type is null )
+        return Sit.NilValue.instance;
+    else
+        return new Sit.HostObjectValue(type);
+}
+
+static this()
+{
+    Builtins.register("ouro.native.Type|pointer",
+            new Sit.FunctionValue("ouro.native.Type|pointer", [
+                Sit.Argument("subType")
+            ], &native_Type_pointer));
+}
+
+Value native_Type_pointer(EC ec, Value[] args)
+{
+    chkArgNum(args, 1);
+    auto subType = chkArgType(args, 0);
+
+    return new Sit.HostObjectValue(new Type(Type.Id.Pointer, subType));
+}
+
+static this()
+{
+    Builtins.register("ouro.native.Type|zeroTerm",
+            new Sit.FunctionValue("ouro.native.Type|zeroTerm", [
+                Sit.Argument("subType")
+            ], &native_Type_zeroTerm));
+}
+
+Value native_Type_zeroTerm(EC ec, Value[] args)
+{
+    chkArgNum(args, 1);
+    auto subType = chkArgType(args, 0);
+
+    return new Sit.HostObjectValue(new Type(Type.Id.ZeroTerm, subType));
+}
+
+static this()
+{
+    Builtins.register("ouro.native.Type|handle",
+            new Sit.FunctionValue("ouro.native.Type|handle", [
+                Sit.Argument("id")
+            ], &native_Type_handle));
+}
+
+Value native_Type_handle(EC ec, Value[] args)
+{
+    chkArgNum(args, 1);
+    auto id = chkArgSymbol(args, 0).value;
+
+    return new Sit.HostObjectValue(new HandleType(id));
 }
 

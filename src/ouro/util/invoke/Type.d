@@ -29,6 +29,7 @@ mixin(genEnum_ctfe
         // Basic types
         "Void"[],
         "Word",
+        "Handle",
 
         "Bool",
         "Char",
@@ -95,6 +96,7 @@ Properties[MaxId] TypeProperties =
 // Basic types
 { "void",   0, 0,           false   },
 { "word",   WordSize, 0,    false   },
+{ "handle", WordSize, 0,    false   },
 { "bool",   1, 0,           false   },
 { "char",   1, 4,           false   },
 { "sint",   1, 8,           false   },
@@ -119,7 +121,7 @@ class Type
     this(Id id)
     {
         auto size = Prop[id].size;
-        assert( size != 0 || id == Id.Void );
+        assert( size != 0 || id == Id.Void || id == Id.Handle );
         assert( ! Prop[id].isComposite );
 
         this.id = id;
@@ -173,6 +175,9 @@ class Type
         auto rhs = cast(Type) rhsObj;
         if( rhs is null ) return cast(equals_t) false;
 
+        // Subclasses cannot be equal
+        if( this.classinfo !is rhs.classinfo ) return false;
+
         if( this.subType !is null && rhs.subType !is null
                 && this.subType != rhs.subType )
             return false;
@@ -211,6 +216,11 @@ class Type
 
             t_void_p    = new Type(Id.Pointer, t_void);
             t_sz        = new Type(Id.ZeroTerm, t_char8);
+
+            version( Windows )
+                t_wsz   = new Type(Id.ZeroTerm, t_char16);
+            else
+                t_wsz   = new Type(Id.ZeroTerm, t_char32);
         }
 
         Type t_void, t_word,
@@ -219,7 +229,32 @@ class Type
              t_sint8, t_sint16, t_sint32, t_sint64,
              t_uint8, t_uint16, t_uint32, t_uint64,
              t_float32, t_float64,
-             t_void_p, t_sz;
+             t_void_p, t_sz,
+             t_wsz;
+    }
+}
+
+class HandleType : Type
+{
+    char[] ident;
+
+    this(char[] ident)
+    {
+        super(Id.Handle);
+        this.ident = ident;
+    }
+
+    char[] toString()
+    {
+        return Prop[id].name~" "~ident;
+    }
+
+    equals_t opEquals(Object rhsObj)
+    {
+        auto rhs = cast(HandleType) rhsObj;
+        if( rhs is null ) return cast(equals_t) false;
+
+        return this.ident == rhs.ident;
     }
 }
 
