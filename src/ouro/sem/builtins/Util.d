@@ -149,3 +149,33 @@ void chkArgNil(Value[] args, size_t i)
     assert( v !is null, "expected nil; got " ~ args[i].classinfo.name );
 }
 
+class Pointer
+{
+    void* ptr;
+    TypeInfo ti;
+
+    this(void* ptr, TypeInfo ti)
+    {
+        this.ptr = ptr;
+        this.ti = ti;
+    }
+
+    static Sit.HostObjectValue value(T)(T* ptr)
+    {
+        return new Sit.HostObjectValue(
+            new Pointer(ptr, typeid(T*))
+        );
+    }
+}
+
+void* chkArgPointer(Value[] args, size_t i, TypeInfo ti)
+{
+    auto obj = chkArgObject(args, i);
+    auto v = cast(Pointer) obj;
+    assert( v !is null, "expected " ~ ti.toString
+            ~ "; got " ~ args[i].classinfo.name );
+    assert( v.ti == ti, "expected " ~ ti.toString
+            ~ "; got " ~ v.ti.toString );
+    return v.ptr;
+}
+
