@@ -1,0 +1,6 @@
+
+let f(x) = f(x+1)
+
+let a() = b()
+let b() = a()
+

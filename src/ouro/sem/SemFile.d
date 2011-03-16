@@ -23,6 +23,7 @@ import Lexer    = ouro.lexer.Lexer;
 import Parser   = ouro.parser.Parser;
 import Sem      = ouro.sem.Semantic;
 import SemCtx   = ouro.sem.Context;
+import UnfixedScan = ouro.sem.UnfixedScan;
 import Sit      = ouro.sit.Nodes;
 
 import ouro.Error : CompilerException;
@@ -46,6 +47,7 @@ int main(char[][] argv)
     bool doRuntime = true;
 
     scope eval = new Eval.EvalVisitor;
+    scope unfixScan = new UnfixedScan.UnfixedScanVisitor;
 
     ModulePool mp;
     {
@@ -62,6 +64,10 @@ int main(char[][] argv)
         if( langMod is null )
             assert( false, "could not load /ouro/lang" );
         mp.compileStmts();
+
+        // Scan for unfixed values
+        foreach( entry ; mp.entries )
+            unfixScan.visitBase(entry.sit);
     }
 
     Sit.Module mainModule;
@@ -201,6 +207,10 @@ int main(char[][] argv)
             }
         }
     }
+
+    // Scan for unfixed values
+    foreach( entry ; mp.entries )
+        unfixScan.visitBase(entry.sit);
 
     if( doRuntime )
     {
