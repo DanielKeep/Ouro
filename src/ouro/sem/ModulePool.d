@@ -177,7 +177,11 @@ struct ModulePool
                         /*xport*/false, "/ouro/lang", /*ident*/null,
                         /*all*/true, /*symbols*/null)] ~ stmts;
 
-        injectStmts(entry.sit, stmts);
+        // If there are no statements to inject, flag the module as complete.
+        if( stmts.length == 0 )
+            entry.sit.complete = true;
+        else
+            injectStmts(entry.sit, stmts);
 
         // Return module object
         return entry.sit;
@@ -185,7 +189,8 @@ struct ModulePool
 
     void compileStmts()
     {
-        assert( stmts.length > 0, "no statements to compile!" );
+        if( stmts.length == 0 )
+            return;
 
         scope sem = new Sem.SemInitialVisitor;
         
