@@ -105,6 +105,33 @@ Value ast_new_LambdaExpr(EC ec, Value[] args)
             new Ast.LambdaExpr(Location.init, isMacro, largs, expr));
 }
 
+static this() { Builtins.register("ouro.ast.new_ListExpr",
+        new Sit.FunctionValue("ouro.ast.new_ListExpr",
+            [Sit.Argument("loc"),
+             Sit.Argument("exprs")],
+            &ast_new_ListExpr
+            )); }
+
+Value ast_new_ListExpr(EC ec, Value[] args)
+{
+    chkArgNum(args, 2);
+    chkArgNil(args, 0); // don't support Locations yet.
+    auto listValues = chkArgList(args, 1).elemValues;
+
+    auto listExprs = new Ast.Expr[listValues.length];
+    foreach( i,listValue ; listValues )
+    {
+        auto aqv = cast(Sit.AstQuoteValue) listValue;
+        assert( aqv !is null );
+        auto expr = cast(Ast.Expr) aqv.ast;
+        assert( expr !is null );
+        listExprs[i] = expr;
+    }
+
+    return new Sit.AstQuoteValue(null,
+            new Ast.ListExpr(Location.init, listExprs));
+}
+
 static this() { Builtins.register("ouro.ast.binaryExprLhs",
         new Sit.FunctionValue("ouro.ast.binaryExprLhs",
             [Sit.Argument("ast")],

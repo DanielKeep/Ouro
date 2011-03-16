@@ -1,6 +1,7 @@
 
 |-- NB: temporary names until types are in.
 export let LambdaExpr|new = __builtin__("ouro.ast.new_LambdaExpr")
+export let ListExpr|new = __builtin__("ouro.ast.new_ListExpr")
 
 export let binaryExprLhs = __builtin__("ouro.ast.binaryExprLhs")
 export let binaryExprOp = __builtin__("ouro.ast.binaryExprOp")
