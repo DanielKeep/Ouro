@@ -52,7 +52,13 @@ class UnfixedValueAbort : NonFatalAbort
 
     this(Sit.UnfixedValue value)
     {
-        super("encountered unfixed value '" ~ value.ident ~ "'");
+        auto ast = value.astNode;
+        super("encountered unfixed value '"
+                ~ value.ident ~ "'"
+                ~ (ast !is null
+                    ? " @ " ~ ast.loc.toString
+                    : ""
+                    ));
         this.value = value;
     }
 }
