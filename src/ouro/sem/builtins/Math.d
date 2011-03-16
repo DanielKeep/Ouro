@@ -55,7 +55,8 @@ template RealFunc(char[] name, char[] fn, ArgNames...)
             args[i] = Sit.Argument(ArgName);
 
         Builtins.register("ouro.math."~name,
-                new Sit.FunctionValue("ouro.math."~name, args, &func));
+                new Sit.FunctionValue("ouro.math."~name, args, &func,
+                    EC.All, /*fold*/true));
     }
 
     alias Repeat!(real, ArgNum) RealArgs;

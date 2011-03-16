@@ -67,6 +67,7 @@ struct ModulePool
 
     Sit.Module currentModule = null;
     size_t currentStmt = size_t.max;
+    size_t compiledModules = 0;
 
     void addImportRoot(char[] uri)
     {
@@ -198,7 +199,7 @@ struct ModulePool
         
         auto moduleFn = new Sit.FunctionValue("ouro.module",
                 [Sit.Argument("path", false)], &loadModule,
-                Sit.EvalContext.Compile);
+                Sit.EvalContext.Compile, /*fold*/true);
 
         Context ctx;
         ctx.builtinFn = (char[] name)
@@ -435,6 +436,27 @@ processStmt:
 
         // Clear list of statements to process
         stmts = null;
+
+        // We should be able to do inner folding now.
+        foreach( entry ; entries[compiledModules..$] )
+        {
+            foreach( k,ref v ; entry.sit.scop.entries )
+            {
+                auto expr = sem.foldExpr(v, /*foldFnBodies*/true);
+                auto value = cast(Sit.Value) expr;
+                assert( value !is null );
+                v = value;
+            }
+            foreach( ref stmt ; entry.sit.stmts )
+            {
+                auto expr = sem.foldExpr(stmt.value, /*foldFnBodies*/true);
+                auto value = cast(Sit.Value) expr;
+                assert( value !is null );
+                stmt.value = value;
+            }
+        }
+
+        compiledModules = entries.length;
     }
 
     void modDone(Sit.Module mod)

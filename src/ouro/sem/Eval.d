@@ -28,6 +28,8 @@ struct Context
     OnUnfixed onUnfixed = &onUnfixedDefault;
     void delegate(Sit.Node) dumpNode;
 
+    bool foldFunctionBodies = false;
+
     static void onUnfixedDefault(Sit.UnfixedValue value)
     {
         NonFatalAbort.throwForUnfixed(value);
@@ -67,6 +69,9 @@ struct Context
         debug(DumpUnfixed) if( dumpNode !is null )
             dumpNode(value);
         onUnfixed(uv);
+
+        // Return un-fixed.
+        return value;
     }
 }
 

@@ -37,8 +37,17 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
 
     protected static bool foldedValue(Sit.Expr node)
     {
+        if( auto fv = cast(Sit.FunctionValue) node )
+        {
+            if( fv.enclosedValues.length > 0 )
+                return false;
+            return true;
+        }
+
         return (cast(Sit.Value) node !is null)
-            && (cast(Sit.RuntimeValue) node is null);
+            && (cast(Sit.RuntimeValue) node is null)
+            && (cast(Sit.EnclosedValue) node is null)
+            && (cast(Sit.UnfixedValue) node is null);
     }
 
     override Sit.Expr visit(Sit.CallExpr node, Context ctx)
@@ -80,7 +89,9 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
                     foreach( e ; lv.elemValues )
                         addArg(e, false);
                 }
-                else if( auto v = cast(Sit.Value) expr )
+                else if( auto v = cast(Sit.Value) expr
+                        && cast(Sit.UnfixedValue) expr is null
+                        && cast(Sit.EnclosedValue) expr is null )
                 {
                     assert( false, node.astNode.loc.toString
                             ~ ": can only explode a List; got a "
@@ -100,8 +111,10 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
             addArg(visitBase(nodeArg.expr, ctx), nodeArg.explode);
 
         // We can only actually make this call if the function and *all* of
-        // the arguments are values.
-        auto canCall = (callable !is null) && argsAreValues;
+        // the arguments are values.  We also need to make sure the callable
+        // is fully folded.
+        auto canCall = (callable !is null) && foldedValue(callable)
+            && callable.trueFn.foldable && argsAreValues;
 
         if( canCall )
         {
@@ -149,12 +162,23 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
 
     override Sit.Expr visit(Sit.ArgumentValue node, Context ctx)
     {
-        return ctx.fixValue(node);
+        /*
+            If we got this, then one of two things has happened:
+
+            1.  The semantic analysis went crazy and inserted an
+                ArgumentValue outside a function, or
+
+            2.  We've been asked to fold a function body.
+
+            Discounting #1, we should just return the value un-resolved.
+        */
+        return node;
     }
 
     override Sit.Expr visit(Sit.EnclosedValue node, Context ctx)
     {
-        return ctx.fixValue(node.value);
+        // See above for ArgumentValue.
+        return node;
     }
 
     override Sit.Expr visit(Sit.DeferredValue node, Context ctx)
@@ -191,16 +215,61 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         return new Sit.ClosureValue(node.astNode, node.fn, values);
     }
 
+    // Map from un-folded to folded functions.
+    Sit.FunctionValue[Sit.FunctionValue] functionFoldMap;
+
+    // Set containing all folded functions.
+    bool[Sit.FunctionValue] foldedFunctions;
+
     override Sit.Expr visit(Sit.FunctionValue node, Context ctx)
     {
+        //+
+        // Are we folding function bodies?
+        if( ctx.foldFunctionBodies )
+        {
+            // If this node is in the set of folded functions, return
+            // immediately; it's been processed before.
+            if( node in foldedFunctions )
+                return node;
+
+            // If this node is in the folded function map, return the
+            // associated node.
+            if( auto foldedPtr = node in functionFoldMap )
+                return *foldedPtr;
+
+            // First, fold the body if we can.
+            if( node.expr !is null )
+            {
+                auto foldExpr = visitBase(node.expr, ctx);
+
+                // Replace the current function node with a new one.
+                node = new Sit.FunctionValue(node, foldExpr);
+            }
+        }
+        // +/
+
         if( node.enclosedValues.length == 0 )
             // No need for a closure.
             return node;
 
-        // Make a closure
+        // Make a closure, but make sure that all enclosed values were folded.
+        // If we get an unfolded enclosed value, don't create a closure.
         auto closureValues = new Sit.Value[node.enclosedValues.length];
-        foreach( i,ev ; node.enclosedValues )
-            closureValues[i] = ctx.fixValue(ev.value);
+        {
+            auto onUnfixedOld = ctx.onUnfixed;
+            ctx.onUnfixed = function void(Sit.UnfixedValue v) {};
+            scope(exit) ctx.onUnfixed = onUnfixedOld;
+
+            foreach( i,ev ; node.enclosedValues )
+            {
+                auto cv = ctx.fixValue(ev.value);
+                if( ! foldedValue(cv) )
+                    // Blargh; give up
+                    return node;
+
+                closureValues[i] = cv;
+            }
+        }
         
         return new Sit.ClosureValue(node.astNode, node, closureValues);
     }

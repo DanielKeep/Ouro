@@ -125,13 +125,14 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         return eval.visitValue(expr, ctx);
     }
 
-    Sit.Expr foldExpr(Sit.Expr expr)
+    Sit.Expr foldExpr(Sit.Expr expr, bool foldFunctionBodies = false)
     {
         alias Eval.Context Context;
 
         Context ctx;
         ctx.evalCtx = Sit.EvalContext.Compile;
         ctx.onUnfixed = &NonFatalAbort.throwForUnfixed;
+        ctx.foldFunctionBodies = foldFunctionBodies;
 
         return fold.visitBase(expr, ctx);
     }

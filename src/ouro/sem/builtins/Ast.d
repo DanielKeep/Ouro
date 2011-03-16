@@ -45,7 +45,7 @@ static this() { Builtins.register("ouro.ast.new_LambdaExpr",
              Sit.Argument("isMacro"),
              Sit.Argument("args"),
              Sit.Argument("expr")],
-            &ast_new_LambdaExpr
+            &ast_new_LambdaExpr, EC.All, true
             )); }
 
 Value ast_new_LambdaExpr(EC ec, Value[] args)
@@ -109,7 +109,7 @@ static this() { Builtins.register("ouro.ast.new_ListExpr",
         new Sit.FunctionValue("ouro.ast.new_ListExpr",
             [Sit.Argument("loc"),
              Sit.Argument("exprs")],
-            &ast_new_ListExpr
+            &ast_new_ListExpr, EC.All, true
             )); }
 
 Value ast_new_ListExpr(EC ec, Value[] args)
@@ -135,7 +135,7 @@ Value ast_new_ListExpr(EC ec, Value[] args)
 static this() { Builtins.register("ouro.ast.binaryExprLhs",
         new Sit.FunctionValue("ouro.ast.binaryExprLhs",
             [Sit.Argument("ast")],
-            &ast_binaryExprLhs
+            &ast_binaryExprLhs, EC.All, true
             )); }
 
 Value ast_binaryExprLhs(EC ec, Value[] args)
@@ -149,7 +149,7 @@ Value ast_binaryExprLhs(EC ec, Value[] args)
 static this() { Builtins.register("ouro.ast.binaryExprOp",
         new Sit.FunctionValue("ouro.ast.binaryExprOp",
             [Sit.Argument("ast")],
-            &ast_binaryExprOp
+            &ast_binaryExprOp, EC.All, true
             )); }
 
 Value ast_binaryExprOp(EC ec, Value[] args)
@@ -163,7 +163,7 @@ Value ast_binaryExprOp(EC ec, Value[] args)
 static this() { Builtins.register("ouro.ast.binaryExprRhs",
         new Sit.FunctionValue("ouro.ast.binaryExprRhs",
             [Sit.Argument("ast")],
-            &ast_binaryExprRhs
+            &ast_binaryExprRhs, EC.All, true
             )); }
 
 Value ast_binaryExprRhs(EC ec, Value[] args)
@@ -177,7 +177,7 @@ Value ast_binaryExprRhs(EC ec, Value[] args)
 static this() { Builtins.register("ouro.ast.nodeType",
         new Sit.FunctionValue("ouro.ast.nodeType",
             [Sit.Argument("ast")],
-            &ast_nodeType
+            &ast_nodeType, EC.All, true
             )); }
 
 Value ast_nodeType(EC ec, Value[] args)
@@ -201,7 +201,7 @@ Value ast_nodeType(EC ec, Value[] args)
 static this() { Builtins.register("ouro.ast.listExprElems",
         new Sit.FunctionValue("ouro.ast.listExprElems",
             [Sit.Argument("ast")],
-            &ast_listExprElems
+            &ast_listExprElems, EC.All, true
             )); }
 
 Value ast_listExprElems(EC ec, Value[] args)
@@ -219,7 +219,7 @@ Value ast_listExprElems(EC ec, Value[] args)
 static this() { Builtins.register("ouro.ast.variableIdent",
         new Sit.FunctionValue("ouro.ast.variableIdent",
             [Sit.Argument("ast")],
-            &ast_variableIdent
+            &ast_variableIdent, EC.All, true
             )); }
 
 Value ast_variableIdent(EC ec, Value[] args)

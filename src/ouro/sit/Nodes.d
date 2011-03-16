@@ -587,6 +587,7 @@ class FunctionValue : CallableValue, Formatter
     Argument[] args;
     Scope scop;
     EnclosedValue[] enclosedValues;
+    bool foldable = false;
 
     // Implementations
     Expr expr;
@@ -608,11 +609,13 @@ class FunctionValue : CallableValue, Formatter
         this.enclosedValues = enclosedValues;
         this.scop = scop;
         this.expr = expr;
+        this.foldable = true;
     }
 
     this(char[] name, Argument[] args,
             Host.Fn fn,
-            EvalContext evalCtx = EvalContext.init)
+            EvalContext evalCtx = EvalContext.init,
+            bool foldable = false)
     in
     {
         assert( name != "" );
@@ -625,11 +628,13 @@ class FunctionValue : CallableValue, Formatter
         this.args = args;
         this.host.fn = fn;
         this.host.evalCtx = evalCtx;
+        this.foldable = foldable;
     }
 
     this(char[] name, Argument[] args,
             Host.Dg dg,
-            EvalContext evalCtx = EvalContext.init)
+            EvalContext evalCtx = EvalContext.init,
+            bool foldable = false)
     in
     {
         assert( name != "" );
@@ -642,6 +647,25 @@ class FunctionValue : CallableValue, Formatter
         this.args = args;
         this.host.dg = dg;
         this.host.evalCtx = evalCtx;
+        this.foldable = foldable;
+    }
+
+    this(FunctionValue base, Expr newExpr)
+    in
+    {
+        assert( base !is null );
+        assert( newExpr !is null );
+        assert( base.expr !is null );
+    }
+    body
+    {
+        super(base.astNode);
+        this.name = base.name;
+        this.args = base.args;
+        this.enclosedValues = base.enclosedValues;
+        this.scop = base.scop;
+        this.expr = newExpr;
+        this.foldable = base.foldable;
     }
 
     override FunctionValue trueFn()

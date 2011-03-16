@@ -104,7 +104,7 @@ static this()
     Builtins.register("ouro.native.loadLibrary",
             new Sit.FunctionValue("ouro.native.loadLibrary", [
                     Sit.Argument("path")
-                ], &native_loadLibrary, EC.Runtime));
+                ], &native_loadLibrary, EC.Runtime, false));
 }
 
 Value native_loadLibrary(EC ec, Value[] args)
@@ -129,7 +129,7 @@ static this()
                     Sit.Argument("returnType"),
                     Sit.Argument("argTypes"),
                     Sit.Argument("variadic")
-                ], &native_loadFunction, EC.Runtime));
+                ], &native_loadFunction, EC.Runtime, false));
 }
 
 Value native_loadFunction(EC ec, Value[] args)
@@ -176,7 +176,7 @@ static this()
             new Sit.FunctionValue("ouro.native.invoke", [
                     Sit.Argument("sym"),
                     Sit.Argument("args")
-                ], &native_invoke, EC.Runtime));
+                ], &native_invoke, EC.Runtime, false));
 }
 
 Value native_invoke(EC ec, Value[] args)
@@ -206,7 +206,7 @@ static this()
     Builtins.register("ouro.native.Type|basic",
             new Sit.FunctionValue("ouro.native.Type|basic", [
                 Sit.Argument("id")
-            ], &native_Type_basic));
+            ], &native_Type_basic, EC.All, true));
 }
 
 Value native_Type_basic(EC ec, Value[] args)
@@ -226,7 +226,7 @@ static this()
     Builtins.register("ouro.native.Type|pointer",
             new Sit.FunctionValue("ouro.native.Type|pointer", [
                 Sit.Argument("subType")
-            ], &native_Type_pointer));
+            ], &native_Type_pointer, EC.All, true));
 }
 
 Value native_Type_pointer(EC ec, Value[] args)
@@ -242,7 +242,7 @@ static this()
     Builtins.register("ouro.native.Type|zeroTerm",
             new Sit.FunctionValue("ouro.native.Type|zeroTerm", [
                 Sit.Argument("subType")
-            ], &native_Type_zeroTerm));
+            ], &native_Type_zeroTerm, EC.All, true));
 }
 
 Value native_Type_zeroTerm(EC ec, Value[] args)
@@ -258,7 +258,7 @@ static this()
     Builtins.register("ouro.native.Type|handle",
             new Sit.FunctionValue("ouro.native.Type|handle", [
                 Sit.Argument("id")
-            ], &native_Type_handle));
+            ], &native_Type_handle, EC.All, true));
 }
 
 Value native_Type_handle(EC ec, Value[] args)

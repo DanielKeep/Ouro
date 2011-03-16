@@ -73,7 +73,7 @@ static this() { Builtins.register("ouro.io.closeStream!",
         new Sit.FunctionValue("ouro.io.closeStream!",
             [Sit.Argument("stream!")],
             &io_closeStream,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_closeStream(EC ec, Value[] args)
 {
@@ -89,7 +89,7 @@ static this() { Builtins.register("ouro.io.copyIntoStream!",
             [Sit.Argument("stream_dst!"),
              Sit.Argument("stream_src!")],
             &io_copyIntoStream,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_copyIntoStream(EC ec, Value[] args)
 {
@@ -105,7 +105,7 @@ static this() { Builtins.register("ouro.io.flushStream!",
         new Sit.FunctionValue("ouro.io.flushStream!",
             [Sit.Argument("stream!")],
             &io_flushStream,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_flushStream(EC ec, Value[] args)
 {
@@ -120,7 +120,7 @@ static this() { Builtins.register("ouro.io.hasCursor?",
         new Sit.FunctionValue("ouro.io.hasCursor?",
             [Sit.Argument("stream")],
             &io_hasCursor,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_hasCursor(EC ec, Value[] args)
 {
@@ -135,7 +135,7 @@ static this() { Builtins.register("ouro.io.openFile~",
             [Sit.Argument("path"),
              Sit.Argument("flags", true)],
             &io_openFile,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_openFile(EC ec, Value[] args)
 {
@@ -228,7 +228,7 @@ static this() { Builtins.register("ouro.io.openStdStream~",
         new Sit.FunctionValue("ouro.io.openStdStream~",
             [Sit.Argument("id")],
             &io_openStdStream,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_openStdStream(EC ec, Value[] args)
 {
@@ -257,7 +257,7 @@ static this() { Builtins.register("ouro.io.seekStream!",
              Sit.Argument("anchor"),
              Sit.Argument("offset")],
             &io_seekStream,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_seekStream(EC ec, Value[] args)
 {
@@ -294,7 +294,7 @@ static this() { Builtins.register("ouro.io.writeToStream!",
             [Sit.Argument("stream!"),
              Sit.Argument("values", true)],
             &io_writeToStream,
-            EC.Runtime)); }
+            EC.Runtime, true)); }
 
 Value io_writeToStream(EC ec, Value[] args)
 {
