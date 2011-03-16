@@ -447,6 +447,10 @@ processStmt:
                 assert( value !is null );
                 v = value;
             }
+            foreach( k,ref v ; entry.sit.exportScop.entries )
+            {
+                v = entry.sit.scop.entries[k];
+            }
             foreach( ref stmt ; entry.sit.stmts )
             {
                 auto expr = sem.foldExpr(stmt.value, /*foldFnBodies*/true);

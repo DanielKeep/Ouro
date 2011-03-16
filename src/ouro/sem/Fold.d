@@ -218,9 +218,6 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
     // Map from un-folded to folded functions.
     Sit.FunctionValue[Sit.FunctionValue] functionFoldMap;
 
-    // Set containing all folded functions.
-    bool[Sit.FunctionValue] foldedFunctions;
-
     override Sit.Expr visit(Sit.FunctionValue node, Context ctx)
     {
         //+
@@ -229,7 +226,7 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         {
             // If this node is in the set of folded functions, return
             // immediately; it's been processed before.
-            if( node in foldedFunctions )
+            if( node.folded )
                 return node;
 
             // If this node is in the folded function map, return the
@@ -241,9 +238,12 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
             if( node.expr !is null )
             {
                 auto foldExpr = visitBase(node.expr, ctx);
+                auto foldNode = new Sit.FunctionValue(node, foldExpr);
+                functionFoldMap[node] = foldNode;
 
                 // Replace the current function node with a new one.
                 node = new Sit.FunctionValue(node, foldExpr);
+                node = foldNode;
             }
         }
         // +/

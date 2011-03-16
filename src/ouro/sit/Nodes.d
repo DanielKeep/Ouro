@@ -593,6 +593,12 @@ class FunctionValue : CallableValue, Formatter
     Expr expr;
     Host host;
 
+    // Must be set to true once the function's body has been folded.
+    // Otherwise, the folder will keep folding it and things will break and
+    // there will be cats and dogs living together, fire will rain from the
+    // sky and every video game will be replaced with a copy of E.T.
+    bool folded = false;
+
     this(Ast.Node astNode, char[] name, Argument[] args,
             EnclosedValue[] enclosedValues, Scope scop, Expr expr)
     in
@@ -666,6 +672,10 @@ class FunctionValue : CallableValue, Formatter
         this.scop = base.scop;
         this.expr = newExpr;
         this.foldable = base.foldable;
+        this.folded = true;
+
+        this.srcModule = base.srcModule;
+        this.srcIdent = base.srcIdent;
     }
 
     override FunctionValue trueFn()
