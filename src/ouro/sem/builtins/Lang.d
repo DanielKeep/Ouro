@@ -340,6 +340,9 @@ private Ast.Expr valueToAst(Value gv)
             v.incLower, v.incUpper,
             valueToAst(v.lowerValue), valueToAst(v.upperValue));
     }
+    else
+        assert( false, "cannot convert a "~gv.classinfo.name
+                ~" to an ast" );
 }
 
 Value ouro_ast(EC ec, Value[] args)
