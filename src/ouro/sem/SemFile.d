@@ -45,11 +45,33 @@ int main(char[][] argv)
     bool showAst = false;
     bool showSem = false;
     bool doRuntime = true;
+    char[] lang = "ouro";
 
     scope eval = new Eval.EvalVisitor;
     scope unfixScan = new UnfixedScan.UnfixedScanVisitor;
 
+    {
+        bool nextIsLang = false;
+        foreach( arg ; args )
+        {
+            if( nextIsLang )
+            {
+                lang = arg;
+                nextIsLang = false;
+            }
+            else
+            {
+                switch( arg )
+                {
+                    case "--lang":  nextIsLang = true; break;
+                    default:
+                }
+            }
+        }
+    }
+
     ModulePool mp;
+    mp.lang = lang;
     {
         Path.PathParser pp;
         pp.parse(Path.standard(exec));
@@ -60,9 +82,9 @@ int main(char[][] argv)
 
     {
         // Import and compile language support.
-        auto langMod = mp.load("/ouro/lang", /*includeLang*/false);
+        auto langMod = mp.load("/"~lang~"/lang", /*includeLang*/false);
         if( langMod is null )
-            assert( false, "could not load /ouro/lang" );
+            assert( false, "could not load /"~lang~"/lang" );
         mp.compileStmts();
 
         // Scan for unfixed values
@@ -74,11 +96,15 @@ int main(char[][] argv)
     char[] mainModulePath;
     bool nextIsImport = false;
     bool argTail = false;
+    bool skipNext = false;
     char[][] mainArgs;
 
     foreach( path ; args )
     {
-        if( argTail )
+        if( skipNext )
+            skipNext = false;
+
+        else if( argTail )
             mainArgs ~= path;
 
         else if( nextIsImport )
@@ -100,6 +126,9 @@ int main(char[][] argv)
 
         else if( path == "--import" )
             nextIsImport = true;
+
+        else if( path == "--lang" )
+            skipNext = true;
 
         else if( path == "--" )
             argTail = true;

@@ -58,6 +58,8 @@ struct ModulePool
         Object ex;
     }
 
+    char[] lang = "ouro";
+
     ImportRoot[] importRoots;
     Entry[] entries;
     size_t[char[]] pathToEntryIdx;
@@ -172,9 +174,9 @@ struct ModulePool
         // Add to the statement pool
         auto stmts = entry.ast.stmts;
         if( includeLang )
-            // Inject: import "/ouro/lang" : *
+            // Inject: import langPath : *
             stmts = [new Ast.ImportStmt(Location.init,
-                        /*xport*/false, "/ouro/lang", /*ident*/null,
+                        /*xport*/false, "/"~lang~"/lang", /*ident*/null,
                         /*all*/true, /*symbols*/null)] ~ stmts;
 
         // If there are no statements to inject, flag the module as complete.
