@@ -8,6 +8,7 @@ module ouro.sem.ModulePool;
 
 debug(TraceModulePool) import tango.io.Stdout;
 import tango.net.Uri;
+import tango.text.Util : head, trim;
 
 import Path = tango.io.Path;
 
@@ -153,8 +154,26 @@ struct ModulePool
         Entry entry;
         entry.uri = res.uri;
 
+        // Pick up default language
+        auto modLang = this.lang;
+
         // Create source
         entry.src = new Source(path, res.data);
+
+        // Lex header
+        Lexer.lexHeader(entry.src,
+            (char[] k, char[] v)
+            {
+                switch( k )
+                {
+                    case "Language":
+                        modLang = v;
+                        break;
+
+                    default:
+                }
+            }
+        );
 
         // Parse
         {
