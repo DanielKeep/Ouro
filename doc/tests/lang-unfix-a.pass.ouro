@@ -1,6 +1,8 @@
 
+let abs = __builtin__("ouro.math.abs")
+
 let f(x) = f(x+1)
 
-let a() = b()
-let b() = a()
+let even?(x)    = if { x = 0, true, not odd?(abs(x-1)) }
+let odd?(x)     = not even?(abs(x-1))
 
