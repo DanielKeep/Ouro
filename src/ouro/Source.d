@@ -108,6 +108,11 @@ final class Source
         return r;
     }
 
+    size_t offset()
+    {
+        return mark.offset;
+    }
+
     dchar get(size_t i)
     {
         dchar r;
