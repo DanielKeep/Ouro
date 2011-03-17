@@ -190,7 +190,7 @@ class ReprVisitor : Visitor!(void, bool)
 
     override void visit(Sit.FunctionValue node, bool showDef)
     {
-        so.r("Function ").r(reprString(node.name));
+        so.f("Function {:x,8} ", cast(void*) node).r(reprString(node.name));
         if( showDef && !(node in defCache) )
         {
             defCache[node] = true;
