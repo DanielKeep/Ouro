@@ -183,6 +183,64 @@ final class Source
         return cp;
     }
 
+    char[] advanceLine()
+    {
+        char[2] nlBuffer;
+        char[] nl = nlBuffer[];
+        char[] line;
+        advanceLine(line, nl);
+        return line;
+    }
+
+    bool advanceLine(out char[] line, ref char[] nl)
+    {
+        // Return null for an empty source.
+        if( this.length == 0 )
+        {
+            line = null;
+            return false;
+        }
+
+        // Handle empty lines
+        auto cp0 = this[0];
+        if( cp0 == '\r' )
+        {
+            if( this[1] == '\n' )
+                nl = nl[0..2] = src[0..2];
+            else
+                nl = nl[0..1] = src[0..1];
+            return true;
+        }
+        else if( cp0 == '\n' )
+        {
+            nl = nl[0..1] = src[0..1];
+            return true;
+        }
+
+        // Find the eol
+        auto start = this.save;
+        while( this.length > 0 && this[0] != '\r' && this[0] != '\n' )
+            advance;
+
+        // We're either at eol or eos.
+        line = sliceFrom(start);
+        if( this.length == 0 )
+        {
+            nl = null;
+        }
+        else if( this[0] == '\r' )
+        {
+            if( this[1] == '\n' )
+                nl = nl[0..2] = advance(2)[];
+            else
+                nl = nl[0..1] = advance(1)[];
+        }
+        else if( this[0] == '\n' )
+            nl = nl[0..1] = advance(1)[];
+
+        return true;
+    }
+
     char[] advance()
     {
         return advance(1);
