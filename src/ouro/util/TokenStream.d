@@ -47,6 +47,31 @@ final class TokenStream
         throw new CompilerException(code, loc, arg0, arg1);
     }
 
+    struct Checkpoint
+    {
+        uint skipEolCounter = 0;
+        Source.Mark mark;
+
+        static Checkpoint opCall(TokenStream ts)
+        {
+            Checkpoint r;
+            r.skipEolCounter = ts.skipEolCounter;
+            r.mark = ts.src.save;
+            return r;
+        }
+    }
+
+    Checkpoint save()
+    {
+        return Checkpoint(this);
+    }
+
+    void restore(ref Checkpoint cp)
+    {
+        this.skipEolCounter = cp.skipEolCounter;
+        this.src.restore(cp.mark);
+    }
+
     void pushSkipEol()
     {
         assert( skipEolCounter < skipEolCounter.max );
