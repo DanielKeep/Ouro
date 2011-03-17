@@ -4,7 +4,7 @@
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
  */
-module ouro.parser.SemFile;
+module ouro.sem.SemFile;
 
 import Path = tango.io.Path;
 
