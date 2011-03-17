@@ -18,7 +18,7 @@ syn keyword ouroLogicalKeywords true false
 syn keyword ouroLiteralKeywords nil
 syn match   ouroSymbolKeywords /#'\|#"\|#\$/
 syn match   ouroSyntax /,/
-syn match   ouroOperators /[-=+/*<>\\:.]\|!=\|\/\/\|\*\*\|<=\|>=\|<>\|::\|++\|(\.)/
+syn match   ouroOperators /\.\.\.\|++\|::\|\*\*\|[-=+/*<>\\:.]\|!=\|\/\/\|<=\|>=\|<>\|(\.)/
 syn keyword ouroOperators and or not mod rem
 
 " Note that, due to limitations in Vim, we can only match against letters and
@@ -26,7 +26,7 @@ syn keyword ouroOperators and or not mod rem
 " characters are missing.  Oh well.
 set iskeyword=48-57,65-90,97-122,170,181,186,192-214,216-246,_
 
-syn match ouroIdent /[\x30-\x39\x41-\x5a\x61-\x7a\xaa\xb5\xba\xc0-\xd6\xd8-\xf6]\k*/
+syn match ouroIdent /[\x30-\x39\x41-\x5a\x61-\x7a\xaa\xb5\xba\xc0-\xd6\xd8-\xf6]\(\k\|['$|?!~]\)*/
 syn match ouroIdent /\$"\(\\.\|[^"]\)*"/
 syn match ouroIdentUnterm /\$"\(\\.\|[^"]\)*$/
 
@@ -43,10 +43,10 @@ syn match ouroNumber '\(\d[0-9_]*\([.]\(\d[0-9_]*\)\?\)\?\|[.]\d[0-9_]*\)\([eE][
 syn match ouroString /"\(\\.\|[^"]\)*"/
 syn match ouroStringUnterm /"\(\\.\|[^"]\)*$/
 
-syn match ouroSymbol /'[\x30-\x39\x41-\x5a\x61-\x7a\xaa\xb5\xba\xc0-\xd6\xd8-\xf6]\k*/
+syn match ouroSymbol /'[\x30-\x39\x41-\x5a\x61-\x7a\xaa\xb5\xba\xc0-\xd6\xd8-\xf6]\(\k\|['$|?!~]\)*/
 syn match ouroSymbol /'"\(\\.\|[^"]\)*"/
 syn match ouroSymbolUnterm /'"\(\\.\|[^"]\)*$/
-syn match ouroSymbol /'\(#'\|#"\|#\$\|[-,=+/*<>\\:.]\|!=\|\/\/\|\*\*\|<=\|>=\|<>\|::\|++\|(\.)\)/
+syn match ouroSymbol /'\(#'\|#"\|#\$\|\.\.\.\|++\|::\|\*\*\|[-,=+/*<>\\:.]\|!=\|\/\/\|<=\|>=\|<>\|(\.)\)/
 
 syn region ouroSubExpr start="(" end=")" fold transparent
 syn region ouroListExpr start="\[" end="\]" fold transparent
