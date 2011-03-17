@@ -538,10 +538,32 @@ Ast.Expr parseExpr(TokenStream ts)
         expr = lhs;
 
     // Handle postfix
-    if( postfixFunc !is null )
+    while( postfixFunc !is null )
     {
         expr = new Ast.PostfixFuncExpr(lhs.loc.extendTo(locSpan),
                 postfixFunc, expr);
+        postfixFunc = null;
+
+        if( ts.peek.type == TOKlparenperiod )
+        {
+            ts.popExpect(TOKlparenperiod);
+            auto cp = ts.save;
+            typeof(postfixFunc) func;
+            typeof(ts.pop()) end;
+            ts.skipEolDo
+            ({
+                func = parseInfixFunction(ts);
+                end = ts.pop;
+            });
+
+            if( end.type == TOKrparen )
+            {
+                postfixFunc = func;
+                locSpan = end.loc;
+            }
+            else
+                ts.restore(cp);
+        }
     }
 
     return expr;

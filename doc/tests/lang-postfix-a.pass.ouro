@@ -1,0 +1,7 @@
+
+let sqr(x) = x**2
+
+let v = 2 (.sqr) (.sqr) (.sqr)
+
+assert { v = ((2**2)**2)**2 }
+
