@@ -241,8 +241,6 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
                 auto foldNode = new Sit.FunctionValue(node, foldExpr);
                 functionFoldMap[node] = foldNode;
 
-                // Replace the current function node with a new one.
-                node = new Sit.FunctionValue(node, foldExpr);
                 node = foldNode;
             }
         }
