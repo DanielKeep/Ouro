@@ -59,6 +59,10 @@ syn match ouroLineCmmnt "|--.*$" contains=ouroCmmntNote
 syn region ouroBlockCmmnt start=/(--/ end=/--)/ contains=ouroBlockCmnt,ouroCmmntNote
 syn region ouroDocCmmnt start=/(++/ end=/++)/ contains=@RST
 
+" Header lines
+syn match ouroHashbang "^#!/.*$"
+syn match ouroHeaderLine /^#[^!$"'].*$/
+
 let b:current_syntax = "ouro"
 
 hi def link ouroKeywords Keyword
@@ -78,4 +82,6 @@ hi def link ouroCmmntNote Todo
 hi def link ouroLineCmmnt Comment
 hi def link ouroBlockCmmnt Comment
 hi def link ouroDocCmmnt PreProc
+hi def link ouroHashbang Comment
+hi def link ouroHeaderLine PreProc
 

@@ -36,6 +36,39 @@ newline token as opposed to two.
 Lexical Structure
 -----------------
 
+Header
+``````
+
+::
+
+    header
+        >>─┬─╢ hash bang ╟─┐
+           ┌───────────────┘
+           ┌─────────────────┐
+           ├─'#'───┬─╢ eol ╟─┘
+           │       │ └─ * ─┐
+           ╧       └───────┘
+
+    hash bang
+        >>─┐
+           └─'#!'───┬─╢ eol ╟─┐
+                  │ └─ * ─┐   ╧
+                  └───────┘
+
+A header is only allowed at the very start of the file.  This combines the
+UNIX hash bang as well as additional header lines.
+
+Header lines are used to encode information about a source file which can be
+extracted without the need for the parser.  The following forms are
+defined:
+
+-   ``Language`` ``:`` *path*
+
+    Specifies the language to use for the module.
+
+Any header line which doesn't match any defined form is *not* an error: it
+should simply be ignored.
+
 Whitespace
 ``````````
 
