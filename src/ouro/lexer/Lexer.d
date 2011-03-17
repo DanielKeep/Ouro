@@ -7,6 +7,7 @@
 module ouro.lexer.Lexer;
 
 import tango.text.convert.Format;
+import tango.text.Util : trim, head;
 
 debug(TraceLexer) import tango.io.Stdout : Stderr;
 
@@ -25,6 +26,28 @@ private
     void err(CEC code, Location loc, char[] arg0 = null)
     {
         throw new CompilerException(code, loc, arg0);
+    }
+}
+
+void lexHeader(Source src, void delegate(char[],char[]) dg = null)
+{
+    if( src.offset != 0 )
+        // The header can only be at the start of a file.
+        return;
+
+    if( src[0..2] == "#!" )
+        src.advanceLine;
+
+    while( src[0] == '#' )
+    {
+        src.advance;
+        auto line = src.advanceLine;
+        line = trim(line);
+        char[] k, v;
+        k = head(line, ":", v);
+        k = trim(k);
+        v = trim(v);
+        if( dg !is null ) dg(k, v);
     }
 }
 
@@ -740,6 +763,8 @@ LexIter lexIter(char[] name, char[] src)
 
 LexIter lexIter(Source src)
 {
+    if( src.offset == 0 )
+        lexHeader(src);
     LexIter r;
     r.src = src;
     return r;
