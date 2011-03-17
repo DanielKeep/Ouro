@@ -7,7 +7,7 @@
 import "/ouro/io" : flushStream!
 import "/ouro/stdio" : woutF~, woutFL~, stdout
 
-let limit = 2**11
+let limit = 3e3
 
 let woutFF~(fmt, v...) =
     do {
@@ -23,7 +23,7 @@ let f(n) =
         n >= limit,
         n,
         do {
-            where { n mod 100 < 1, woutF~(", $*", n) },
+            where { n mod 100 < 1, woutFF~(", $*", n) },
             f(n+1)
         }
     }
