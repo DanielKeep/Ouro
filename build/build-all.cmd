@@ -14,6 +14,10 @@ echo Compiling SemFile
 xfbuild %ARGS% +D.xf/SemFile.deps +O.xf/SemFile.objs +o..\bin\SemFile %1 %2 %3 %4 %5 %6 %7 %8 %9 ../src/ouro/sem/SemFile.d
 if errorlevel 1 goto fail
 
+echo Compiling Repl
+xfbuild %ARGS% +D.xf/Repl.deps +O.xf/Repl.objs +o..\bin\Repl %1 %2 %3 %4 %5 %6 %7 %8 %9 ../src/ouro/sem/Repl.d
+if errorlevel 1 goto fail
+
 goto eof
 
 :fail
