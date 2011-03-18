@@ -156,6 +156,11 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         return result;
     }
 
+    Sit.Value evalExpr(Sit.Expr node, Context ctx = Context.init)
+    {
+        return visitValue(node, ctx);
+    }
+
     override Sit.Value visit(Sit.CallExpr node, Context ctx)
     {
         Sit.FunctionValue fn;
