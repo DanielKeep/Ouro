@@ -56,7 +56,13 @@ struct ModulePool
         Sit.Module mod;
         Sit.Stmt stmt;
         size_t* stmtsNotDone;
+        ShadowPool* shadowPool;
         Object ex;
+    }
+
+    struct ShadowPool
+    {
+        Sit.Stmt[] stmts;
     }
 
     char[] lang = "ouro";
@@ -207,6 +213,23 @@ struct ModulePool
 
         // Return module object
         return entry.sit;
+    }
+
+    void loadStmt(Sit.Module mod, Source stmtSrc, ref ShadowPool pool)
+    {
+        // Parse statement
+        Ast.Module stmtMod;
+        {
+            scope ts = new TokenStream(stmtSrc, &Lexer.lexNext);
+            stmtMod = Parser.parseModule(ts);
+        }
+
+        // If no statements were parsed, give up.
+        if( stmtMod.stmts.length == 0 )
+            return;
+
+        // Add to the statement pool.
+        injectStmts(mod, stmtMod.stmts, &pool);
     }
 
     void compileStmts()
@@ -445,6 +468,11 @@ processStmt:
         }
         while( failedStmt )
 
+        // Handle shadow pools
+        foreach( stmt ; stmts )
+            if( stmt.shadowPool !is null )
+                stmt.shadowPool.stmts ~= stmt.stmt;
+
         // Double-check that all statements are done *and* the associated
         // modules are done.
         foreach( i,stmt ; stmts )
@@ -510,8 +538,29 @@ processStmt:
         mod.complete = true;
     }
 
-    void injectStmts(Sit.Module mod, Ast.Statement[] stmts)
+    void clearStmts()
     {
+        foreach( stmt ; stmts )
+        {
+            if( ! stmt.done )
+            {
+                assert( *stmt.stmtsNotDone > 0 );
+                (*stmt.stmtsNotDone) --;
+
+                if( *stmt.stmtsNotDone == 0 )
+                    stmt.mod.complete = true;
+            }
+        }
+
+        stmts = null;
+    }
+
+    void injectStmts(Sit.Module mod, Ast.Statement[] stmts,
+            ShadowPool* shadowPool = null)
+    {
+        if( stmts.length == 0 )
+            return;
+
         typeof(this.stmts) newStmts, injSlice;
         if( currentStmt == size_t.max )
         {
@@ -526,7 +575,14 @@ processStmt:
             newStmts[currentStmt+1+stmts.length..$] = this.stmts[currentStmt+1..$];
 
             injSlice = newStmts[currentStmt+1..currentStmt+1+stmts.length];
+
+            // Grab shadow pool if one hasn't been specified.
+            if( shadowPool is null )
+                shadowPool = newStmts[currentStmt].shadowPool;
         }
+
+        // Module, if it was complete, no longer is.
+        mod.complete = false;
 
         // TODO: Better way of doing this
         size_t* stmtsNotDone;
@@ -542,6 +598,9 @@ processStmt:
             stmt.stmt.astNode = stmts[i];
             stmt.stmtsNotDone = stmtsNotDone;
             (*stmtsNotDone)++;
+
+            if( shadowPool !is null )
+                stmt.shadowPool = shadowPool;
         }
 
         this.stmts = newStmts;
