@@ -6,5 +6,6 @@
  */
 module ouro.util.uriSchemes.All;
 
+import ouro.util.uriSchemes.Empty;
 import ouro.util.uriSchemes.File;
 
