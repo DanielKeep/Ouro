@@ -39,8 +39,10 @@ class CdeclBuilder : CallBuilder
             if( rt.id == Type.Id.Float )
                 st0p = &st0;
 
-            invoke(fp, stack.length, stack.ptr,
-                    &eax, &edx, st0p);
+            auto sp = stack.ptr;
+            auto ss = stackLength;
+
+            invoke(fp, ss, sp, &eax, &edx, st0p);
 
             auto rts = rt.size;
             if( res.length < rts )
@@ -119,6 +121,7 @@ private:
         assert( va == Variadic.None, "variadics nyi" );
 
         stack = null;
+        stackSize = 0;
         this.retType = rt;
         this.argTypes = args;
         this.variadic = va;
@@ -157,12 +160,12 @@ private:
 
     void push(ubyte[] data)
     {
+        pushBytes(data);
+
         // Keep stack aligned to 4 bytes
         auto rem = data.length % 4;
         if( rem != 0 )
             pushBytes(padding[0..4-rem]);
-
-        pushBytes(data);
 
         assert( stack.length % 4 == 0 );
     }
