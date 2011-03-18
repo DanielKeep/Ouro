@@ -1,0 +1,30 @@
+
+export let loadLibrary~     = __builtin__("ouro.native.loadLibrary")
+export let loadFunction~    = __builtin__("ouro.native.loadFunction")
+export let invoke~          = __builtin__("ouro.native.invoke")
+
+export let Type|basic      = __builtin__("ouro.native.Type|basic")
+export let Type|pointer    = __builtin__("ouro.native.Type|pointer")
+export let Type|zeroTerm   = __builtin__("ouro.native.Type|zeroTerm")
+export let Type|handle     = __builtin__("ouro.native.Type|handle")
+
+export let c_void      = Type|basic('void)
+export let c_size_t    = Type|basic('word)
+export let c_bool      = Type|basic('bool)
+export let c_char      = Type|basic('char8)
+export let c_wchar     = Type|basic('char16)
+export let c_short_int = Type|basic('sint16)
+export let c_int       = Type|basic('sint32)
+export let c_long_int  = Type|basic('sint32)
+export let c_long_long = Type|basic('sint64)
+export let c_u_short_int = Type|basic('sint16)
+export let c_u_int      = Type|basic('sint32)
+export let c_u_long_int = Type|basic('sint32)
+export let c_u_long_long = Type|basic('sint64)
+export let c_float     = Type|basic('float32)
+export let c_double    = Type|basic('float64)
+
+export let c_void_p    = Type|basic('void_p)
+export let c_sz        = Type|basic('sz)
+export let c_wsz       = Type|basic('wsz)
+
