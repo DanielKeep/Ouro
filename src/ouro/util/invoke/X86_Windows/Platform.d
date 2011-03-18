@@ -9,6 +9,7 @@ module ouro.util.invoke.X86_Windows.Platform;
 import ouro.util.invoke.CallBuilder;
 import ouro.util.invoke.CallConv : CallConv;
 import ouro.util.invoke.X86_Windows.Cdecl : CdeclBuilder;
+import ouro.util.invoke.X86_Windows.Stdcall : StdcallBuilder;
 
 CallBuilder.CreateFn callConvBuilder(CallConv cc)
 {
@@ -24,5 +25,6 @@ CallBuilder.CreateFn[CallConv] createFns;
 static this()
 {
     createFns[CallConv.Cdecl] = &CdeclBuilder.create;
+    createFns[CallConv.Stdcall] = &StdcallBuilder.create;
 }
 

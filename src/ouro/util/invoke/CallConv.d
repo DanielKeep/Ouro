@@ -15,7 +15,8 @@ mixin(genEnum_ctfe
 (
     "CallConv",
     [
-        "Cdecl"
+        "Cdecl",
+        "Stdcall"
     ],
     /*map*/         null,
     /*toString*/    "callConvToString",

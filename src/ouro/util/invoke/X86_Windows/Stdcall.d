@@ -1,27 +1,37 @@
 /**
-    Implementation of the C calling convention for x86 Windows.
+    Implementation of the stdcall calling convention for x86 Windows.
 
     Authors: Daniel Keep <daniel.keep@gmail.com>
     Copyright: See LICENSE.
  */
-module ouro.util.invoke.X86_Windows.Cdecl;
+module ouro.util.invoke.X86_Windows.Stdcall;
+
+import Integer = tango.text.convert.Integer;
 
 import ouro.util.invoke.CallBuilder;
 import ouro.util.invoke.CallConv : CallConv;
 import ouro.util.invoke.Type : Type, Variadic;
 
-class CdeclBuilder : CallBuilder
+class StdcallBuilder : CallBuilder
 {
     static CallBuilder create()
     {
-        return new CdeclBuilder;
+        return new StdcallBuilder;
     }
 
-    override CallConv callConv() { return CallConv.Cdecl; }
+    override CallConv callConv() { return CallConv.Stdcall; }
 
     override char[] mangle(char[] name, Type rt, Type[] args, Variadic va)
     {
-        return "_" ~ name;
+        if( va != Variadic.None )
+            assert( false, "stdcall does not allow variadic functions" );
+
+        size_t paramSize = 0;
+
+        foreach( arg ; args )
+            paramSize += arg.size;
+
+        return "_" ~ name ~ "@" ~ Integer.toString(paramSize);
     }
 
     override void[] doCall(void* fp, void[] res,
@@ -42,7 +52,7 @@ class CdeclBuilder : CallBuilder
             auto sp = stack.ptr;
             auto ss = stackSize;
 
-            invokeCdecl(fp, ss, sp, &eax, &edx, st0p);
+            invokeStdcall(fp, ss, sp, &eax, &edx, st0p);
 
             auto rts = rt.size;
             if( res.length < rts )
@@ -95,36 +105,23 @@ class CdeclBuilder : CallBuilder
         push( cast(ubyte[]) value );
     }
 
-    /+
-    override void pushInt(ulong v, size_t width)
-    {
-        pushIntN(v, width);
-    }
-
-    override void pushFloat(double v, size_t width)
-    {
-        pushFloatN(v, width);
-    }
-    // +/
-
 private:
     ubyte[] stack;
     size_t stackSize;
     Type retType;
     Type[] argTypes;
-    Variadic variadic;
 
     const ubyte[3] padding = [0,0,0];
 
     void reset(Type rt, Type[] args, Variadic va)
     {
-        assert( va == Variadic.None, "variadics nyi" );
+        if( va != Variadic.None )
+            assert( false, "stdcall does not allow for variadic functions" );
 
         stack = null;
         stackSize = 0;
         this.retType = rt;
         this.argTypes = args;
-        this.variadic = va;
 
         // Compute size of of stack needed
         size_t ss = 0;
@@ -134,29 +131,6 @@ private:
 
         stack = new ubyte[ss];
     }
-
-    /+
-    void pushIntN(ulong v, size_t n)
-    {
-        auto i = cast(ubyte[]) (&v)[0..1];
-        push(i[0..n]);
-    }
-
-    void pushFloatN(double v, size_t n)
-    {
-        if( n == 4 )
-        {
-            float f = v;
-            push(cast(ubyte[]) (&f)[0..1]);
-        }
-        else if( n == 8 )
-        {
-            push(cast(ubyte[]) (&v)[0..1]);
-        }
-        else
-            assert( false );
-    }
-    // +/
 
     void push(ubyte[] data)
     {
@@ -231,7 +205,7 @@ size_t alignSize(size_t n)
                 Note that this argument may be null, in which case ST(0) is
                 not popped.
  */
-extern(C) void invokeCdecl(void* fp, uint ss, void* sp,
+extern(C) void invokeStdcall(void* fp, uint ss, void* sp,
         uint* eax, uint* edx, double* st0)
 {
     asm
@@ -242,10 +216,10 @@ extern(C) void invokeCdecl(void* fp, uint ss, void* sp,
         mov     EBP, ESP;
 
         // Save registers.  We can probably drop some of these.
-        // push    EAX;
+        //push    EAX;
         push    EBX;
-        // push    ECX;
-        // push    EDX;
+        push    ECX;
+        //push    EDX;
         push    ESI;
         push    EDI;
 
@@ -268,9 +242,8 @@ loop:   movsb;
         mov     EAX, fp;
         call    EAX;
 
-        // Clean up the stack
-        mov     ECX, ss;
-        add     ESP, ECX;
+        // No need to clean up the stack for stdcall.  ESP should be back to
+        // what it was before we made space for the stack.
 
         // We need to save EAX and EDX.
         mov     EDI, eax;
@@ -287,36 +260,38 @@ loop:   movsb;
 noFloat:
         pop     EDI;
         pop     ESI;
-        // pop     EDX;
-        // pop     ECX;
+        //pop     EDX;
+        pop     ECX;
         pop     EBX;
-        // pop     EAX;
+        //pop     EAX;
         pop     EBP;
         ret;
     }
 }
 
-version( TestCdecl ):
+version( TestStdcall ):
 
 import tango.io.Stdout;
 
-extern(C) int add(int a, int b)
+extern(Windows) int add(int a, int b)
 {
     return a+b;
 }
 
-extern(C) int addBytes(byte a, byte b)
+extern(Windows) int addBytes(byte a, byte b)
 {
     return a+b;
 }
 
-extern(C) int sub(int a, int b)
+extern(Windows) int sub(int a, int b)
 {
     return a-b;
 }
 
-extern(C) float fsub(float a, float b)
+extern(Windows) float fsub(float a, float b)
 {
+    Stdout.formatln("fsub({:x,8}, {:x,8})",
+            *cast(size_t*)&a, *cast(size_t*)&b);
     return a-b;
 }
 
@@ -325,77 +300,72 @@ int call_addBytes()
     return addBytes(1,2);
 }
 
-void old_main()
+float call_fsub()
 {
-    {
-        int[2] args = [1, 2];
-        uint eax, edx;
-        Stdout.formatln("Calling add...");
-        auto fp = &add;
-        auto ss = args.length * 4;
-        auto sp = args.ptr;
-        Stdout.formatln("  fp  = {,8:x}", fp);
-        Stdout.formatln("  ss  = {,8:x}, sp  = {,8:x}", ss, sp);
-        Stdout.formatln("  eax = {,8:x}, edx = {,8:x}", &eax, &edx);
-        invokeCdecl(fp, args.length*4, args.ptr, &eax, &edx, null);
-        Stdout.formatln("Returned.");
-        Stdout.formatln("  eax = {,8:x}", eax);
-        Stdout.formatln("  edx = {,8:x}", edx);
-    }
-    {
-        call_addBytes;
-    }
-    {
-        int[2] args = [1, 2];
-        uint eax, edx;
-        Stdout.formatln("Calling sub...");
-        auto fp = &sub;
-        auto ss = args.length * 4;
-        auto sp = args.ptr;
-        Stdout.formatln("  fp  = {,8:x}", fp);
-        Stdout.formatln("  ss  = {,8:x}, sp  = {,8:x}", ss, sp);
-        Stdout.formatln("  eax = {,8:x}, edx = {,8:x}", &eax, &edx);
-        invokeCdecl(fp, args.length*4, args.ptr, &eax, &edx, null);
-        Stdout.formatln("Returned.");
-        Stdout.formatln("  eax = {,8:x}", eax);
-        Stdout.formatln("  edx = {,8:x}", edx);
-    }
-    {
-        float[2] args = [3.0, 0.5];
-        uint eax, edx; double st0;
-        Stdout.formatln("Calling fsub...");
-        auto fp = &fsub;
-        auto ss = args.length * 4;
-        auto sp = args.ptr;
-        Stdout.formatln("  fp  = {,8:x}", fp);
-        Stdout.formatln("  ss  = {,8:x}, sp  = {,8:x}", ss, sp);
-        Stdout.formatln("  eax = {,8:x}, edx = {,8:x}", &eax, &edx);
-        invokeCdecl(fp, args.length*4, args.ptr, &eax, &edx, &st0);
-        Stdout.formatln("Returned.");
-        Stdout.formatln("  eax = {,8:x}", eax);
-        Stdout.formatln("  edx = {,8:x}", edx);
-        Stdout.formatln("  st0 = {,8}", st0);
-    }
+    return fsub(1.50, 2.20);
 }
 
 void main()
 {
-    scope cdecl = new CdeclBuilder;
-    auto cc = cast(CallBuilder) cdecl;
+    call_addBytes;
+    Stdout.formatln("fsub(1.5, 2.2) = {}", call_fsub);
 
-    auto t_int = Type.t_sint32;
+    scope stdcall = new StdcallBuilder;
+    auto cc = cast(CallBuilder) stdcall;
+
+    auto t_byte = Type.t_sint8;
+    auto t_int  = Type.t_sint32;
+    auto t_float= Type.t_float32;
 
     {
         int a = 1, b = 2;
         int r;
-        Stdout.format("add({}, {}) = ", a, b);
+        Stdout.formatln("add({}, {})", a, b);
         cc.doCall(&add, (&r)[0..1], t_int, [t_int, t_int], Variadic.None,
             {
                 cc.pushArg(t_int, (&a)[0..1]);
                 cc.pushArg(t_int, (&b)[0..1]);
             }
         );
-        Stdout.formatln("{}", r);
+        Stdout.formatln(" = {}", r);
+    }
+    {
+        byte a = 1, b = 2;
+        int r;
+        Stdout.formatln("addBytes({}, {})", a, b);
+        cc.doCall(&addBytes, (&r)[0..1], t_int, [t_byte, t_byte], Variadic.None,
+            {
+                cc.pushArg(t_byte, (&a)[0..1]);
+                cc.pushArg(t_byte, (&b)[0..1]);
+            }
+        );
+        Stdout.formatln(" = {}", r);
+    }
+    {
+        int a = 1, b = 2;
+        int r;
+        Stdout.formatln("sub({}, {})", a, b);
+        cc.doCall(&sub, (&r)[0..1], t_int, [t_int, t_int], Variadic.None,
+            {
+                cc.pushArg(t_int, (&a)[0..1]);
+                cc.pushArg(t_int, (&b)[0..1]);
+            }
+        );
+        Stdout.formatln(" = {}", r);
+    }
+    {
+        float a = 1.5, b = 2.2;
+        float r;
+        Stdout.formatln("a = {:x,8}, b = {:x,8}",
+                *cast(size_t*)&a, *cast(size_t*)&b);
+        Stdout.formatln("fsub({}, {})", a, b);
+        cc.doCall(&fsub, (&r)[0..1], t_float, [t_float, t_float], Variadic.None,
+            {
+                cc.pushArg(t_float, (&a)[0..1]);
+                cc.pushArg(t_float, (&b)[0..1]);
+            }
+        );
+        Stdout.formatln(" = {}", r);
     }
 }
 
