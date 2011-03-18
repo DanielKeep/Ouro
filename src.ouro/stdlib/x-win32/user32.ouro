@@ -1,0 +1,56 @@
+
+import "/ouro/x-native" : *
+
+export let user32 = loadLibrary~("user32.dll")
+
+export let HWND        = Type|handle('HWND)
+export let LPCTSTR     = c_wsz
+export let UINT        = c_u_int
+
+export let MessageBox' =
+    loadFunction~(user32, "MessageBoxW", 'Stdcall,
+                  c_int, [HWND, LPCTSTR, LPCTSTR, UINT], false)
+export let MessageBox =
+    (\hWnd,lpText,lpCaption,uType.
+        invoke~(MessageBox', [hWnd,lpText,lpCaption,uType]))
+
+export let IDOK         = 1
+export let IDCANCEL     = 2
+export let IDABORT      = 3
+export let IDRETRY      = 4
+export let IDIGNORE     = 5
+export let IDYES        = 6
+export let IDNO         = 7
+export let IDTRYAGAIN   = 10
+export let IDCONTINUE   = 11
+
+export let MB_OK                = 0
+export let MB_OKCANCEL          = 1
+export let MB_ABORTRETRYIGNORE  = 2
+export let MB_YESNOCANCEL       = 3
+export let MB_YESNO             = 4
+export let MB_RETRYCANCEL       = 5
+export let MB_CANCELTRYCONTINUE = 6
+export let MB_ICONERROR         = 16
+export let MB_ICONHAND          = 16
+export let MB_ICONSTOP          = 16
+export let MB_ICONQUESTION      = 32
+export let MB_ICONEXCLAMATION   = 48
+export let MB_ICONWARNING       = 48
+export let MB_ICONASTERISK      = 64
+export let MB_ICONINFORMATION   = 64
+export let MB_DEFBUTTON1        = 0
+export let MB_DEFBUTTON2        = 256
+export let MB_DEFBUTTON3        = 512
+export let MB_DEFBUTTON4        = 768
+export let MB_APPLMODAL         = 0
+export let MB_SYSTEMMODAL       = 4096
+export let MB_TASKMODAL         = 8192
+export let MB_HELP              = 16_384
+export let MB_SETFOREGROUND     = 65_536
+export let MB_DEFAULT_DESKTOP_ONLY = 131_072
+export let MB_TOPMOST           = 262_144
+export let MB_RIGHT             = 524_288
+export let MB_RTLREADING        = 1_048_576
+export let MB_SERVICE_NOTIFICATION = 2_097_152
+
