@@ -1,0 +1,5 @@
+
+export let Cpu  = __builtin__("ouro.hostenv.Cpu")
+export let OS   = __builtin__("ouro.hostenv.OS")
+export let Endianess = __builtin__("ouro.hostenv.Endianess")
+
