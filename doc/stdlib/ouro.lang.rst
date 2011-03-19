@@ -39,6 +39,29 @@ functions.
     assert { branch(true, \."yup", \."nope") = "yup" }
     assert { branch(false, \."yup", \."nope") = "nope" }
 
+``case{value_expr, rules...}``
+------------------------------
+
+Evaluates *value*\ :sub:`expr` and then checks its value against each rule of
+the form ``[value, expr]``.  When a matching *value* is found, the
+corresponding *expr* is evaluated.
+
+The last rule may replace *value* with ``else``; this will match any value.
+
+If no rule matches, an error is raised.
+
+``cond{rules...}``
+------------------
+
+Tests each successive rule of the form ``[test, expr]``.  Once a *test*
+expression evaluates to ``true``, the corresponding *expr* is evaluated and no
+further rules are processed.
+
+The last rule may replace *test* with ``else``; this is effectively equivalent
+to using ``true``.
+
+If no rule matches, an error is raised.
+
 ``do{exprs...}``
 ----------------
 

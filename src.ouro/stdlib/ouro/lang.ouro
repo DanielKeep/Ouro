@@ -29,6 +29,63 @@ export let macro assert(expr) = (
 
 export let astOf(v) = #"{#${v}}
 
+export let macro case(value_expr, pair, pairs...) =
+    let' {
+        [pair',         listExprElems(pair)],
+        [pair_value,    head(pair')],
+        [pair_expr,     head(tail(pair'))],
+
+        [match_expr,
+            if {
+                pairs = [] and pair_value = #'{else},
+                #'{true},
+                #"{$".caseValue" = #${pair_value}}
+            }
+         ],
+        [tail_expr,
+            if {
+                pairs = [],
+                #"{ fail("No matching case for ${:R}"
+                    (.format.) [$".caseValue"]) },
+                case(#'{$".caseValue"}, pairs...)
+            }
+         ],
+
+        #"{
+            (\$".caseValue".
+                if {
+                    #${match_expr},
+                    #${pair_expr},
+                    #${tail_expr}
+                })
+                (#${value_expr})
+        }
+    }
+
+export let macro cond(pair, pairs...) =
+    let' {
+        [pair',     listExprElems(pair)],
+        [pair_test, pair' (.head)],
+        [pair_expr, pair' (.tail) (.head)],
+
+        [test_expr,
+            if {
+                pairs = [] and pair_test = #'{else},
+                #'{true},
+                pair_test
+            }
+         ],
+        [tail_expr,
+            if {
+                pairs = [],
+                #'{ fail("No matching conditions") },
+                cond(pairs...)
+            }
+         ],
+
+        if(test_expr, pair_expr, tail_expr)
+    }
+
 export let macro do(expr, exprs...) = (
     if { exprs = [],
          expr,
