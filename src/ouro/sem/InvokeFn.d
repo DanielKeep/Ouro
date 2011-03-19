@@ -56,7 +56,7 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
                 // We might have gotten fewer arguments than we needed.  Keep
                 // in mind that the vararg argument can be a zero-width list.
                 if( args.length < fn.args.length - 1 )
-                    assert(false, "not enough arguments" );
+                    assert(false, "not enough arguments for " ~ fn.name );
 
                 // Make a copy of args
                 args = args.dup;
