@@ -7,38 +7,23 @@ Ouro Todo
 Referring to symbols from inside macros
 ---------------------------------------
 
-It's a complete pain in the arse trying to use other functions or macros from
-inside a macro.  Since the macro gets expanded in another context, it's very
-hard to tell whether you can safely use a particular name or not.
+Currently, all functions track their defining module and get a unique symbol
+name.  Of course, they aren't exported by default which can complicate things.
 
-Ideas:
+It seems that two additional things would be very useful:
 
--   **Automatic, unique symbols.** This involves ensuring that all functions can
-    be turned back into an AST by ensuring there exists an expression that
-    uniquely refers to them anywhere.
+1.  The ability to load a symbol from a module irrespective of export
+    visibility.  Perhaps ``lookup`` could be modified to accept an optional
+    "use scop instead of exportScop" flag.
 
-    For any function which is not being directly bound to a symbol, create a
-    new, top-level statement with a unique symbol name.  Bind the function to
-    that and substitute a reference.
+2.  Some syntactic construct for converting a local reference to a globally
+    usable form.  For example::
 
-    For example, this (in module ``fib``)::
+        let x = 42
 
-        let fib(n) = let {
-            [fib', \a,b,n,m. if { n < m, fib'(b,a+b,n+1), a }],
-            fib'(0,1,0,n)
-        }
+        export let macro f() = #?{x}
 
-    Might become::
-
-        let $"--λ 0" = \a,b,n,m. if { n < m, $"--λ 0"(b,a+b,n+1), a }
-
-        let fib(n) = let {
-            [fib', $"--λ 0"],
-            fib'(0,1,0,n)
-        }
-
-    Then, the result of ``ast(fib')`` would be
-    ``#~'{module("/fib") $"--λ 0"}``.
+        f() = #'{lookup(module(__PATH__), 'x, 'force)}
 
 "Extern" identifiers
 --------------------
@@ -50,94 +35,79 @@ That way, we can write things like::
 
     let $dstp:blargh = 42
 
-Modules
--------
-
-Here's what I'm thinking.
-
-When compiling a program, we create a 'statement pool' into which all
-statements to be compiled and evaluated go.  Each statement maintains its
-association with a specific module, scope, etc.
-
-Loading a module involves pouring the results of the initial semantic pass
-into this pool.  The statements can then be iterated until they have all been
-processed.
-
-The pool itself should probably *actually* be a list of modules since we might
-want to add extra statements into the mix whilst doing semantics (for example,
-binding lambdas to a symbol).
-
-Symbols
--------
-
-Symbols are immutable, interred strings.  They can be written like so::
-
-    'thisIsASymbol
-
-    '$"this is also a symbol"
-
-    Symbol("I'm a symbol too, don'tcherknow?")
-
-These will be useful as the runtime representation of identifiers and named
-flags to functions.
-
-For example::
-
-    open("blah.txt", 'append)
-
-Will be more space-efficient and faster than::
-
-    open("blah.txt", "append")
-
-This is because an interred string need only be stored exactly once
-program-wide and equality is determined with a pointer test.
-
 Member access syntax
 --------------------
 
-Still not 100% decided on this.  The following are the current possibilities
-I'm considering.
+There are two syntaxes that I've considered: C and Smalltalk.
 
-The three examples are:
+C style uses a ``.`` between the value and the member identifier.
+Smalltalk style simply places the member identifier on the RHS of the value.
+For example, to look up the ``bar`` member of the value ``foo``::
 
-- Accessing member ``bar`` of value ``foo``.
-- Accessing member ``baz`` of module ``/quxx``.
-- Parameterised access of member ``bar`` of value ``foo``.
+    foo.bar  |-- C style
+    foo bar  |-- Smalltalk style
 
-Note that the below use the as-yet unimplemented symbol syntax.
+The Smalltalk style has the benefit of reading better and introduces less
+noise into code.  There is, however, a downside to this style: the following
+code becomes syntactically valid::
 
-Internal representation
-```````````````````````
+    do {
+        woutL~("Line one"),
+        woutL~("Line two")
+        woutL~("Line three")
+    }
 
-::
+Forgetting a comma will be a much harder to diagnose problem.  Personal
+experience has shown that forgetting commas is all too easy.
 
-    getElement(foo, 'bar)
+I think the best way forward would be to implement Smalltalk style and see how
+it pans out, keeping C style member access in reserve as a fallback option.
 
-    getElement(module("/quxx"), 'baz)
+Exceptions
+----------
 
-    getElement(foo, 'bar)
+Ouro needs a coherent error handling system.  Although continuation-based
+systems look cool, it needs something in the near term that's reasonably easy
+to implement.
 
-C-style
-```````
+For that, I think a standard try/catch system will be sufficient.  Some
+thinking::
 
-::
+    let throw(id, msg, args...) = ...
 
-    foo.bar
+    guard {
+        [success,   "Expr returned normally."],
+        [failure,   "Expr was unwound by an exception."],
+        [exit,      "Expr returned or unwound."],
+        ['DivideByZero, "Expr was unwound by a 'DivideByZero exception."],
 
-    module("/quxx").baz
+        expr
+    }
 
-    foo.('bar)
+    |-- Catches any exception
+    let ex = catch { expr }
 
-Smalltalk-style
-```````````````
+    |-- Catches three specific kinds of exception
+    let ex = catch { ['DivideByZero, 'SegFault, 'Win32Exception], expr }
 
-Note: also used by Io.
+There would need to be integration between host exceptions and Ouro
+exceptions.  There would also need to be integration of stack traces.
 
-::
+Nascent Ideas
+-------------
 
-    foo bar
+Transactions
+````````````
 
-    module("/quxx") baz
+Functions could return [value, undoFn] and be used like so::
 
-    foo ['bar]
+    transaction {
+        returnsNil(),
+        var = returnsNonNil(),
+        mightThrow(),
+        result()
+    }
+
+If an exception is thrown at any point, all functions which have already
+completed have their "undo" function called in reverse order.
 
