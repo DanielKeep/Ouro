@@ -6,3 +6,10 @@
 _backup/
 
 desktop.ini
+
+# Eclipse crap
+/.buildpath
+/.dprojectoptions
+/.project
+/.settings/
+
