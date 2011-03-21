@@ -96,6 +96,54 @@ exceptions.  There would also need to be integration of stack traces.
 Nascent Ideas
 -------------
 
+Additional Types
+````````````````
+
+Integer
+    Should be like Python's ``int`` type; a big int.
+
+Integer Ranges
+``````````````
+
+Being able to concisely express a consecutive sequence of integers would be
+very nice.  However, the current ``range`` syntax doesn't really allow for
+that.  There are two ways it could be handled:
+
+1.  Introduce a specific integer type along with appropriate syntax.  It might
+    also be a good idea to allow constraints.  For example::
+
+        range [0i, 10i)
+
+        range : Integer [0, 10)
+
+    This could work with any type that has a ``nextValue`` metamethod.
+
+2.  Introduce a ``discrete`` syntax for ranges which is distinct from
+    continuous ranges.  For example::
+
+        range [0 .. 10)
+
+    Of course, one could just make ``..`` a proper operator which binds more
+    loosely than everything except comma.  Then you could do::
+
+        slice([0,1,2,3,4], 1..4)
+
+    But what about steps other than ``1``?
+
+List & Map Comprehensions
+`````````````````````````
+
+Comprehensions are a syntactically nice way of expressing transforms.  The
+only real question is whether or not the syntactic additions are worth the
+saving.  Some examples::
+
+    map(\x.x**2, range[0,5))
+    [= x**2 | x <- range[0, 5)]
+        = [0, 1, 4, 9, 16]
+
+    mapDict(\x,y.[x,x/y], [:1:2,3:4:])
+    [=: x:x/y | x:y <- [:1:2,3:4:]:] = [:1:0.5, 3:0.75:]
+
 Transactions
 ````````````
 
