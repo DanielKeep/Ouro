@@ -180,6 +180,7 @@ int main(char[][] argv)
                             version( Windows )
                                 uriPath = '/' ~ uriPath;
                         }
+                        uriPath = Path.normalize(uriPath);
 
                         uri = new Uri("file", "", uriPath);
                     }
