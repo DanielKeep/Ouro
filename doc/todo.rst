@@ -4,6 +4,38 @@ Ouro Todo
 
 .. contents::
 
+Optional Arguments
+------------------
+
+Functions should be able to specify default values for arguments, allowing
+them to be omitted by the caller.  For example::
+
+    let atan(y,x=nil) =
+        if {
+            x = nil,
+            atan(y),
+            atan2(y,x)
+        }
+
+The default value expression should be evaluated once and in the context of
+the function's defining scope.
+
+Named Arguments
+---------------
+
+It should be possible to pass function arguments by name.  For example::
+
+    let colorFrom(r, g, b, a=1.0) =
+        [a, r, g, b]
+
+    colorFrom(r:1.0, g:0.5, b:0.0)
+
+It might also be a good idea to expand the explode syntax to also work for
+maps, although it might need new or modified syntax::
+
+    let rgb = [: r:1.0, g:0.5, b:0.0 :]
+    colorFrom(rgb:...)
+
 Referring to symbols from inside macros
 ---------------------------------------
 
