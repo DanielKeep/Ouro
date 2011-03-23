@@ -4,7 +4,7 @@ let f(v) = format("$*", [v])
 assert { f(#'{nil})     = "nil" }
 assert { f(#'{6*7})     = "(6)*(7)" }
 
-assert { f(if)          = "if(l,expr_t,expr_f)" }
+assert { f(if)          = "if(condition,then,else)" }
 assert { f(branch)      = "__builtin__(\"ouro.branch\")(cond,b0,b1)" }
 assert { f(\x,y.nil)    = "λx,y." }
 

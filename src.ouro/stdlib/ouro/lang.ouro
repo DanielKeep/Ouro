@@ -17,8 +17,8 @@ export let $".dump" = __builtin__("ouro..dump")
 |--
 
 |-- We define if first since it's used so much.
-export let macro if(l, expr_t, expr_f) = (
-    #"{ #${branch}( #${l}, \.#${expr_t}, \.#${expr_f} ) }
+export let macro if(condition, then, else) = (
+    #"{ #${branch}( #${condition}, \.#${then}, \.#${else} ) }
 )
 
 export let macro assert(expr) = (
@@ -29,7 +29,7 @@ export let macro assert(expr) = (
 
 export let astOf(v) = #"{#${v}}
 
-export let macro case(value_expr, pair, pairs...) =
+export let macro case(value, pair, pairs...) =
     let' {
         [pair',         listExprElems(pair)],
         [pair_value,    head(pair')],
@@ -58,7 +58,7 @@ export let macro case(value_expr, pair, pairs...) =
                     #${pair_expr},
                     #${tail_expr}
                 })
-                (#${value_expr})
+                (#${value})
         }
     }
 

@@ -39,14 +39,14 @@ functions.
     assert { branch(true, \."yup", \."nope") = "yup" }
     assert { branch(false, \."yup", \."nope") = "nope" }
 
-``case{value_expr, rules...}``
+``case{value, rules...}``
 ------------------------------
 
-Evaluates *value*\ :sub:`expr` and then checks its value against each rule of
-the form ``[value, expr]``.  When a matching *value* is found, the
+Evaluates *value* and then checks its value against each rule of
+the form ``[v, expr]``.  When a matching *v* is found, the
 corresponding *expr* is evaluated.
 
-The last rule may replace *value* with ``else``; this will match any value.
+The last rule may replace *v* with ``else``; this will match any value.
 
 If no rule matches, an error is raised.
 
@@ -339,16 +339,21 @@ The following character sequences are treated specially:
 .. [*]  The actual character used may be modified by culture settings,
     although how this is performed is as-yet undefined.
 
-``if{l, expr_t, expr_f}``
--------------------------
+``if{condition, then, else}``
+-----------------------------
 
-Evaluates and returns the result of |expr_t| or |expr_f|
-based on the value of *l*.  The branch not chosen is not evaluated.
+Evaluates and returns the result of |then| or |else|
+based on the value of *condition*.  The branch not chosen is not evaluated.
 
 ::
 
     assert { if { true, "yup", "nope" } = "yup" }
     assert { if { false, "yup", "nope" } = "nope" }
+
+    if { true,
+        then: 'doNothing,
+        else: fail { "Oh noes!" }
+    }
 
 ``head(l)``
 -----------

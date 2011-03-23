@@ -1,0 +1,7 @@
+
+assert { if { true, then: 1, else: 0 } = 1 }
+assert { if { false,then: 1, else: 0 } = 0 }
+
+assert { if { true, else: 1, then: 0 } = 0 }
+assert { if { false,else: 1, then: 0 } = 1 }
+
