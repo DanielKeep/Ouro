@@ -1,0 +1,9 @@
+
+let f(x,y=nil) = [x,y]
+
+assert { f(1,2)         = [1,2] }
+assert { f(3,y:4)       = [3,4] }
+assert { f(x:5)         = [5,nil] }
+assert { f(x:7, y:8)    = [7,8] }
+assert { f(y:9, x:10)   = [10,9] }
+
