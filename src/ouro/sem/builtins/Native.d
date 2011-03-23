@@ -128,7 +128,7 @@ static this()
                     Sit.Argument("callConv"),
                     Sit.Argument("returnType"),
                     Sit.Argument("argTypes"),
-                    Sit.Argument("variadic")
+                    Sit.Argument("variadic", Sit.LogicalValue.instance(false))
                 ], &native_loadFunction, EC.Runtime, false));
 }
 
