@@ -197,7 +197,7 @@ Value ouro_let(EC ec, Value[] args)
     return new Sit.AstQuoteValue(null,
             new Ast.CallExpr(Location.init, false,
                 new Ast.LambdaExpr(subExpr.loc, false, bindArgs, subExpr),
-                bindExprs));
+                bindExprs, null));
 }
 
 Value ouro_import(EC ec, Value[] args)
@@ -269,7 +269,8 @@ private Ast.Expr valueToAst(Value gv)
         return new Ast.CallExpr(Locnull, false,
             new Ast.BuiltinExpr(Locnull, "ouro.closure"),
             [valueToAst(v.fn),
-             valueToAst(new Sit.ListValue(null, v.values))]);
+             valueToAst(new Sit.ListValue(null, v.values))],
+            null);
     }
     else if( auto v = cast(Sit.FunctionValue) gv )
     {
@@ -279,8 +280,10 @@ private Ast.Expr valueToAst(Value gv)
                 new Ast.BuiltinExpr(Locnull, "ouro.lookup"),
                 [cast(Ast.Expr) new Ast.CallExpr(Locnull, false,
                     new Ast.BuiltinExpr(Locnull, "ouro.module"),
-                    [new Ast.StringExpr(Locnull, v.srcModule.path)]),
-                 new Ast.SymbolExpr(Locnull, v.srcIdent)]);
+                    [new Ast.StringExpr(Locnull, v.srcModule.path)],
+                    null),
+                 new Ast.SymbolExpr(Locnull, v.srcIdent)],
+                null);
         }
         else
         {
@@ -316,7 +319,8 @@ private Ast.Expr valueToAst(Value gv)
     {
         return new Ast.CallExpr(Locnull, false,
             new Ast.BuiltinExpr(Locnull, "ouro.module"),
-            [new Ast.StringExpr(Locnull, v.modul.path)]);
+            [new Ast.StringExpr(Locnull, v.modul.path)],
+            null);
     }
     else if( auto v = cast(Sit.NilValue) gv )
     {

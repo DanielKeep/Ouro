@@ -177,6 +177,7 @@ class QQSubVisitor : Visitor!(Ast.Expr, Ast.Expr[])
         bool same = true;
         auto funcExpr = visitExpr(node.funcExpr, subExprs);
         auto argExprs = new Ast.Expr[node.argExprs.length];
+        Ast.Expr[char[]] namedExprs;
 
         foreach( i,argExpr ; node.argExprs )
         {
@@ -184,10 +185,17 @@ class QQSubVisitor : Visitor!(Ast.Expr, Ast.Expr[])
             same = same && (argExprs[i] is argExpr);
         }
 
+        foreach( ident,argExpr ; node.namedArgExprs )
+        {
+            namedExprs[ident] = visitExpr(argExpr, subExprs);
+            same = same && (namedExprs[ident] is argExpr);
+        }
+
         if( funcExpr is node.funcExpr && same )
             return node;
 
-        return new Ast.CallExpr(node.loc, node.isMacro, funcExpr, argExprs);
+        return new Ast.CallExpr(node.loc, node.isMacro,
+                funcExpr, argExprs, namedExprs);
     }
 
     override Ast.Expr visit(Ast.VariableExpr node, Ast.Expr[] subExprs)

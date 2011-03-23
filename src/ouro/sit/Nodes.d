@@ -238,8 +238,10 @@ class CallExpr : Expr
 {
     Expr funcExpr;
     CallArg[] args;
+    CallArg[char[]] namedArgs;
 
-    this(Ast.Node astNode, Expr funcExpr, CallArg[] args)
+    this(Ast.Node astNode, Expr funcExpr, CallArg[] args,
+            CallArg[char[]] namedArgs)
     in
     {
         assert( funcExpr !is null );
@@ -249,6 +251,7 @@ class CallExpr : Expr
         super(astNode);
         this.funcExpr = funcExpr;
         this.args = args;
+        this.namedArgs = namedArgs;
     }
 }
 
@@ -701,8 +704,8 @@ class FunctionValue : CallableValue, Formatter
                 ~ reprIdent(rhs.trueFn.name) ~ ")",
             args, null, scop,
             new CallExpr(null, rhs, [
-                CallArg(new CallExpr(null, lhs, callArgs), false)
-            ])
+                CallArg(new CallExpr(null, lhs, callArgs, null), false)
+            ], null)
         );
 
         return fc;

@@ -1,0 +1,12 @@
+
+let f(x) = x
+
+assert { f(1) = 1 }
+assert { f(x:2) = 2 }
+
+let g(x,y) = [x,y]
+
+assert { g(1,2) = [1,2] }
+assert { g(3,y:4) = [3,4] }
+assert { g(x:5,y:6) = [5,6] }
+

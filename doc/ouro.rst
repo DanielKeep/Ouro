@@ -505,9 +505,11 @@ Note: eventually, pattern matching should be added here::
 
     <function tail> =
         ( "(", <treat eol as whitespace(
-            [ <expression>, { ",", <expression> } ] )>, ")"
+            [ <call argument>, { ",", <call argument> } ] )>, ")"
         | "{", <treat eol as whitespace(
-            [ <expression>, { ",", <expression> } ] )>, "}" );
+            [ <call argument>, { ",", <call argument> } ] )>, "}" );
+
+    <call argument> = ( <expression> | <identifier>, ":", <expression> );
 
     <infix function> = <identifier>
                      | <sub expression>;
@@ -694,6 +696,7 @@ The following describes the structure of the AST nodes themselves.
         isMacro : Logical
         funcExpr : Expr
         argExprs : [Expr]
+        namedArgExprs : [:String:Expr:]
 
     VariableExpr : Expr
         ident : String
@@ -774,6 +777,7 @@ don't know what symbols it defines.
     CallExpr : Expr
         funcExpr : Expr
         args     : [CallArg]
+        namedArgs: [:String:CallArg:]
 
     CallArg
         expr    : Expr
@@ -1071,13 +1075,15 @@ called ``ctx``.  The meaning of *Eval* and *Fold* is explained later.
 ``Ast CallExpr``
     - Transform ``node funcExpr``.
     - If this is a non-macro call:
-        - Transform each ``node argExpr``.  If the expression is an
+        - Transform each ``node argExpr`` and ``node namedArgExpr``.
+          If the expression is an
           ``Ast ExplodeExpr``, transform ``argExpr subExpr`` instead and flag
           the argument as an explode.
         - Result is a ``CallExpr`` of the function expression itself with the
           arguments.
     - If this is a macro call:
-        - Transform each ``node argExpr`` into an ``AstQuoteValue`` containing
+        - Transform each ``node argExpr`` and ``node namedArgExpr``
+          into an ``AstQuoteValue`` containing
           the original argument expression node.
         - *Eval* the function expression.  It must result in a
           ``FunctionValue``.

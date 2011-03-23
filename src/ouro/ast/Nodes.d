@@ -784,9 +784,10 @@ class CallExpr : Expr
     bool isMacro;
     Expr funcExpr;
     Expr[] argExprs;
+    Expr[char[]] namedArgExprs;
 
     this(Location loc, bool isMacro, Expr funcExpr,
-            Expr[] argExprs)
+            Expr[] argExprs, Expr[char[]] namedArgExprs)
     in
     {
         assert( funcExpr !is null );
@@ -800,6 +801,7 @@ class CallExpr : Expr
         this.isMacro = isMacro;
         this.funcExpr = funcExpr;
         this.argExprs = argExprs;
+        this.namedArgExprs = namedArgExprs;
     }
 
     override equals_t exprEquals(Expr rhsExpr)
@@ -812,7 +814,24 @@ class CallExpr : Expr
                 return cast(equals_t) false;
 
         return this.isMacro == rhs.isMacro
-            && this.funcExpr == rhs.funcExpr;
+            && this.funcExpr == rhs.funcExpr
+            && aaEqual(this.namedArgExprs, rhs.namedArgExprs);
+    }
+
+    // HACK
+    private equals_t aaEqual(Expr[char[]] a, Expr[char[]] b)
+    {
+        if( a is b )
+            return cast(equals_t) true;
+
+        if( a.length != b.length )
+            return cast(equals_t) false;
+
+        foreach( k,va ; a )
+            if( va != b[k] )
+                return cast(equals_t) false;
+
+        return cast(equals_t) true;
     }
 }
 

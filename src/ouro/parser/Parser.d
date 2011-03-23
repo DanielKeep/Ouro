@@ -949,9 +949,11 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
 
         <function tail> =
             ( "(", <treat eol as whitespace(
-                [ <expression>, { ",", <expression> } ] )>, ")"
+                [ <call argument>, { ",", <call argument> } ] )>, ")"
             | "{", <treat eol as whitespace(
-                [ <expression>, { ",", <expression> } ] )>, "}" );
+                [ <call argument>, { ",", <call argument> } ] )>, "}" );
+
+        <call argument> = ( <expression> | <identifier>, ":", <expression> );
     */
 
     Ast.Expr baseExpr;
@@ -985,11 +987,29 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
         auto closer = (isMacro ? TOKrbrace : TOKrparen);
 
         Ast.Expr[] args;
+        Ast.Expr[char[]] namedArgs;
 
         if( ! isRparenOrRbrace(ts.peek.type) )
             ts.skipEolDo
             ({
-                args ~= parseCommaExprs(ts, closer);
+                size_t i = 0;
+                while( ts.peek.type != closer )
+                {
+                    if( i > 0 ) ts.popExpect(TOKcomma);
+                    i ++;
+
+                    if( ts.peek(0).type == TOKidentifier
+                            && ts.peek(1).type == TOKcolon )
+                    {
+                        auto ident = ts.popExpect(TOKidentifier).value;
+                        ts.popExpect(TOKcolon);
+                        namedArgs[ident] = parseExpr(ts);
+                    }
+                    else
+                    {
+                        args ~= parseExpr(ts);
+                    }
+                }
             });
 
         // Remember: we need to skip over EOLs until we're out of the argument
@@ -1069,7 +1089,7 @@ Ast.Expr tryparseFunctionOrVariableOrSubExpr(TokenStream ts)
         }
         else
             baseExpr = new Ast.CallExpr(loc,
-                    isMacro, baseExpr, args);
+                    isMacro, baseExpr, args, namedArgs);
     }
 
     return baseExpr;

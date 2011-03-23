@@ -110,22 +110,76 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         foreach( nodeArg ; node.args )
             addArg(visitBase(nodeArg.expr, ctx), nodeArg.explode);
 
+        // Process named arguments
+        Sit.CallArg[char[]] namedArgs;
+        bool namedArgsAreValues = true;
+
+        foreach( ident,namedArg ; node.namedArgs )
+        {
+            auto expr = visitBase(namedArg.expr, ctx);
+            namedArgsAreValues &= foldedValue(expr);
+            namedArgs[ident] = Sit.CallArg(expr, namedArg.explode);
+        }
+
         // We can only actually make this call if the function and *all* of
         // the arguments are values.  We also need to make sure the callable
         // is fully folded.
         auto canCall = (callable !is null) && foldedValue(callable)
-            && callable.trueFn.foldable && argsAreValues;
+            && callable.trueFn.foldable && argsAreValues
+            && namedArgsAreValues;
 
         if( canCall )
         {
             // We have to convert the array of expressions into an array of
             // values.  It should just be a quick cast of all elements.
             auto argValues = new Sit.Value[args.length];
+            size_t nextArgIdx = 0;
+
+            void addArgValue(size_t i, Sit.Expr expr, bool explode)
+            {
+                auto value = cast(Sit.Value) expr;
+                assert( value !is null );
+
+                if( ! explode )
+                {
+                    if( i >= argValues.length )
+                        argValues.length = i+1;
+                    assert( argValues[i] is null );
+                    argValues[i] = value;
+                    nextArgIdx = i+1;
+                }
+                else
+                {
+                    auto listValue = cast(Sit.ListValue) value;
+                    assert( listValue !is null, node.astNode.loc.toString
+                            ~ ": can only explode a List; got a "
+                            ~ value.classinfo.name );
+
+                    foreach( j,argValue ; listValue.elemValues )
+                        addArgValue(i+j, argValue, false);
+                    nextArgIdx = i + listValue.elemValues.length;
+                }
+            }
 
             foreach( i,arg ; args )
+                addArgValue(nextArgIdx, arg.expr, arg.explode);
+
+            // Handle named arguments
             {
-                argValues[i] = cast(Sit.Value) arg.expr;
-                assert( argValues[i] !is null );
+                auto fn = callable.trueFn;
+                foreach( ident,arg ; namedArgs )
+                {
+                    size_t i = ~0;
+                    foreach( fnArgIdx,fnArg ; fn.args )
+                        if( fnArg.ident == ident )
+                        {
+                            i = fnArgIdx;
+                            break;
+                        }
+                    assert( i != ~0, "unknown argument "~ident );
+
+                    addArgValue(i, arg.expr, arg.explode);
+                }
             }
 
             // Ok, call that sucker!
@@ -152,11 +206,11 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
             foreach( i,argValue ; argValues )
                 callArgs[i] = Sit.CallArg(argValue, false);
 
-            return new Sit.CallExpr(node.astNode, callable, callArgs);
+            return new Sit.CallExpr(node.astNode, callable, callArgs, null);
         }
         else
         {
-            return new Sit.CallExpr(node.astNode, funcExpr, args);
+            return new Sit.CallExpr(node.astNode, funcExpr, args, namedArgs);
         }
     }
 

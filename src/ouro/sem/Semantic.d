@@ -140,7 +140,12 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
     Sit.Node visitMacro(Context* ctx, Ast.Node node,
             Sit.FunctionValue fn, Sit.CallArg[] args...)
     {
-        auto call = new Sit.CallExpr(node, fn, args);
+        auto call = new Sit.CallExpr(node, fn, args, null);
+        return visitMacro(ctx, call);
+    }
+
+    Sit.Node visitMacro(Context* ctx, Sit.CallExpr call)
+    {
         Sit.Value value;
         Object lastEx;
         if( abortedF({ value = evalExpr(call); }, lastEx) )
@@ -298,7 +303,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         auto moduleExpr = new Sit.CallExpr(node,
             ctx.builtinFunction("ouro.module"),
-            [Sit.CallArg(new Sit.StringValue(node, node.modulePath), false)]
+            [Sit.CallArg(new Sit.StringValue(node, node.modulePath), false)],
+            null
         );
 
         ctx.stmt.xport = node.xport;
@@ -412,7 +418,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             rhs = visitExpr(node.rhs, ctx);
 
         return new Sit.CallExpr(node, func,
-                [Sit.CallArg(lhs, false), Sit.CallArg(rhs, false)]);
+                [Sit.CallArg(lhs, false), Sit.CallArg(rhs, false)], null);
     }
 
     override Sit.Node visit(Ast.TernaryExpr node, Context* ctx)
@@ -425,7 +431,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         return new Sit.CallExpr(node, func,
                 [Sit.CallArg(lhs, false),
                  Sit.CallArg(mid, false),
-                 Sit.CallArg(rhs, false)]);
+                 Sit.CallArg(rhs, false)],
+                null);
     }
 
     override Sit.Node visit(Ast.InfixFuncExpr node, Context* ctx)
@@ -436,7 +443,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         return new Sit.CallExpr(node, func,
                 [Sit.CallArg(lhs, false),
-                 Sit.CallArg(rhs, false)]);
+                 Sit.CallArg(rhs, false)],
+                null);
     }
 
     override Sit.Node visit(Ast.PrefixExpr node, Context* ctx)
@@ -445,7 +453,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         auto subExpr = visitExpr(node.subExpr, ctx);
 
         return new Sit.CallExpr(node, func,
-                [Sit.CallArg(subExpr, false)]);
+                [Sit.CallArg(subExpr, false)],
+                null);
     }
 
     override Sit.Node visit(Ast.PostfixFuncExpr node, Context* ctx)
@@ -454,7 +463,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         auto subExpr = visitExpr(node.subExpr, ctx);
 
         return new Sit.CallExpr(node, func,
-                [Sit.CallArg(subExpr, false)]);
+                [Sit.CallArg(subExpr, false)],
+                null);
     }
 
     override Sit.Node visit(Ast.NumberExpr node, Context* ctx)
@@ -562,9 +572,19 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                         false);
             }
 
+            Sit.CallArg[char[]] namedArgExprs;
+            foreach( ident,argExpr ; node.namedArgExprs )
+            {
+                namedArgExprs[ident] = Sit.CallArg(
+                        new Sit.AstQuoteValue(argExpr, argExpr),
+                        false);
+            }
+
             auto funcValue = cast(Sit.FunctionValue) evalExpr(funcExpr);
 
-            return visitMacro(ctx, node, funcValue, argExprs);
+            auto call = new Sit.CallExpr(node, funcValue,
+                    argExprs, namedArgExprs);
+            return visitMacro(ctx, call);
         }
         else
         {
@@ -580,7 +600,20 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
                 argExprs[i] = Sit.CallArg(visitExpr(argExpr, ctx), explode);
             }
 
-            return new Sit.CallExpr(node, funcExpr, argExprs);
+            Sit.CallArg[char[]] namedArgExprs;
+            foreach( ident,argExpr ; node.namedArgExprs )
+            {
+                auto explode = false;
+                if( auto explodeExpr = cast(Ast.ExplodeExpr) argExpr )
+                {
+                    explode = true;
+                    argExpr = explodeExpr.subExpr;
+                }
+                namedArgExprs[ident] = Sit.CallArg(
+                        visitExpr(argExpr, ctx), explode);
+            }
+
+            return new Sit.CallExpr(node, funcExpr, argExprs, namedArgExprs);
         }
     }
 
@@ -600,7 +633,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             [Sit.CallArg(new Sit.LogicalValue(node, node.incLower), false),
              Sit.CallArg(new Sit.LogicalValue(node, node.incUpper), false),
              Sit.CallArg(visitExpr(node.lowerExpr, ctx), false),
-             Sit.CallArg(visitExpr(node.upperExpr, ctx), false)]
+             Sit.CallArg(visitExpr(node.upperExpr, ctx), false)],
+            null
         );
     }
 
@@ -622,7 +656,7 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             args[1+i] = Sit.CallArg(visitExpr(subExpr, ctx), false);
 
         return new Sit.CallExpr(node,
-                ctx.builtinFunction("ouro.qqsub"), args);
+                ctx.builtinFunction("ouro.qqsub"), args, null);
     }
 
     override Sit.Node visit(Ast.AstQQSubExpr node, Context* ctx)
@@ -664,7 +698,8 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
             ctx.builtinFunction("ouro.import"),
             [Sit.CallArg(scopeExpr, false),
              Sit.CallArg(symbolsExpr, false),
-             Sit.CallArg(subExpr, false)]
+             Sit.CallArg(subExpr, false)],
+            null
         );
     }
 

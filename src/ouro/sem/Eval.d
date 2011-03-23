@@ -171,11 +171,15 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
         // Evaluate arguments
         Sit.Value[] args;
 
-        void addArg(Sit.Value value, bool explode)
+        void addArg(size_t i, Sit.Value value, bool explode)
         {
             if( ! explode )
             {
-                args ~= value;
+                if( i >= args.length )
+                    args.length = i+1;
+                if( args[i] !is null )
+                    assert( false );
+                args[i] = value;
             }
             else
             {
@@ -184,13 +188,28 @@ class EvalVisitor : Visitor!(Sit.Value, Context)
                         ~ ": can only explode a List; got a "
                         ~ value.classinfo.name );
 
-                foreach( argValue ; listValue.elemValues )
-                    addArg(argValue, false);
+                foreach( j,argValue ; listValue.elemValues )
+                    addArg(i+j, argValue, false);
             }
         }
 
         foreach( i,nodeArg ; node.args )
-            addArg(visitValue(nodeArg.expr, ctx), nodeArg.explode);
+            addArg(args.length,
+                    visitValue(nodeArg.expr, ctx), nodeArg.explode);
+
+        foreach( ident,namedArg ; node.namedArgs )
+        {
+            size_t i = ~0;
+            foreach( argIdx,arg ; fn.args )
+                if( arg.ident == ident )
+                {
+                    i = argIdx;
+                    break;
+                }
+            assert( i != ~0, "unknown argument "~ident );
+
+            addArg(i, visitValue(namedArg.expr, ctx), namedArg.explode);
+        }
 
         return Sit.TailCall.call(callable, args);
     }

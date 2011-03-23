@@ -189,6 +189,7 @@ class QQRewriteVisitor : Visitor!(Ast.Expr, Context*)
         bool same = true;
         auto funcExpr = visitExpr(node.funcExpr, ctx);
         auto argExprs = new Ast.Expr[node.argExprs.length];
+        Ast.Expr[char[]] namedExprs;
 
         foreach( i,argExpr ; node.argExprs )
         {
@@ -196,10 +197,17 @@ class QQRewriteVisitor : Visitor!(Ast.Expr, Context*)
             same = same && (argExprs[i] is argExpr);
         }
 
+        foreach( ident,argExpr ; node.namedArgExprs )
+        {
+            namedExprs[ident] = visitExpr(argExpr, ctx);
+            same = same && (namedExprs[ident] is argExpr);
+        }
+
         if( funcExpr is node.funcExpr && same )
             return node;
 
-        return new Ast.CallExpr(node.loc, node.isMacro, funcExpr, argExprs);
+        return new Ast.CallExpr(node.loc, node.isMacro,
+                funcExpr, argExprs, namedExprs);
     }
 
     override Ast.Expr visit(Ast.VariableExpr node, Context* ctx)
