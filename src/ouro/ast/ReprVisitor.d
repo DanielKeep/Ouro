@@ -73,9 +73,9 @@ class ReprVisitor : Visitor!()
     override void visit(Ast.BinaryExpr node)
     {
         so.r("(").push;
-        visitBase(node.lhs);
+        so.seqBalanced({ visitBase(node.lhs); });
         so.pop.r(")")(node.opRepr(node.op))("(").push;
-        visitBase(node.rhs);
+        so.seqBalanced({ visitBase(node.rhs); });
         so.pop.r(")");
     }
 
@@ -212,7 +212,9 @@ class ReprVisitor : Visitor!()
 
             visitBase(expr);
         }
-        so.pop.r(node.isMacro ? "}" : ")");
+        if( node.argExprs.length > 0 )
+            so.pop;
+        so.r(node.isMacro ? "}" : ")");
     }
 
     override void visit(Ast.VariableExpr node)
