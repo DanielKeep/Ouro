@@ -232,11 +232,14 @@ extern(C) void invokeStdcall(void* fp, uint ss, void* sp,
         sub     ESP, ECX;
         mov     ESI, sp;
         mov     EDI, ESP;
+        cmp     ECX, 0;
+        je      loop_end;
         cld;
 loop:   movsb;
         dec     ECX;
         cmp     ECX, 0;
         jne     loop;
+loop_end:
 
         // Ready to make the call.
         mov     EAX, fp;
