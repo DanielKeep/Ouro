@@ -736,10 +736,15 @@ struct Argument
     bool isVararg;
     Value defaultValue;
 
-    static Argument opCall(char[] ident, bool isVararg = false,
+    static Argument opCall(char[] ident, bool isVararg,
             Value defaultValue = null)
     {
         return Argument(Location.init, ident, isVararg, defaultValue);
+    }
+
+    static Argument opCall(char[] ident, Value defaultValue = null)
+    {
+        return Argument(Location.init, ident, false, defaultValue);
     }
 
     static Argument opCall(Location loc, char[] ident, bool isVararg = false,
