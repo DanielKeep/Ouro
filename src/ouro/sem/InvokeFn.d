@@ -33,6 +33,26 @@ Sit.Value invoke(Sit.CallableValue callable, Sit.Value[] args,
         else
             assert(false, "tried to invoke a " ~ callable.classinfo.name);
 
+        // Process default argument values.
+        void setArg(size_t i, Sit.Value v)
+        {
+            if( i >= args.length )
+                args.length = i+1;
+            assert( args[i] is null );
+            args[i] = v;
+        }
+
+        // Go backwards so we only grow the array at most once.
+        foreach_reverse( i, arg ; fn.args )
+        {
+            if( arg.defaultValue !is null
+                    && (i >= args.length || args[i] is null) )
+                setArg(i, arg.defaultValue);
+        }
+
+        foreach( i, arg ; args )
+            assert( arg !is null, "arg "~fn.args[i].ident~" has no value" );
+
         // Handle callee-side varargs.  This means searching for any argument
         // which is flagged as vararg.
         {

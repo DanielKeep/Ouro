@@ -63,8 +63,15 @@ class ReprVisitor : Visitor!()
         so.f("let {}{}", node.isMacro ? "macro " : "",
                 reprIdent(node.ident));
         foreach( i,arg ; node.args )
+        {
             so.r((i==0)?"(":",")(reprIdent(arg.ident))
                 (arg.isVararg?"...":"");
+            if( arg.defaultExpr !is null )
+            {
+                so.r("=");
+                visitBase(arg.defaultExpr);
+            }
+        }
         so(") = ");
         visitBase(node.expr);
         so.l;
@@ -186,6 +193,11 @@ class ReprVisitor : Visitor!()
             so.r(arg.ident);
             if( arg.isVararg )
                 so.r("...");
+            if( arg.defaultExpr !is null )
+            {
+                so.r("=");
+                visitBase(arg.defaultExpr);
+            }
         }
         so.r(".");
         visitBase(node.expr);

@@ -47,6 +47,7 @@ enum CompilerErrorCode : uint
     SUnexpected,
     SUnexExplode,
     SLetSelImp,
+    SExOptArg,
 }
 
 private alias CompilerErrorCode CEC;
@@ -91,6 +92,7 @@ CEC.PExParenForKw:  "expected regular call for {}",
 CEC.SUnexpected:    "unexpected semantic error",
 CEC.SUnexExplode:   "misplaced explode expression",
 CEC.SLetSelImp:     "cannot have a selective binding import",
+CEC.SExOptArg:      "found non-optional argument {} after an optional argument",
 
 // Set message for real this time
 cast(CEC) uint.max: null

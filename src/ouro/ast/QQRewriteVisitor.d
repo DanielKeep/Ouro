@@ -163,10 +163,15 @@ class QQRewriteVisitor : Visitor!(Ast.Expr, Context*)
     {
         auto expr = visitExpr(node.expr, ctx);
 
-        if( expr is node.expr )
+        auto args = node.args.dup;
+        foreach( i, ref arg ; args )
+            if( arg.defaultExpr !is null )
+                arg.defaultExpr = visitExpr(arg.defaultExpr, ctx);
+
+        if( expr is node.expr && args == node.args )
             return node;
 
-        return new Ast.LambdaExpr(node.loc, node.isMacro, node.args, expr);
+        return new Ast.LambdaExpr(node.loc, node.isMacro, args, expr);
     }
 
     override Ast.Expr visit(Ast.ExplodeExpr node, Context* ctx)

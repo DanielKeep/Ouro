@@ -344,11 +344,21 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
         subCtx.scop = new Sit.Scope(ctx.scop, true);
 
         auto args = new Sit.Argument[node.args.length];
+        bool optionalArgs = false;
 
         foreach( i,arg ; node.args )
         {
             subCtx.scop.bindArg(null, arg.ident);
-            args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
+            Sit.Value def = null;
+            if( arg.defaultExpr is null && optionalArgs )
+                err(CEC.SExOptArg, arg.loc, arg.ident);
+
+            else if( arg.defaultExpr !is null )
+            {
+                optionalArgs = true;
+                def = evalExpr(visitExpr(arg.defaultExpr, ctx));
+            }
+            args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg, def);
         }
 
         auto expr = visitExpr(node.expr, &subCtx);
@@ -502,11 +512,21 @@ class SemInitialVisitor : AstVisitor.Visitor!(Sit.Node, Context*)
 
         subCtx.scop = new Sit.Scope(ctx.scop, true);
         auto args = new Sit.Argument[node.args.length];
+        bool optionalArgs = false;
 
         foreach( i,arg ; node.args )
         {
             subCtx.scop.bindArg(null, arg.ident);
-            args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg);
+            Sit.Value def = null;
+            if( arg.defaultExpr is null && optionalArgs )
+                err(CEC.SExOptArg, arg.loc, arg.ident);
+
+            else if( arg.defaultExpr !is null )
+            {
+                optionalArgs = true;
+                def = evalExpr(visitExpr(arg.defaultExpr, ctx));
+            }
+            args[i] = Sit.Argument(arg.loc, arg.ident, arg.isVararg, def);
         }
 
         auto expr = visitExpr(node.expr, &subCtx);

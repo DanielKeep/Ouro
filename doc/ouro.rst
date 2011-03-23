@@ -439,7 +439,7 @@ now, the code is canonical).
 
 Note: eventually, pattern matching should be added here::
 
-    <argument name> = <identifier>, [ "..." ];
+    <argument name> = <identifier>, [ "..." | "=", <expression> ];
 
     <expression statement> = <expression>, <term>;
 
@@ -619,6 +619,7 @@ The following describes the structure of the AST nodes themselves.
         loc : Location
         ident : String
         isVararg : Logical
+        defaultExpr : Expr
 
     ExprStmt : Statement
         expr : Expr
@@ -864,6 +865,7 @@ implementation allows for a function pointer.
         loc      : Location
         ident    : String
         isVararg : Logical
+        defaultValue : Value
 
     ListExpr : Expr
         elemExprs : [Expr]

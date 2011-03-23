@@ -161,11 +161,14 @@ struct Argument
     Location loc;
     char[] ident;
     bool isVararg;
+    Expr defaultExpr;
 
-    static Argument opCall(Location loc, char[] ident, bool isVararg)
+    static Argument opCall(Location loc, char[] ident, bool isVararg,
+            Expr defaultExpr = null)
     in
     {
         assert( ident != "" );
+        if( isVararg ) assert( defaultExpr is null );
     }
     body
     {
@@ -173,13 +176,16 @@ struct Argument
         r.loc = loc;
         r.ident = ident;
         r.isVararg = isVararg;
+        r.defaultExpr = defaultExpr;
         return r;
     }
 
     equals_t opEquals(ref Argument rhs)
     {
         return this.ident == rhs.ident
-            && this.isVararg == rhs.isVararg;
+            && this.isVararg == rhs.isVararg
+            && ((this.defaultExpr is null && rhs.defaultExpr is null)
+                    || this.defaultExpr == rhs.defaultExpr);
     }
 }
 

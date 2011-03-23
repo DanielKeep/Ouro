@@ -251,21 +251,27 @@ Ast.Argument[] parseFuncArgNames(TokenStream ts, TOK stopType)
 Ast.Argument parseArgName(TokenStream ts)
 {
     /*
-        <argument name> = <identifier>, [ "..." ];
+        <argument name> = <identifier>, [ "..." | "=", <expression> ];
     */
 
     auto start = ts.peek.loc;
     auto end = start;
     auto ident = ts.popExpect(TOKidentifier).value;
     bool isVararg;
+    Ast.Expr defaultExpr;
 
     if( ts.peek.type == TOKperiod3 )
     {
         end = ts.pop.loc;
         isVararg = true;
     }
+    else if( ts.peek.type == TOKeq )
+    {
+        ts.pop;
+        defaultExpr = parseExpr(ts);
+    }
 
-    return Ast.Argument(start.extendTo(end), ident, isVararg);
+    return Ast.Argument(start.extendTo(end), ident, isVararg, defaultExpr);
 }
 
 Ast.ExprStmt parseExprStmt(TokenStream ts)

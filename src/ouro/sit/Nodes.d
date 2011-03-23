@@ -731,16 +731,20 @@ struct Argument
     Location loc;
     char[] ident;
     bool isVararg;
+    Value defaultValue;
 
-    static Argument opCall(char[] ident, bool isVararg = false)
+    static Argument opCall(char[] ident, bool isVararg = false,
+            Value defaultValue = null)
     {
-        return Argument(Location.init, ident, isVararg);
+        return Argument(Location.init, ident, isVararg, defaultValue);
     }
 
-    static Argument opCall(Location loc, char[] ident, bool isVararg = false)
+    static Argument opCall(Location loc, char[] ident, bool isVararg = false,
+            Value defaultValue = null)
     in
     {
         assert( ident != "" );
+        if( isVararg ) assert( defaultValue is null );
     }
     body
     {
@@ -748,6 +752,7 @@ struct Argument
         r.loc = loc;
         r.ident = ident;
         r.isVararg = isVararg;
+        r.defaultValue = defaultValue;
         return r;
     }
 }
