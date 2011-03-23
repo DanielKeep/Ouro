@@ -18,6 +18,25 @@ import ouro.util.invoke.CallConv : CallConv,
 import ouro.util.invoke.Platform : getCallBuilder, releaseCallBuilder;
 import ouro.util.invoke.Type : Type, HandleType, Variadic;
 
+class Library
+{
+    enum Mangle
+    {
+        Mangle,
+        NoMangle,
+        Mixed
+    }
+
+    SharedLib lib;
+    Mangle mangleStyle = Mangle.Mangle;
+
+    this(SharedLib lib, Mangle ms = Mangle.Mangle)
+    {
+        this.lib = lib;
+        this.mangleStyle = ms;
+    }
+}
+
 class NativeFn
 {
     void* ptr;
@@ -36,11 +55,11 @@ class NativeFn
     }
 }
 
-SharedLib chkArgSharedLib(Value[] args, size_t i)
+Library chkArgSharedLib(Value[] args, size_t i)
 {
     auto obj = chkArgObject(args, i, /*silent*/true);
-    auto r = cast(SharedLib) obj;
-    assert( r !is null, "expected SharedLib; got a "
+    auto r = cast(Library) obj;
+    assert( r !is null, "expected Library; got a "
             ~ args[i].classinfo.name);
     return r;
 }
@@ -103,20 +122,40 @@ static this()
 {
     Builtins.register("ouro.native.loadLibrary",
             new Sit.FunctionValue("ouro.native.loadLibrary", [
-                    Sit.Argument("path")
+                    Sit.Argument("path"),
+                    Sit.Argument("flags", true)
                 ], &native_loadLibrary, EC.Runtime, false));
 }
 
 Value native_loadLibrary(EC ec, Value[] args)
 {
-    chkArgNum(args, 1);
+    chkArgNum(args, 2);
     auto path = chkArgString(args, 0);
+    auto flags = chkArgList(args, 1).elemValues;
+
+    alias Library.Mangle Mangle;
+    auto ms = Mangle.Mangle;
+
+    foreach( flagValue ; flags )
+    {
+        auto flag = cast(Sit.SymbolValue) flagValue;
+        assert( flag !is null, "expected symbol" );
+        switch( flag.value )
+        {
+            case "mangle":      ms = Mangle.Mangle; break;
+            case "noMangle":    ms = Mangle.NoMangle; break;
+            case "mixedMangle": ms = Mangle.Mixed; break;
+
+            default:
+                assert( false, "unknown library flag \""~flag.value~"\"" );
+        }
+    }
 
     auto lib = SharedLib.loadNoThrow(path);
     if( lib is null )
         return Sit.NilValue.instance;
-    else
-        return new Sit.HostObjectValue(lib);
+    
+    return new Sit.HostObjectValue(new Library(lib, ms));
 }
 
 static this()
@@ -155,14 +194,46 @@ Value native_loadFunction(EC ec, Value[] args)
     if( cc is null )
         return Sit.NilValue.instance;
 
-    // Mangle if name is a symbol.
-    char[] mangle;
-    if( null !is cast(Sit.StringValue) args[1] )
-        mangle = symName;
-    else
-        mangle = cc.mangle(symName, returnTy, argTys, variadic);
+    // Load symbol
+    void* sym;
+    alias Library.Mangle M;
+    switch( lib.mangleStyle )
+    {
+        case M.Mangle:
+            {
+                char[] mangle;
+                if( null !is cast(Sit.StringValue) args[1] )
+                    mangle = symName;
+                else
+                    mangle = cc.mangle(symName, returnTy, argTys, variadic);
 
-    auto sym = lib.getSymbolNoThrow(toStringz(mangle, buffer));
+                sym = lib.lib.getSymbolNoThrow(toStringz(mangle, buffer));
+            }
+            break;
+
+        case M.NoMangle:
+            {
+                sym = lib.lib.getSymbolNoThrow(toStringz(symName, buffer));
+            }
+            break;
+
+        case M.Mixed:
+            {
+                // Try mangled first; if that fails, try unmangled.
+                char[] mangle;
+                if( null !is cast(Sit.StringValue) args[1] )
+                    mangle = symName;
+                else
+                    mangle = cc.mangle(symName, returnTy, argTys, variadic);
+
+                sym = lib.lib.getSymbolNoThrow(toStringz(mangle, buffer));
+                if( sym !is null ) break;
+
+                sym = lib.lib.getSymbolNoThrow(toStringz(symName, buffer));
+            }
+            break;
+    }
+
     if( sym is null )
         return Sit.NilValue.instance;
 
