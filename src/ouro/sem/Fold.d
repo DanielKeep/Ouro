@@ -322,7 +322,7 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
                 closureValues[i] = cv;
             }
         }
-        
+
         return new Sit.ClosureValue(node.astNode, node, closureValues);
     }
 
@@ -383,7 +383,7 @@ class FoldVisitor : Visitor!(Sit.Expr, Context)
         if( allValues )
         {
             auto kvpValues = new Sit.ValueKVP[node.kvps.length];
-            
+
             foreach( i,kvpExpr ; kvpExprs )
             {
                 auto k = cast(Sit.Value) kvpExpr.key;
