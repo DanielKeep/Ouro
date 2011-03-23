@@ -49,6 +49,14 @@ final class StructuredOutput
         return this;
     }
 
+    This seqBalanced(void delegate() dg)
+    {
+        auto depth = this.depth;
+        dg();
+        assert( this.depth == depth, "depth mismatch" );
+        return this;
+    }
+
     This r(char[] s)
     {
         os.write(s);
