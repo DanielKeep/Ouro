@@ -132,6 +132,24 @@ Value ast_new_ListExpr(EC ec, Value[] args)
             new Ast.ListExpr(Location.init, listExprs));
 }
 
+static this() { Builtins.register("ouro.ast.new_VariableExpr",
+        new Sit.FunctionValue("ouro.ast.new_VariableExpr",
+            [Sit.Argument("loc"),
+             Sit.Argument("exprs")],
+            &ast_new_VariableExpr, EC.All, true
+            )); }
+
+Value ast_new_VariableExpr(EC ec, Value[] args)
+{
+    chkArgNum(args, 2);
+    chkArgNil(args, 0); // don't support Locations yet.
+    auto ident = chkArgStringOrSymbol(args, 1);
+
+    return new Sit.AstQuoteValue(null,
+        new Ast.VariableExpr(Location.init, ident)
+    );
+}
+
 static this() { Builtins.register("ouro.ast.binaryExprLhs",
         new Sit.FunctionValue("ouro.ast.binaryExprLhs",
             [Sit.Argument("ast")],
