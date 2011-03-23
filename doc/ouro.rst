@@ -206,7 +206,7 @@ These tokens are used for non-alphanumeric language keywords.
            ├─'<'─┘    - Less-than
            ├─'>'─┘    - Greater-than
            ├─'\'─┘    - Lambda introduction
-           ├─':'─┘    - Reserved for constraints
+           ├─':'─┘    - Key/value separator
            └─'.'─┘    - Lambda argument terminator
 
 Keyword
