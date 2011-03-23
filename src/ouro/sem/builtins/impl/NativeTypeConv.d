@@ -111,6 +111,8 @@ void[] valueToNative(Value value, Type ty, void[] buffer = null)
             }
 
         case Id.Pointer:
+            if( cast(Sit.NilValue) value )
+                return copyValue(cast(size_t) 0, buffer);
             assert( false, "pointers nyi" );
 
         case Id.Array:
