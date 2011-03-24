@@ -342,7 +342,7 @@ The following character sequences are treated specially:
 ``if{condition, then, else}``
 -----------------------------
 
-Evaluates and returns the result of |then| or |else|
+Evaluates and returns the result of *then* or *else*
 based on the value of *condition*.  The branch not chosen is not evaluated.
 
 ::
