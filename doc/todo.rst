@@ -16,6 +16,12 @@ It seems that two additional things would be very useful:
     visibility.  Perhaps ``lookup`` could be modified to accept an optional
     "use scop instead of exportScop" flag.
 
+    .. note::
+        Turns out that lookup already bypasses exportScop and reads driectly
+        from scop.  Which makes some of the failures I've seen all the more
+        baffling.  None the less, the default behaviour should *probably* be
+        to only lookup public symbols unless instructed otherwise.
+
 2.  Some syntactic construct for converting a local reference to a globally
     usable form.  For example::
 
