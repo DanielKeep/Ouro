@@ -4,6 +4,27 @@ Ouro Todo
 
 .. contents::
 
+Quality of Implementation
+-------------------------
+
+Things that could be done to improve the quality of the interpreter, runtime,
+compiler, etc.
+
+Semantic errors
+```````````````
+
+Currently, most failures in the semantic stage result in blind assertion
+failures.  These should be converted into actual compilation errors.
+
+Errors which can occur at both runtime and compile time should be treated, for
+the moment, as a special class of compile error; folding/evaluation failure or
+something.
+
+Module naming
+`````````````
+
+Split module name into path and uri.
+
 Referring to symbols from inside macros
 ---------------------------------------
 
