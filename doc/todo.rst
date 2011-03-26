@@ -129,6 +129,46 @@ Additional Types
 Integer
     Should be like Python's ``int`` type; a big int.
 
+Nameable Types
+``````````````
+
+A problem with functions (and later, types) is that you want to be able to
+find out what they're called, not simply what their value is.  Consider::
+
+    |-- In module /main
+    let f(x) = 2*x
+
+When printing this, you want to display it as ``/main f(x)`` or somesuch.
+Displaying it as ``\x.2*x`` isn't as helpful because it doesn't tell you where
+to look for its definition.
+
+This is an issue because until a value is actually bound to a symbol, you
+can't know what to call it.  For example::
+
+    let f = if { SomeCondition, then: \x.2*x, else: \x.3*x }
+
+Which function gets called ``f`` depends on which branch gets evaluated.
+
+Currently, function objects get mutated when they're bound.  This is slightly
+undesirable, but much simpler than the alternative which is to exhaustively
+replace all references to the old function with a new one.
+
+But what about types, or other user-defined constructs which would be useful
+to be able to name?
+
+We want to avoid mutability wherever possible in user code as we can't
+distinguish between compile-time and runtime mutability.  Perhaps the
+"globally replace one value with another" idea has some merit.
+
+Provided that all host variables get added as roots, it might be possible to
+have a protocol for nameable types.  This::
+
+    let Foo = Record { bar : Real }
+
+Might be rewritten into::
+
+    let Foo = (\obj.obj rename('Foo))(Record { bar : Real })
+
 Integer Ranges
 ``````````````
 
